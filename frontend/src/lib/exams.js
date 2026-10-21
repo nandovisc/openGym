@@ -122,7 +122,9 @@ export function normalizeExam(input, { prev = null } = {}) {
     files: list(input?.files).filter(f => f && typeof f === 'object' && typeof f.hash === 'string').slice(0, FILES_MAX),
     results,
     notes: text(input?.notes, 500),
-    created: Number(prev?.created) || Date.now()
+    created: Number(prev?.created) || Date.now(),
+    // When its results were read with AI (POST /api/exams/read), 0 for typed in by hand.
+    ai: Number(input?.ai) || 0
   }
 }
 

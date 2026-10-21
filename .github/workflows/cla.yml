@@ -17,6 +17,8 @@ permissions:
 
 jobs:
   cla:
+    # Upstream's own repository only: a fork (deployed on Vercel, docs/VERCEL.md) has no use for it.
+    if: github.repository == 'DuarteSantos8/openGym'
     runs-on: ubuntu-latest
     steps:
       # Comments on plain issues (the pinned CLA issue #554) are not pull requests: the action

@@ -170,12 +170,12 @@ test('the three hot-path state reads all go through readStateCached', () => {
   };
   for (const key of ['GET /api/data/rev', 'POST /api/push/test', 'POST /api/push/rest-timer']) {
     const body = handler(key);
-    assert.match(body, /readStateCached\(user\.id\)/, `${key} should read through the cache`);
-    assert.doesNotMatch(body, /readState\(user\.id\)/, `${key} parses the whole document again`);
+    assert.match(body, /(read|load)StateCached\(user\.id\)/, `${key} should read through the cache`);
+    assert.doesNotMatch(body, /(read|load)State\(user\.id\)/, `${key} parses the whole document again`);
   }
   // GET /api/data hands out the document itself and PUT compares against it — both want the real
   // thing, uncached.
   // (readStateStrict: a file that cannot be read is a 503, not an empty profile.)
-  assert.match(handler('GET /api/data'), /readStateStrict\(user\.id\)/);
-  assert.match(handler('PUT /api/data'), /readStateStrict\(user\.id\)/);
+  assert.match(handler('GET /api/data'), /(read|load)StateStrict\(user\.id\)/);
+  assert.match(handler('PUT /api/data'), /(read|load)StateStrict\(user\.id\)/);
 });

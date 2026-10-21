@@ -208,6 +208,40 @@ paths:
                   writable: { type: boolean, const: false }
               example: { ok: false, writable: false }
 
+  /api/cron/tick:
+    post:
+      tags: [meta]
+      operationId: cronTick
+      summary: Scheduled work (serverless only)
+      description: |
+        Only on an instance running with `STORE=supabase` (docs/VERCEL.md), where no timer
+        runs between requests; absent everywhere else. Called by a scheduler — on Vercel a
+        `pg_cron` job in the database (`api/store/supabase-cron.sql`) — with
+        `Authorization: Bearer <CRON_SECRET>`. Without `CRON_SECRET` set it refuses everyone.
+
+        - `job=rest`: sends the rest-timer alerts that are due.
+        - `job=minute` (the default): the day's reminders and missed-workout nudges, then the
+          due rest-timer alerts.
+        - `job=hourly`: audit-log retention and the media sweep.
+      security: []
+      parameters:
+        - name: job
+          in: query
+          required: false
+          schema: { type: string, enum: [rest, minute, hourly] }
+      responses:
+        '200':
+          description: Done. `sent` counts the rest-timer alerts sent.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  job: { type: string }
+                  sent: { type: integer }
+        '400': { description: Unknown job. }
+        '401': { description: Missing or wrong CRON_SECRET. }
   /api/config:
     get:
       tags: [meta]

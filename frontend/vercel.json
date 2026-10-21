@@ -1,0 +1,44 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "vite",
+  "installCommand": "npm ci && npm ci --prefix ../api --omit=dev --omit=optional",
+  "buildCommand": "npm run build && node ../scripts/catalogue/stage-media.mjs dist",
+  "outputDirectory": "dist",
+  "regions": ["sfo1"],
+  "functions": {
+    "api/index.js": { "maxDuration": 60 }
+  },
+  "rewrites": [
+    { "source": "/api/:path*", "destination": "/api/index" }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Frame-Options", "value": "DENY" },
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "Referrer-Policy", "value": "same-origin" },
+        { "key": "Content-Security-Policy", "value": "frame-ancestors 'none'" }
+      ]
+    },
+    {
+      "source": "/(.*)\\.(js|css|json|html)",
+      "headers": [{ "key": "Cache-Control", "value": "no-cache, must-revalidate" }]
+    },
+    {
+      "source": "/",
+      "headers": [{ "key": "Cache-Control", "value": "no-cache, must-revalidate" }]
+    },
+    {
+      "source": "/assets/(.*)",
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }]
+    },
+    {
+      "source": "/exercise-media/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=2592000, immutable" },
+        { "key": "Cross-Origin-Resource-Policy", "value": "same-origin" }
+      ]
+    }
+  ]
+}

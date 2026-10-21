@@ -1,5 +1,5 @@
 {
-  "about": "Which blob hashes a state references. api/media.js referencedHashes() and frontend/src/lib/media-refs.js referencedHashes() must both give `expect` (compared as sorted lists) for every `state` here: the server keeps and the client keeps exactly this set. Each of customEx[].media.hash, customEx[].media.poster.hash and the same two of every entry of workouts[].media counts on its own when it matches /^[0-9a-f]{64}$/ — deliberately looser than normalizeMediaRef, because this set decides what is kept.",
+  "about": "Which blob hashes a state references. api/media.js referencedHashes() and frontend/src/lib/media-refs.js referencedHashes() must both give `expect` (compared as sorted lists) for every `state` here: the server keeps and the client keeps exactly this set. Each of customEx[].media.hash, customEx[].media.poster.hash and the same two of every entry of workouts[].media and of exams[].files count on its own when it matches /^[0-9a-f]{64}$/ — deliberately looser than normalizeMediaRef, because this set decides what is kept.",
   "referencedHashes": [
     {
       "name": "no state at all",
@@ -867,6 +867,102 @@
           ]
         },
         "workouts": []
+      },
+      "expect": []
+    },
+    {
+      "name": "a medical exam's PDF and the photos of another",
+      "state": {
+        "exams": [
+          {
+            "id": "e1",
+            "d": "2026-10-01",
+            "files": [
+              {
+                "kind": "doc",
+                "hash": "1111111111111111111111111111111111111111111111111111111111111111",
+                "mime": "application/pdf",
+                "size": 50000,
+                "at": 1
+              }
+            ]
+          },
+          {
+            "id": "e2",
+            "d": "2026-10-02",
+            "files": [
+              {
+                "kind": "image",
+                "hash": "2222222222222222222222222222222222222222222222222222222222222222",
+                "mime": "image/webp",
+                "size": 900,
+                "width": 1200,
+                "height": 1600,
+                "at": 1
+              },
+              {
+                "kind": "image",
+                "hash": "3333333333333333333333333333333333333333333333333333333333333333",
+                "mime": "image/webp",
+                "size": 900,
+                "width": 1200,
+                "height": 1600,
+                "at": 1
+              }
+            ]
+          }
+        ]
+      },
+      "expect": [
+        "1111111111111111111111111111111111111111111111111111111111111111",
+        "2222222222222222222222222222222222222222222222222222222222222222",
+        "3333333333333333333333333333333333333333333333333333333333333333"
+      ]
+    },
+    {
+      "name": "exams that are not a list, files that are not a list, and malformed hashes",
+      "state": {
+        "exams": [
+          {
+            "id": "e1",
+            "files": {
+              "x": {
+                "hash": "4444444444444444444444444444444444444444444444444444444444444444"
+              }
+            }
+          },
+          {
+            "id": "e2",
+            "files": [
+              {
+                "hash": "nope"
+              },
+              null,
+              "str",
+              {
+                "hash": "5555555555555555555555555555555555555555555555555555555555555555"
+              }
+            ]
+          },
+          null
+        ]
+      },
+      "expect": [
+        "5555555555555555555555555555555555555555555555555555555555555555"
+      ]
+    },
+    {
+      "name": "exams as an object is ignored",
+      "state": {
+        "exams": {
+          "e1": {
+            "files": [
+              {
+                "hash": "6666666666666666666666666666666666666666666666666666666666666666"
+              }
+            ]
+          }
+        }
       },
       "expect": []
     }

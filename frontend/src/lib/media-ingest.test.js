@@ -78,6 +78,15 @@ describe('photos', () => {
     await expect(ingestMediaFile(file(latin1('%PDF-1.7'), 'x.mp4'), LIMITS, deps())).rejects.toMatchObject({ code: 'type' })
   })
 
+  it('keeps a PDF as it is where documents are asked for, within its cap', async () => {
+    const pdf = latin1('%PDF-1.7\n' + 'x'.repeat(200))
+    const out = await ingestMediaFile(file(pdf, 'exame.pdf'), LIMITS, deps(), { docs: true })
+    expect(out.media).toMatchObject({ kind: 'doc', mime: 'application/pdf', size: pdf.length })
+    expect(out.blobs).toHaveLength(1)
+    expect(out.blobs[0].hash).toBe(out.media.hash)
+    await expect(ingestMediaFile(file(pdf, 'exame.pdf'), { ...LIMITS, docMB: 0.0001 }, deps(), { docs: true })).rejects.toMatchObject({ code: 'too-large' })
+  })
+
   it('says so when this browser cannot decode it', async () => {
     const d = deps({ decodeImage: vi.fn(async () => { throw Object.assign(new Error('x'), { code: 'unreadable' }) }) })
     await expect(ingestMediaFile(file(png()), LIMITS, d)).rejects.toMatchObject({ code: 'unreadable' })

@@ -47,10 +47,12 @@ export const MEDIA_TYPES = {
   'image/gif': { kind: 'gif', category: 'still', ext: 'gif' },
   'video/mp4': { kind: 'video', category: 'video', ext: 'mp4' },
   'video/quicktime': { kind: 'video', category: 'video', ext: 'mov' },
-  'video/webm': { kind: 'video', category: 'video', ext: 'webm' }
+  'video/webm': { kind: 'video', category: 'video', ext: 'webm' },
+  // A medical exam's report (Health → Exams). Stored and served as it is, never parsed here.
+  'application/pdf': { kind: 'doc', category: 'doc', ext: 'pdf' }
 };
 const EXT_MIME = Object.fromEntries(Object.entries(MEDIA_TYPES).map(([mime, t]) => [t.ext, mime]));
-const FILE_RE = /^([0-9a-f]{64})\.(jpg|png|webp|gif|mp4|mov|webm)$/;
+const FILE_RE = /^([0-9a-f]{64})\.(jpg|png|webp|gif|mp4|mov|webm|pdf)$/;
 
 /* ---------------------------------------------------------------- limits */
 
@@ -72,6 +74,7 @@ export function mediaLimits(env = process.env) {
     gifMB: num('MEDIA_GIF_MAX_MB', 8, 0.001),
     videoMB: num('MEDIA_VIDEO_MAX_MB', 40, 0.001),
     videoSec: num('MEDIA_VIDEO_MAX_SEC', 60, 1),
+    docMB: num('MEDIA_DOC_MAX_MB', 10, 0.001),
     gcGraceDays: num('MEDIA_GC_GRACE_DAYS', 14, 0),
     uploadsPerHour: Math.floor(num('MEDIA_UPLOADS_PER_HOUR', 600, 1)),
     minFreeMB: num('MEDIA_MIN_FREE_MB', 512, 0)          // 0 = no floor
@@ -82,7 +85,7 @@ export function mediaLimits(env = process.env) {
 // `workouts: true`: this server keeps the files a logged workout's `media` names (its GC walks
 // workouts[].media), so a signed-in client may offer attaching them. A server from before says
 // nothing, and the client offers them on custom exercises only.
-export const mediaConfig = l => ({ imageMB: l.imageMB, gifMB: l.gifMB, videoMB: l.videoMB, videoSec: l.videoSec, quotaMB: l.quotaMB, workouts: true });
+export const mediaConfig = l => ({ imageMB: l.imageMB, gifMB: l.gifMB, videoMB: l.videoMB, videoSec: l.videoSec, docMB: l.docMB, quotaMB: l.quotaMB, workouts: true });
 
 /* ---------------------------------------------------------------- errors */
 
@@ -172,6 +175,7 @@ export function sniffMedia(head) {
     return null;       // HEIC/AVIF stills, M4A audio and every brand nobody vouched for
   }
   if (at(0, 0x1a, 0x45, 0xdf, 0xa3)) return ebmlDocType(b) === 'webm' ? as('video/webm') : null;
+  if (ascii(0, 5) === '%PDF-') return as('application/pdf');
   return null;
 }
 
@@ -300,6 +304,10 @@ export function referencedHashes(state) {
     if (!isObj(w) || !Array.isArray(w.media)) continue;
     for (const m of w.media) if (isObj(m)) ref(m);
   }
+  for (const e of Array.isArray(state.exams) ? state.exams : []) {
+    if (!isObj(e) || !Array.isArray(e.files)) continue;
+    for (const m of e.files) if (isObj(m)) ref(m);
+  }
   return out;
 }
 
@@ -408,9 +416,9 @@ function streamToFile(req, file, { max, maxMB, idleMs }) {
 export function createMediaStore({ dir, limits, now = Date.now, readState = () => null, idleMs = 60000, log = console } = {}) {
   const L = { ...mediaLimits({}), ...(limits || {}) };
   const quotaBytes = L.quotaMB > 0 ? Math.round(L.quotaMB * MB) : 0;
-  const capMB = kind => (kind === 'video' ? L.videoMB : kind === 'gif' ? L.gifMB : L.imageMB);
+  const capMB = kind => (kind === 'video' ? L.videoMB : kind === 'gif' ? L.gifMB : kind === 'doc' ? L.docMB : L.imageMB);
   const capOf = kind => Math.round(capMB(kind) * MB);
-  const maxCap = Math.max(capOf('image'), capOf('gif'), capOf('video'));
+  const maxCap = Math.max(capOf('image'), capOf('gif'), capOf('video'), capOf('doc'));
   const users = new Map();          // safe uid -> { dir, bytes, count, reserved, inflight, hashes }
   const orphansLogged = new Set();
 

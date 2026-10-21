@@ -51,7 +51,7 @@ function readAll(req, max, maxMB) {
 export function createRemoteMediaStore({ remote, bucket = 'opengym-media', limits, now = Date.now, readState = async () => null, log = console } = {}) {
   const L = { ...mediaLimits({}), ...(limits || {}) };
   const quotaBytes = L.quotaMB > 0 ? Math.round(L.quotaMB * MB) : 0;
-  const capMB = kind => (kind === 'video' ? L.videoMB : kind === 'gif' ? L.gifMB : L.imageMB);
+  const capMB = kind => (kind === 'video' ? L.videoMB : kind === 'gif' ? L.gifMB : kind === 'doc' ? L.docMB : L.imageMB);
   const capOf = kind => Math.round(capMB(kind) * MB);
   const { rpc, storage } = remote;
 

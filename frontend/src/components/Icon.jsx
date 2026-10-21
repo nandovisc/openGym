@@ -41,6 +41,8 @@ const P = {
   crown: <path d="M4.2 17.6h15.6M4.2 17.6 3.4 7.2l4.6 3.2L12 4.6l4 5.8 4.6-3.2-.8 10.4Z" />,
   bolt: <path d="M13.4 3.4 5.6 13.6h5.2l-.2 7 7.8-10.2h-5.2Z" />,
   shield: <path d="M12 3.6 5 6.2v5.5c0 4 2.9 7.5 7 8.7 4.1-1.2 7-4.7 7-8.7V6.2Z" />,
+  // A page with a folded corner and lines of text: a lab report (Health → Exams).
+  doc: <><path d="M6.4 3.6h7.6l4.6 4.6v11a1.2 1.2 0 0 1-1.2 1.2H6.4a1.2 1.2 0 0 1-1.2-1.2V4.8a1.2 1.2 0 0 1 1.2-1.2Z" /><path d="M13.6 3.8v4.6h4.6M8.6 12.4h6.8M8.6 16h4.6" /></>,
   // A capsule on the diagonal, split across its middle (Health → Medications).
   pill: <><rect x="3.6" y="8.6" width="16.8" height="6.8" rx="3.4" transform="rotate(-45 12 12)" /><path d="m9.6 9.6 4.8 4.8" /></>,
   heart: <path d="M12 20c-.4 0-.8-.1-1-.4l-6.2-6a4.6 4.6 0 0 1 0-6.6 4.4 4.4 0 0 1 6.2 0l1 1 1-1a4.4 4.4 0 0 1 6.2 0 4.6 4.6 0 0 1 0 6.6l-6.2 6c-.2.3-.6.4-1 .4Z" />,

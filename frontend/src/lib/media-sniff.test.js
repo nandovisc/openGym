@@ -30,12 +30,14 @@ describe('sniffKind', () => {
     expect(sniffKind(ftyp('avif'))).toMatchObject({ mime: 'image/avif', input: true })
   })
 
-  it('refuses SVG, HTML, PDF, ZIP, BMP, TIFF, ICO, M4A and Matroska', () => {
+  it('reads a PDF as a document (a medical exam\'s file)', () => {
+    expect(sniffKind(latin1('%PDF-1.7\n'))).toEqual({ mime: 'application/pdf', kind: 'doc', category: 'doc' })
+  })
+  it('refuses SVG, HTML, ZIP, BMP, TIFF, ICO, M4A and Matroska', () => {
     for (const b of [
       latin1('<?xml version="1.0"?><svg xmlns="http://www.w3.org/2000/svg"/>'),
       latin1('<svg onload="alert(1)">'),
       latin1('<!doctype html><script>alert(1)</script>'),
-      latin1('%PDF-1.7\n'),
       bytes([0x50, 0x4b, 0x03, 0x04], fill(20)),
       bytes('BM', fill(40)),
       bytes([0x49, 0x49, 0x2a, 0x00], fill(20)),

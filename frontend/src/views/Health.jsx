@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { useStore } from '../store/useStore.js'
 import { doseState, dosesOn, hhmmOf } from '../lib/meds.js'
+import { examsByDate, outOfRange } from '../lib/exams.js'
 import { lastBW } from '../lib/history.js'
 import { fmtDate, fmtNum, todayISO } from '../lib/format.js'
 import { t } from '../lib/i18n.js'
@@ -18,14 +19,15 @@ export function medsToday(S, now = { d: todayISO(), hhmm: hhmmOf() }) {
 }
 
 // Health: every record of the body that is not a workout, one place to reach them from. Body
-// weight and measurements are the screens that were there already; medications are new, and the
-// exams and nutrition modules join this list when they exist.
+// weight and measurements are the screens that were there already; medications and exams are
+// new, and nutrition joins this list when it exists.
 export default function Health() {
   const nav = useNavigate()
   const S = useStore(s => s.S)
   const meds = medsToday(S)
   const bw = lastBW(S)
   const lastMeasure = (S.measurements || []).at(-1)
+  const lastExam = examsByDate(S.exams)[0]
   const medsSub = !(S.meds || []).length ? t('Add what you take and get reminded')
     : !meds.total ? t('Nothing scheduled today')
       : [t('{0} of {1} doses taken today', meds.taken, meds.total), meds.late ? t('{0} late', meds.late) : null].filter(Boolean).join(' · ')
@@ -37,13 +39,15 @@ export default function Health() {
     </div>
     <Section>
       <Row icon="pill" iconTint="var(--teal)" title={t('Medications')} subtitle={medsSub} accessory="chevron" onClick={() => nav('/health/meds')} />
+      <Row icon="doc" iconTint="var(--red)" title={t('Medical exams')}
+        subtitle={lastExam ? [fmtDate(lastExam.d, true), lastExam.title, outOfRange(lastExam) ? t('{0} out of range', outOfRange(lastExam)) : null].filter(Boolean).join(' · ') : t('Lab reports read for you, results over time')}
+        accessory="chevron" onClick={() => nav('/health/exams')} />
       <Row icon="scale" iconTint="var(--blue)" title={t('Body weight')}
         subtitle={bw ? `${fmtNum(bw.w)} ${S.unit} · ${fmtDate(bw.d, true)}` : t('No weigh-ins yet')} accessory="chevron" onClick={weighInsSheet} />
       <Row icon="ruler" iconTint="var(--indigo)" title={t('Body measurements')}
         subtitle={lastMeasure ? fmtDate(lastMeasure.d, true) : t('No measurements yet')} accessory="chevron" onClick={() => nav('/measurements')} />
     </Section>
     <Section title={t('Coming soon')}>
-      <Row icon="note" iconTint="var(--grey)" title={t('Medical exams')} subtitle={t('Lab reports read for you, results over time')} />
       <Row icon="flame" iconTint="var(--grey)" title={t('Nutrition')} subtitle={t('Meals, calories and macros')} />
     </Section>
   </div>

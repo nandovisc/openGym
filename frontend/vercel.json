@@ -6,7 +6,7 @@
   "outputDirectory": "dist",
   "regions": ["sfo1"],
   "functions": {
-    "api/index.js": { "maxDuration": 60 }
+    "api/index.js": { "maxDuration": 120 }
   },
   "rewrites": [
     { "source": "/api/:path*", "destination": "/api/index" }

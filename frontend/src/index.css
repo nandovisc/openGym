@@ -2160,3 +2160,17 @@ button.wl-summary{width:100%;padding:0 0 10px;text-align:start;border-radius:var
 .med-day.missed{background:var(--red)}
 .med-hint{display:flex;align-items:center;gap:10px;color:var(--orange)}
 .health-card b{font-size:17px}
+
+/* ---- Health → Exams (views/Exams.jsx) ---- */
+.exam-files{display:flex;flex-wrap:wrap;gap:8px}
+.exam-file{position:relative}
+.exam-doc,.exam-add,.exam-photo{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;width:84px;height:84px;border-radius:var(--r);border:1px solid var(--sep);background:var(--surface-2);color:var(--label-2);font:inherit;font-size:12px;overflow:hidden;padding:0}
+.exam-doc{color:var(--red)}
+.exam-add{border-style:dashed}
+.exam-photo img{width:100%;height:100%;object-fit:cover}
+.exam-file-x{position:absolute;top:-8px;right:-8px;background:var(--surface-3);border-radius:50%;width:24px;height:24px;font-size:12px}
+.exam-edit-row{display:flex;flex-direction:column;gap:6px;padding:10px 0;border-top:1px solid var(--sep)}
+.exam-result{display:flex;align-items:center;gap:12px;padding:9px 0;border-top:1px solid var(--sep)}
+.list>.exam-result{padding:10px 14px;background:var(--surface);border-radius:var(--r);border-top:0;margin-bottom:6px}
+.exam-what{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.exam-val{text-align:end;font-variant-numeric:tabular-nums;font-weight:600}

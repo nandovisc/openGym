@@ -20,6 +20,7 @@ import { startCadence } from './coach/cadence.js';
 import { startWarmup } from './coach/warmup.js';
 import { dayReminderPush, medReminderPush, nudgePush, restTimerPush, testPush } from './push-messages.js';
 import { doseId, medsDue } from './meds.js';
+import { ExamReadError, examReaderConfig, readExam } from './exam-reader.js';
 import { verifyError } from './verify-error.js';
 import {
   hashPassword, verifyPassword, needsRehash, passwordProblem, passwordLength, nameKey, BusyError,
@@ -31,7 +32,7 @@ import {
   listPasskeys, addPasskeyRecord, renamePasskeyRecord, removePasskeyRecord, passkeyRemovalRefused, MAX_PASSKEYS
 } from './passkeys-store.js';
 import { createDeviceLink, findDeviceLink, burnDeviceLink, dropDeviceLinks } from './device-link.js';
-import { createMediaStore, mediaLimits, mediaConfig, MediaError, HASH_RE } from './media.js';
+import { createMediaStore, mediaLimits, mediaConfig, MediaError, HASH_RE, sniffMedia } from './media.js';
 import { effectiveRoutineId } from './queue.js';
 import { stampPut } from './sync-stamps.js';
 import { atomicWrite as durableWrite } from './durable.js';
@@ -1980,6 +1981,46 @@ const mediaRoutes = {
   }
 };
 
+/* ---------- medical exams read by AI (Health → Exams) ---------- */
+// The report's files come in the request and go on to the Anthropic API (exam-reader.js); the
+// reading comes back for the person to check before the app saves anything. Off without
+// ANTHROPIC_API_KEY: the route answers 404 and /api/config says nothing, so the app hides it.
+// One PDF or up to six photos, each sniffed by its bytes — never by the type it claims — and
+// each within the instance's own caps for documents and photos. Thirty readings an hour per
+// profile: each is a paid call.
+const EXAM_AI = examReaderConfig(process.env);
+const EXAM_READS = createWindow({ max: 30, windowMs: 3600000 });
+const examRoutes = {
+  'POST /api/exams/read': async (req, res) => {
+    const user = readSession(req);
+    if (!user) return json(res, 401, { error: 'not signed in' });
+    const body = await readBody(req);
+    const raw = Array.isArray(body.files) ? body.files : [];
+    if (!raw.length || raw.length > 6) return json(res, 400, { error: 'send one PDF or up to six photos', code: 'exam-files' });
+    const files = [];
+    for (const f of raw) {
+      const bytes = typeof f?.data === 'string' ? Buffer.from(f.data, 'base64') : null;
+      const sn = bytes && bytes.length ? sniffMedia(bytes.subarray(0, 64)) : null;
+      if (!sn || (sn.kind !== 'doc' && sn.kind !== 'image')) return json(res, 415, { error: 'a report is a PDF or a photo', code: 'exam-type' });
+      const capMB = sn.kind === 'doc' ? MEDIA_LIMITS.docMB : MEDIA_LIMITS.imageMB;
+      if (bytes.length > capMB * 1048576) return json(res, 413, { error: 'that file is too large', code: 'exam-too-large', maxMB: capMB });
+      files.push({ mime: sn.mime, bytes });
+    }
+    if (files.some(f => f.mime === 'application/pdf') && files.length > 1) return json(res, 400, { error: 'send one PDF or up to six photos', code: 'exam-files' });
+    const wait = EXAM_READS.take(user.id);
+    if (wait) return json(res, 429, { error: 'too many readings, try again later', code: 'locked', retryAfter: wait }, { 'Retry-After': String(wait) });
+    try {
+      const reading = await readExam(files, EXAM_AI);
+      audit(req, 'exams.read', { user, msg: `${files.length} file(s), ${reading.results.length} result(s)` });
+      json(res, 200, reading);
+    } catch (e) {
+      if (!(e instanceof ExamReadError)) throw e;
+      audit(req, 'exams.read', { ok: false, user, msg: e.code });
+      json(res, e.status, { error: e.message, code: e.code });
+    }
+  }
+};
+
 /* ---------- scheduled work, serverless ---------- */
 // What the timers of the single process do, done when something calls this route: on Vercel a
 // pg_cron job in the database itself, through pg_net (api/store/supabase-cron.sql). Bearer
@@ -2087,6 +2128,8 @@ const routes = {
       // Public like the two flags above: the caps are not a secret, and the absence of the
       // block is how the app knows this server does not take photos and videos at all.
       ...(MEDIA_ON ? { media: mediaConfig(MEDIA_LIMITS) } : {}),
+      // Whether Health → Exams may offer reading a report with AI (POST /api/exams/read).
+      ...(EXAM_AI.key ? { exams_ai: true } : {}),
       ...(readSession(req) ? { coach: coachConfig.publicConfig() } : {})
     });
   },
@@ -2742,6 +2785,10 @@ const routes = {
   // Absent, not refusing, when MEDIA_UPLOADS=0: a 404 is what a server from before the feature
   // answers, and the client already treats that as "this server does not store them".
   ...(MEDIA_ON ? mediaRoutes : {}),
+
+  /* ---------- medical exams read by AI ---------- */
+  // Absent without ANTHROPIC_API_KEY, like the media routes without MEDIA_UPLOADS.
+  ...(EXAM_AI.key ? examRoutes : {}),
 
   /* ---------- scheduled work (serverless only) ---------- */
   ...(SERVERLESS ? cronRoutes : {})

@@ -57,6 +57,11 @@ export function sanitizeCustomMedia(state) {
     const list = workoutMediaOf(w, Infinity)
     if (list.length) w.media = list; else delete w.media
   }
+  // A medical exam's files (Health → Exams): the PDF or the photos of the report.
+  for (const e of Array.isArray(state?.exams) ? state.exams : []) {
+    if (!e || typeof e !== 'object' || !('files' in e)) continue
+    e.files = (Array.isArray(e.files) ? e.files : []).map(normalizeMediaRef).filter(Boolean)
+  }
   return state
 }
 
@@ -132,7 +137,7 @@ export async function readBackupFile(file) {
  */
 export async function storeBackupMedia(files, { media = mediaStore, limits = DEFAULT_LIMITS } = {}) {
   let stored = 0, skipped = 0
-  const cap = { image: limits.imageMB, gif: limits.gifMB, video: limits.videoMB }
+  const cap = { image: limits.imageMB, gif: limits.gifMB, video: limits.videoMB, doc: limits.docMB }
   for (const { hash, entry } of files) {
     try {
       const head = new Uint8Array(await entry.blob.slice(0, 64).arrayBuffer())

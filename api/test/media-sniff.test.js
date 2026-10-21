@@ -14,7 +14,7 @@ import * as M from './media-samples.mjs';
 const head = b => b.subarray(0, 64);
 const kindOf = b => sniffMedia(head(b));
 
-test('each of the seven stored types is recognised from its magic bytes', () => {
+test('each of the eight stored types is recognised from its magic bytes', () => {
   const cases = [
     [M.jpeg(), 'image/jpeg', 'image', 'still', 'jpg'],
     [M.png(), 'image/png', 'image', 'still', 'png'],
@@ -23,12 +23,14 @@ test('each of the seven stored types is recognised from its magic bytes', () => 
     [M.gif(1000, '87a'), 'image/gif', 'gif', 'still', 'gif'],
     [M.mp4(), 'video/mp4', 'video', 'video', 'mp4'],
     [M.mp4({ brand: 'qt  ' }), 'video/quicktime', 'video', 'video', 'mov'],
-    [M.ebml('webm'), 'video/webm', 'video', 'video', 'webm']
+    [M.ebml('webm'), 'video/webm', 'video', 'video', 'webm'],
+    // A medical exam's report (Health → Exams).
+    [M.pdf(), 'application/pdf', 'doc', 'doc', 'pdf']
   ];
   for (const [bytes, mime, kind, category, ext] of cases) {
     assert.deepEqual(kindOf(bytes), { mime, kind, category, ext }, mime);
   }
-  assert.equal(Object.keys(MEDIA_TYPES).length, 7);
+  assert.equal(Object.keys(MEDIA_TYPES).length, 8);
 });
 
 test('every MP4 brand on the list is a video, and a brand nobody vouched for is not', () => {
@@ -44,10 +46,10 @@ test('HEIC and AVIF stills are refused — the app re-encodes them, it never upl
   }
 });
 
-test('SVG, HTML, PDF, ZIP, M4A audio and Matroska are refused', () => {
+test('SVG, HTML, a PDF without its header, ZIP, M4A audio and Matroska are refused', () => {
   assert.equal(kindOf(M.svg()), null, 'svg');
   assert.equal(kindOf(M.html()), null, 'html');
-  assert.equal(kindOf(M.pdf()), null, 'pdf');
+  assert.equal(kindOf(Buffer.from('PDF-1.7 but not really')), null, 'pdf without %');
   assert.equal(kindOf(M.zip()), null, 'zip');
   assert.equal(kindOf(M.mp4({ brand: 'M4A ' })), null, 'm4a');
   assert.equal(kindOf(M.ebml('matroska')), null, 'matroska');

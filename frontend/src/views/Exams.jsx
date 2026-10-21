@@ -78,15 +78,39 @@ function ResultRow({ r, onChange, onRemove }) {
   </div>
 }
 
-function ExamForm({ id, close }) {
+/** Whether an exam has a report on file and no results yet: the one to offer reading with AI. */
+export const awaitsReading = e => (e?.files || []).length > 0 && !(e?.results || []).length
+
+/** The AI's reading of an exam's files (POST /api/exams/read), as the form takes it. Throws. */
+async function readReport(files) {
+  const body = []
+  for (const m of files) {
+    const got = await mediaStore.get(m.hash)
+    if (!got) throw Object.assign(new Error('missing'), { code: 'missing' })
+    body.push({ mime: m.mime, data: await base64Of(got.blob) })
+  }
+  return fromReading(await api('/api/exams/read', { method: 'POST', body: JSON.stringify({ files: body }), timeout: 150000 }))
+}
+const readingToast = reading => toast(reading.results.length
+  ? t('{0} results read. Check them before saving.', reading.results.length)
+  : t('No results were found in this file.'))
+const readFailText = e => (e?.code === 'missing' ? t('This file is not on this device yet.') : readError(e))
+// A reading laid over the form: its date, and its title and lab where the form has none.
+const withReading = (x, reading) => ({ ...x, d: reading.d || x.d, title: x.title || reading.title, lab: x.lab || reading.lab, results: reading.results, ai: Date.now() })
+
+function ExamForm({ id, reading = null, close }) {
   const S = useStore(s => s.S)
   const user = useStore(s => s.user)
   const config = useStore(s => s.config)
   const prev = id ? (S.exams || []).find(e => e.id === id) : null
-  const [f, setF] = useState(() => ({
-    d: prev?.d || todayISO(), title: prev?.title || '', lab: prev?.lab || '', notes: prev?.notes || '',
-    files: prev?.files ? [...prev.files] : [], results: prev?.results ? prev.results.map(r => ({ ...r })) : []
-  }))
+  const [f, setF] = useState(() => {
+    const start = {
+      d: prev?.d || todayISO(), title: prev?.title || '', lab: prev?.lab || '', notes: prev?.notes || '',
+      files: prev?.files ? [...prev.files] : [], results: prev?.results ? prev.results.map(r => ({ ...r })) : [], ai: prev?.ai || 0
+    }
+    // Opened from an exam's detail right after its reading: the values wait here to be checked.
+    return reading ? withReading(start, reading) : start
+  })
   const [busy, setBusy] = useState('')
   const fileRef = useRef(null)
   const set = (k, v) => setF(x => ({ ...x, [k]: v }))
@@ -123,17 +147,11 @@ function ExamForm({ id, close }) {
   const read = async () => {
     setBusy('read')
     try {
-      const files = []
-      for (const m of f.files) {
-        const got = await mediaStore.get(m.hash)
-        if (!got) throw Object.assign(new Error('missing'), { code: 'missing' })
-        files.push({ mime: m.mime, data: await base64Of(got.blob) })
-      }
-      const reading = fromReading(await api('/api/exams/read', { method: 'POST', body: JSON.stringify({ files }), timeout: 150000 }))
-      setF(x => ({ ...x, d: reading.d || x.d, title: x.title || reading.title, lab: x.lab || reading.lab, results: reading.results }))
-      toast(reading.results.length ? t('{0} results read. Check them before saving.', reading.results.length) : t('No results were found in this file.'))
+      const got = await readReport(f.files)
+      setF(x => withReading(x, got))
+      readingToast(got)
     } catch (e) {
-      toast(e?.code === 'missing' ? t('This file is not on this device yet.') : readError(e))
+      toast(readFailText(e))
     } finally { setBusy('') }
   }
 
@@ -190,16 +208,31 @@ function ExamForm({ id, close }) {
   </>
 }
 
-export const examFormSheet = (id = null) => ui().openSheet(close => <ExamForm id={id} close={close} />)
+export const examFormSheet = (id = null, reading = null) => ui().openSheet(close => <ExamForm id={id} reading={reading} close={close} />)
 
 function ExamDetail({ id, close }) {
   const exam = useStore(s => (s.S.exams || []).find(e => e.id === id))
+  const canRead = useStore(s => !!s.user && !!s.config?.exams_ai)
+  const [reading, setReading] = useState(false)
   if (!exam) return <><h3>{t('Exam')}</h3><div className="muted small">{t('This exam was deleted.')}</div><Button onClick={close}>{t('Close')}</Button></>
   const sections = [...new Set(exam.results.map(r => r.section || ''))]
   return <>
     <h3>{exam.title || t('Exam')}</h3>
     <div className="muted small" style={{ marginBottom: 12 }}>{[fmtDate(exam.d, true), exam.lab].filter(Boolean).join(' · ')}</div>
     {exam.files?.length > 0 && <div className="exam-files" style={{ marginBottom: 14 }}>{exam.files.map(file => <ExamFile key={file.hash} file={file} />)}</div>}
+    {/* A report on file and nothing read off it yet: reading it is the next thing to do. The
+        values then open in the form, to be checked before they are saved. */}
+    {canRead && awaitsReading(exam) && <div style={{ marginBottom: 14 }}>
+      <Button variant="primary" icon="sparkles" disabled={reading} onClick={async () => {
+        setReading(true)
+        try {
+          const got = await readReport(exam.files)
+          close()
+          examFormSheet(exam.id, got)
+          readingToast(got)
+        } catch (e) { toast(readFailText(e)); setReading(false) }
+      }}>{reading ? t('Reading the report…') : t('Read with AI')}</Button>
+    </div>}
     {sections.map(sec => <div key={sec} style={{ marginBottom: 12 }}>
       {sec && <h4 className="sec" style={{ margin: '6px 2px' }}>{sec}</h4>}
       {exam.results.filter(r => (r.section || '') === sec).map(r => {
@@ -253,6 +286,7 @@ export default function Exams() {
   const config = useStore(s => s.config)
   const user = useStore(s => s.user)
   const [tab, setTab] = useState('exams')
+  const aiOn = !!user && !!config?.exams_ai
   const list = examsByDate(exams)
   const all = analytes(exams)
 
@@ -276,6 +310,8 @@ export default function Exams() {
     {tab === 'exams' && list.length > 0 && <Section>{list.map(e => {
       const out = outOfRange(e)
       return <Row key={e.id} icon={e.files?.some(f => f.kind === 'doc') ? 'doc' : 'note'} iconTint={out ? 'var(--red)' : 'var(--indigo)'}
+        // Waiting to be read with AI: its report is on file, nothing has been read off it.
+        children={aiOn && awaitsReading(e) ? <span className="exam-ai" title={t('Read with AI')}><Icon name="sparkles" /></span> : null}
         title={e.title || t('Exam')}
         subtitle={[fmtDate(e.d, true), e.lab, t('{0} results', e.results.length), out ? t('{0} out of range', out) : null].filter(Boolean).join(' · ')}
         accessory="chevron" onClick={() => examDetailSheet(e.id)} />

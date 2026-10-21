@@ -117,3 +117,46 @@ describe('Exams', () => {
     expect(page.textContent).toContain('2 results')
   })
 })
+
+describe('an exam waiting to be read', () => {
+  const unread = () => {
+    const S = clone(DEF)
+    S.exams = [
+      { id: 'u', d: '2026-01-09', title: 'Dr. Diego', files: [{ kind: 'doc', hash: 'a'.repeat(64), mime: 'application/pdf', size: 10, at: 1 }], results: [] },
+      { id: 'r', d: '2026-02-13', title: 'Lido', files: [{ kind: 'doc', hash: 'b'.repeat(64), mime: 'application/pdf', size: 10, at: 1 }], results: [{ id: 'x', key: 'glucose', name: 'Glicose', value: 90, valueText: '90', unit: 'mg/dL', flag: 'normal' }] }
+    ]
+    return S
+  }
+
+  it('is marked in the list when the server reads with AI, and only then', () => {
+    useStore.setState({ S: unread(), user: { id: 'u1' }, config: { exams_ai: true } })
+    let page = render(<MemoryRouter><Exams /></MemoryRouter>)
+    expect(page.querySelectorAll('.exam-ai')).toHaveLength(1)
+    useStore.setState({ config: { media: {} } })
+    page = render(<MemoryRouter><Exams /></MemoryRouter>)
+    expect(page.querySelectorAll('.exam-ai')).toHaveLength(0)
+  })
+
+  it('offers reading in its detail; the values then open in the form to be checked', async () => {
+    useStore.setState({ S: unread(), user: { id: 'u1' }, config: { exams_ai: true } })
+    const { mediaStore } = await import('../lib/media-store.js')
+    await mediaStore.put('a'.repeat(64), new Blob(['%PDF-1.7']), { mime: 'application/pdf' })
+    api.mockResolvedValue({ date: null, lab: 'Diagmax', title: null, results: [
+      { key: 'tsh', name: 'TSH', value: 2.1, valueText: '2,1', unit: 'µUI/mL', refLow: 0.4, refHigh: 4, refText: '0,4 a 4,0', flag: 'normal', section: '' }
+    ] })
+    const page = render(<MemoryRouter><Exams /></MemoryRouter>)
+    act(() => [...page.querySelectorAll('button')].find(b => b.textContent.includes('Dr. Diego')).click())
+    const detail = topSheet()
+    expect(button(detail, 'Read with AI')).toBeTruthy()
+    await act(async () => { button(detail, 'Read with AI').click() })
+    await until(() => useUI.getState().sheets.some(s => s && s.render) && api.mock.calls.length && useUI.getState().toastMsg)
+    const form = topSheet()
+    expect(form.textContent).toContain('Edit exam')
+    expect(useStore.getState().S.exams.find(e => e.id === 'u').results).toEqual([])   // not saved yet
+    act(() => button(form, 'Save').click())
+    const saved = useStore.getState().S.exams.find(e => e.id === 'u')
+    expect(saved).toMatchObject({ lab: 'Diagmax', d: '2026-01-09' })
+    expect(saved.results[0]).toMatchObject({ key: 'tsh', value: 2.1 })
+    expect(saved.ai).toBeGreaterThan(0)
+  })
+})

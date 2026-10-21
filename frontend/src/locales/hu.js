@@ -2358,4 +2358,5 @@ export default {
   'Over time': 'Időben',
   '{0} out of range': '{0} tartományon kívül',
   'No results yet': 'Még nincs eredmény',
+  'The server\'s AI key was not accepted. Check ANTHROPIC_API_KEY on the server.': 'A szerver MI-kulcsát nem fogadták el. Ellenőrizd az ANTHROPIC_API_KEY-t a szerveren.',
 }

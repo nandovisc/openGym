@@ -2434,4 +2434,5 @@ export default {
   'Over time': 'সময়ের সাথে',
   '{0} out of range': '{0}টি সীমার বাইরে',
   'No results yet': 'এখনও কোনো ফলাফল নেই',
+  'The server\'s AI key was not accepted. Check ANTHROPIC_API_KEY on the server.': 'সার্ভারের AI কী গ্রহণ করা হয়নি। সার্ভারে ANTHROPIC_API_KEY দেখুন।',
 }

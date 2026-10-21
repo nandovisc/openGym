@@ -2355,4 +2355,5 @@ export default {
   'Over time': 'Zaman içinde',
   '{0} out of range': '{0} aralık dışı',
   'No results yet': 'Henüz sonuç yok',
+  'The server\'s AI key was not accepted. Check ANTHROPIC_API_KEY on the server.': 'Sunucunun yapay zekâ anahtarı kabul edilmedi. Sunucudaki ANTHROPIC_API_KEY’i kontrol et.',
 }

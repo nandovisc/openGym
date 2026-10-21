@@ -2359,4 +2359,9 @@ export default {
   '{0} out of range': '{0} tartományon kívül',
   'No results yet': 'Még nincs eredmény',
   'The server\'s AI key was not accepted. Check ANTHROPIC_API_KEY on the server.': 'A szerver MI-kulcsát nem fogadták el. Ellenőrizd az ANTHROPIC_API_KEY-t a szerveren.',
+  '{0}: {1} results read and saved.': '{0}: {1} eredmény beolvasva és mentve.',
+  'Reading the report. You can keep using the app; the results are saved when ready.': 'A lelet beolvasása folyamatban. Nyugodtan használd tovább az appot; az eredmények elkészültükkor mentődnek.',
+  'The file is sent to the AI only to read the values. Check them against the report.': 'A fájl csak az értékek beolvasásához jut el az MI-hez. Vesd össze őket a lelettel.',
+  'You can close this screen; the results are saved when ready.': 'Bezárhatod ezt a képernyőt; az eredmények elkészültükkor mentődnek.',
+  'Read by AI. Check the values against the report.': 'MI által beolvasva. Vesd össze az értékeket a lelettel.',
 }

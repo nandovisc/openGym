@@ -2435,4 +2435,9 @@ export default {
   '{0} out of range': '{0}টি সীমার বাইরে',
   'No results yet': 'এখনও কোনো ফলাফল নেই',
   'The server\'s AI key was not accepted. Check ANTHROPIC_API_KEY on the server.': 'সার্ভারের AI কী গ্রহণ করা হয়নি। সার্ভারে ANTHROPIC_API_KEY দেখুন।',
+  '{0}: {1} results read and saved.': '{0}: {1}টি ফলাফল পড়া ও সংরক্ষণ করা হয়েছে।',
+  'Reading the report. You can keep using the app; the results are saved when ready.': 'রিপোর্ট পড়া হচ্ছে। অ্যাপ ব্যবহার চালিয়ে যান; ফলাফল তৈরি হলে সংরক্ষিত হবে।',
+  'The file is sent to the AI only to read the values. Check them against the report.': 'শুধু মান পড়ার জন্য ফাইলটি AI-তে পাঠানো হয়। রিপোর্টের সাথে মিলিয়ে দেখুন।',
+  'You can close this screen; the results are saved when ready.': 'এই স্ক্রিন বন্ধ করতে পারেন; ফলাফল তৈরি হলে সংরক্ষিত হবে।',
+  'Read by AI. Check the values against the report.': 'AI দিয়ে পড়া। মানগুলো রিপোর্টের সাথে মিলিয়ে দেখুন।',
 }

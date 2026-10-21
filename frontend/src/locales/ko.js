@@ -2356,4 +2356,9 @@ export default {
   '{0} out of range': '범위 밖 {0}개',
   'No results yet': '아직 결과가 없습니다',
   'The server\'s AI key was not accepted. Check ANTHROPIC_API_KEY on the server.': '서버의 AI 키가 거부되었습니다. 서버의 ANTHROPIC_API_KEY를 확인하세요.',
+  '{0}: {1} results read and saved.': '{0}: 결과 {1}개를 읽고 저장했습니다.',
+  'Reading the report. You can keep using the app; the results are saved when ready.': '검사지를 읽는 중입니다. 앱을 계속 사용하세요. 결과는 준비되면 저장됩니다.',
+  'The file is sent to the AI only to read the values. Check them against the report.': '값을 읽기 위해서만 파일이 AI로 전송됩니다. 검사지와 비교해 확인하세요.',
+  'You can close this screen; the results are saved when ready.': '이 화면을 닫아도 됩니다. 결과는 준비되면 저장됩니다.',
+  'Read by AI. Check the values against the report.': 'AI가 읽었습니다. 값을 검사지와 비교해 확인하세요.',
 }

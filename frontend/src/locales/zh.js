@@ -2356,4 +2356,9 @@ export default {
   '{0} out of range': '{0} 项超出范围',
   'No results yet': '还没有结果',
   'The server\'s AI key was not accepted. Check ANTHROPIC_API_KEY on the server.': '服务器的 AI 密钥未被接受。请检查服务器上的 ANTHROPIC_API_KEY。',
+  '{0}: {1} results read and saved.': '{0}：已读取并保存 {1} 项结果。',
+  'Reading the report. You can keep using the app; the results are saved when ready.': '正在读取报告。你可以继续使用应用，结果准备好后会自动保存。',
+  'The file is sent to the AI only to read the values. Check them against the report.': '文件仅发送给 AI 用于读取数值。请与报告核对。',
+  'You can close this screen; the results are saved when ready.': '可以关闭此页面，结果准备好后会自动保存。',
+  'Read by AI. Check the values against the report.': '由 AI 读取。请将数值与报告核对。',
 }

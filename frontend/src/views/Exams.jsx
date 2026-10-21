@@ -98,6 +98,40 @@ const readFailText = e => (e?.code === 'missing' ? t('This file is not on this d
 // A reading laid over the form: its date, and its title and lab where the form has none.
 const withReading = (x, reading) => ({ ...x, d: reading.d || x.d, title: x.title || reading.title, lab: x.lab || reading.lab, results: reading.results, ai: Date.now() })
 
+/** The exams being read right now, by id (useUI: it lasts as long as the page is open). */
+export const useReadingExam = id => useUI(s => !!s.examReads?.[id])
+const setReading = (id, on) => {
+  const reads = { ...(useUI.getState().examReads || {}) }
+  if (on) reads[id] = true; else delete reads[id]
+  useUI.setState({ examReads: reads })
+}
+
+/**
+ * Reads a saved exam's report with AI and saves what comes back into it, without anyone having to
+ * wait on a screen: the person may close the sheet, open another exam, leave Health. Saved only
+ * into an exam that is still there and still has no results — values typed in meanwhile are
+ * never replaced. The detail then says the values were read by AI, to be checked against the
+ * report. Lasts as long as the app stays open.
+ */
+export function readInBackground(exam) {
+  const id = exam.id
+  if (useUI.getState().examReads?.[id]) return
+  setReading(id, true)
+  readReport(exam.files).then(got => {
+    let saved = null
+    update(s => {
+      const e = (s.exams || []).find(x => x.id === id)
+      if (!e || (e.results || []).length) return
+      saved = normalizeExam(withReading(e, got), { prev: e })
+      s.exams = s.exams.map(x => (x.id === id ? saved : x))
+    })
+    if (!saved) return
+    toast(saved.results.length
+      ? t('{0}: {1} results read and saved.', saved.title || t('Exam'), saved.results.length)
+      : t('No results were found in this file.'))
+  }).catch(e => toast(readFailText(e))).finally(() => setReading(id, false))
+}
+
 function ExamForm({ id, reading = null, close }) {
   const S = useStore(s => s.S)
   const user = useStore(s => s.user)
@@ -145,6 +179,18 @@ function ExamForm({ id, reading = null, close }) {
   }
 
   const read = async () => {
+    // Nothing read off it yet: the exam is saved as it is and read in the background, so the
+    // form can close at once. With results already there, a new reading replaces them here, to
+    // be looked over before saving.
+    if (!f.results.length) {
+      const exam = normalizeExam(f, { prev })
+      if (exam.error) { toast(t('Choose the date of the exam')); return }
+      update(s => { s.exams = [...(s.exams || []).filter(e => e.id !== exam.id), exam] })
+      close()
+      readInBackground(exam)
+      toast(t('Reading the report. You can keep using the app; the results are saved when ready.'))
+      return
+    }
     setBusy('read')
     try {
       const got = await readReport(f.files)
@@ -185,7 +231,7 @@ function ExamForm({ id, reading = null, close }) {
         <input ref={fileRef} type="file" accept="application/pdf,image/*" multiple hidden onChange={onFiles} />
         {canRead && <div style={{ marginTop: 10 }}>
           <Button variant="primary" icon="sparkles" onClick={read} disabled={!!busy}>{busy === 'read' ? t('Reading the report…') : t('Read with AI')}</Button>
-          <div className="small dim" style={{ marginTop: 6 }}>{t('The file is sent to the AI only to read the values. Check them before saving.')}</div>
+          <div className="small dim" style={{ marginTop: 6 }}>{t('The file is sent to the AI only to read the values. Check them against the report.')}</div>
         </div>}
       </div>
       <label><span>{t('Date')}</span><input className="field" type="date" value={f.d} max={todayISO()} onChange={e => set('d', e.target.value)} /></label>
@@ -213,26 +259,23 @@ export const examFormSheet = (id = null, reading = null) => ui().openSheet(close
 function ExamDetail({ id, close }) {
   const exam = useStore(s => (s.S.exams || []).find(e => e.id === id))
   const canRead = useStore(s => !!s.user && !!s.config?.exams_ai)
-  const [reading, setReading] = useState(false)
+  const reading = useReadingExam(id)
   if (!exam) return <><h3>{t('Exam')}</h3><div className="muted small">{t('This exam was deleted.')}</div><Button onClick={close}>{t('Close')}</Button></>
   const sections = [...new Set(exam.results.map(r => r.section || ''))]
   return <>
     <h3>{exam.title || t('Exam')}</h3>
     <div className="muted small" style={{ marginBottom: 12 }}>{[fmtDate(exam.d, true), exam.lab].filter(Boolean).join(' · ')}</div>
     {exam.files?.length > 0 && <div className="exam-files" style={{ marginBottom: 14 }}>{exam.files.map(file => <ExamFile key={file.hash} file={file} />)}</div>}
-    {/* A report on file and nothing read off it yet: reading it is the next thing to do. The
-        values then open in the form, to be checked before they are saved. */}
+    {/* A report on file and nothing read off it yet: reading it is the next thing to do, and it
+        goes on in the background — the results are saved into the exam when they arrive. */}
     {canRead && awaitsReading(exam) && <div style={{ marginBottom: 14 }}>
-      <Button variant="primary" icon="sparkles" disabled={reading} onClick={async () => {
-        setReading(true)
-        try {
-          const got = await readReport(exam.files)
-          close()
-          examFormSheet(exam.id, got)
-          readingToast(got)
-        } catch (e) { toast(readFailText(e)); setReading(false) }
+      <Button variant="primary" icon="sparkles" disabled={reading} onClick={() => {
+        readInBackground(exam)
+        toast(t('Reading the report. You can keep using the app; the results are saved when ready.'))
       }}>{reading ? t('Reading the report…') : t('Read with AI')}</Button>
+      {reading && <div className="small dim" style={{ marginTop: 6 }}>{t('You can close this screen; the results are saved when ready.')}</div>}
     </div>}
+    {exam.ai > 0 && exam.results.length > 0 && <div className="small dim exam-ai-note"><Icon name="sparkles" /> {t('Read by AI. Check the values against the report.')}</div>}
     {sections.map(sec => <div key={sec} style={{ marginBottom: 12 }}>
       {sec && <h4 className="sec" style={{ margin: '6px 2px' }}>{sec}</h4>}
       {exam.results.filter(r => (r.section || '') === sec).map(r => {
@@ -280,6 +323,12 @@ function Trend({ k, close }) {
   </>
 }
 
+// In the list: the exam waits to be read with AI, or (pulsing) is being read now.
+function ReadMark({ id }) {
+  const busy = useReadingExam(id)
+  return <span className={'exam-ai' + (busy ? ' busy' : '')} title={busy ? t('Reading the report…') : t('Read with AI')}><Icon name="sparkles" /></span>
+}
+
 export default function Exams() {
   const nav = useNavigate()
   const exams = useStore(s => s.S.exams || [])
@@ -311,7 +360,7 @@ export default function Exams() {
       const out = outOfRange(e)
       return <Row key={e.id} icon={e.files?.some(f => f.kind === 'doc') ? 'doc' : 'note'} iconTint={out ? 'var(--red)' : 'var(--indigo)'}
         // Waiting to be read with AI: its report is on file, nothing has been read off it.
-        children={aiOn && awaitsReading(e) ? <span className="exam-ai" title={t('Read with AI')}><Icon name="sparkles" /></span> : null}
+        children={aiOn && awaitsReading(e) ? <ReadMark id={e.id} /> : null}
         title={e.title || t('Exam')}
         subtitle={[fmtDate(e.d, true), e.lab, t('{0} results', e.results.length), out ? t('{0} out of range', out) : null].filter(Boolean).join(' · ')}
         accessory="chevron" onClick={() => examDetailSheet(e.id)} />

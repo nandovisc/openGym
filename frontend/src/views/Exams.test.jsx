@@ -67,11 +67,10 @@ describe('Exams', () => {
     expect(page.textContent).toContain('1 out of range')
   })
 
-  it('reads a PDF with AI when the server offers it, and the values wait to be checked', async () => {
+  it('reads a new exam\'s PDF with AI in the background: the exam is saved at once, its results when they arrive', async () => {
     useStore.setState({ S: clone(DEF), user: { id: 'u1', name: 'One' }, config: { exams_ai: true, media: { docMB: 10 } } })
-    api.mockResolvedValue({ date: '2026-09-30', lab: 'Lab Central', title: 'Lipídios', results: [
-      { key: 'ldl_cholesterol', name: 'Colesterol LDL', value: 142, valueText: '142', unit: 'mg/dL', refLow: null, refHigh: 130, refText: 'inferior a 130', flag: 'high', section: '' }
-    ] })
+    let answer
+    api.mockReturnValue(new Promise(r => { answer = r }))
     examFormSheet()
     const form = topSheet()
     const input = form.querySelector('input[type=file]')
@@ -79,9 +78,12 @@ describe('Exams', () => {
     await act(async () => { input.dispatchEvent(new Event('change', { bubbles: true })) })
     await until(() => button(form, 'Read with AI'))
     expect(useUI.getState().toastMsg).toBe('')
-    expect(button(form, 'Read with AI')).toBeTruthy()
     await act(async () => { button(form, 'Read with AI').click() })
-    await until(() => api.mock.calls.length && useUI.getState().toastMsg)
+    await until(() => api.mock.calls.length)
+    // saved and closed before the reading is back
+    expect(useStore.getState().S.exams).toHaveLength(1)
+    expect(useStore.getState().S.exams[0].results).toEqual([])
+    expect(useUI.getState().sheets.filter(Boolean)).toHaveLength(0)
     const [path, opts] = api.mock.calls[0]
     expect(path).toBe('/api/exams/read')
     // fetch sends the body as it gets it: it has to be the JSON text, not the object
@@ -89,12 +91,16 @@ describe('Exams', () => {
     const sent = JSON.parse(opts.body)
     expect(sent.files[0].mime).toBe('application/pdf')
     expect(atob(sent.files[0].data).startsWith('%PDF-')).toBe(true)
-    expect(useStore.getState().S.exams).toEqual([])          // nothing saved until confirmed
-    act(() => button(form, 'Save').click())
+    await act(async () => { answer({ date: '2026-09-30', lab: 'Lab Central', title: 'Lipídios', results: [
+      { key: 'ldl_cholesterol', name: 'Colesterol LDL', value: 142, valueText: '142', unit: 'mg/dL', refLow: null, refHigh: 130, refText: 'inferior a 130', flag: 'high', section: '' }
+    ] }) })
+    await until(() => useStore.getState().S.exams[0].results.length)
     const [exam] = useStore.getState().S.exams
     expect(exam).toMatchObject({ d: '2026-09-30', lab: 'Lab Central', title: 'Lipídios' })
     expect(exam.files[0]).toMatchObject({ kind: 'doc', mime: 'application/pdf' })
     expect(exam.results[0]).toMatchObject({ key: 'ldl_cholesterol', value: 142, flag: 'high' })
+    expect(exam.ai).toBeGreaterThan(0)
+    expect(useUI.getState().toastMsg).toBe('Lipídios: 1 results read and saved.')
   })
 
   it('hides the AI button without a server that offers it', async () => {
@@ -137,26 +143,43 @@ describe('an exam waiting to be read', () => {
     expect(page.querySelectorAll('.exam-ai')).toHaveLength(0)
   })
 
-  it('offers reading in its detail; the values then open in the form to be checked', async () => {
+  it('offers reading in its detail, and saves the results without anyone waiting', async () => {
     useStore.setState({ S: unread(), user: { id: 'u1' }, config: { exams_ai: true } })
     const { mediaStore } = await import('../lib/media-store.js')
     await mediaStore.put('a'.repeat(64), new Blob(['%PDF-1.7']), { mime: 'application/pdf' })
-    api.mockResolvedValue({ date: null, lab: 'Diagmax', title: null, results: [
-      { key: 'tsh', name: 'TSH', value: 2.1, valueText: '2,1', unit: 'µUI/mL', refLow: 0.4, refHigh: 4, refText: '0,4 a 4,0', flag: 'normal', section: '' }
-    ] })
+    let answer
+    api.mockReturnValue(new Promise(r => { answer = r }))
     const page = render(<MemoryRouter><Exams /></MemoryRouter>)
     act(() => [...page.querySelectorAll('button')].find(b => b.textContent.includes('Dr. Diego')).click())
     const detail = topSheet()
-    expect(button(detail, 'Read with AI')).toBeTruthy()
     await act(async () => { button(detail, 'Read with AI').click() })
-    await until(() => useUI.getState().sheets.some(s => s && s.render) && api.mock.calls.length && useUI.getState().toastMsg)
-    const form = topSheet()
-    expect(form.textContent).toContain('Edit exam')
-    expect(useStore.getState().S.exams.find(e => e.id === 'u').results).toEqual([])   // not saved yet
-    act(() => button(form, 'Save').click())
+    await until(() => api.mock.calls.length)
+    // reading: the mark in the list pulses, and the sheet can be closed
+    expect(page.querySelector('.exam-ai.busy')).toBeTruthy()
+    act(() => button(detail, 'Close').click())
+    await act(async () => { answer({ date: null, lab: 'Diagmax', title: null, results: [
+      { key: 'tsh', name: 'TSH', value: 2.1, valueText: '2,1', unit: 'µUI/mL', refLow: 0.4, refHigh: 4, refText: '0,4 a 4,0', flag: 'normal', section: '' }
+    ] }) })
+    await until(() => useStore.getState().S.exams.find(e => e.id === 'u').results.length)
     const saved = useStore.getState().S.exams.find(e => e.id === 'u')
-    expect(saved).toMatchObject({ lab: 'Diagmax', d: '2026-01-09' })
+    expect(saved).toMatchObject({ lab: 'Diagmax', d: '2026-01-09', title: 'Dr. Diego' })
     expect(saved.results[0]).toMatchObject({ key: 'tsh', value: 2.1 })
     expect(saved.ai).toBeGreaterThan(0)
+    expect(page.querySelectorAll('.exam-ai')).toHaveLength(0)
+  })
+
+  it('never replaces results typed in while the reading was on its way', async () => {
+    useStore.setState({ S: unread(), user: { id: 'u1' }, config: { exams_ai: true } })
+    const { mediaStore } = await import('../lib/media-store.js')
+    await mediaStore.put('a'.repeat(64), new Blob(['%PDF-1.7']), { mime: 'application/pdf' })
+    let answer
+    api.mockReturnValue(new Promise(r => { answer = r }))
+    const { readInBackground } = await import('./Exams.jsx')
+    await act(async () => { readInBackground(useStore.getState().S.exams[0]) })
+    await until(() => api.mock.calls.length)
+    useStore.getState().update(s => { s.exams[0].results = [{ id: 'm', key: 'tsh', name: 'TSH', value: 3, valueText: '3', unit: '' }] })
+    await act(async () => { answer({ date: null, lab: null, title: null, results: [{ key: 'tsh', name: 'TSH', value: 9, valueText: '9', unit: '', refLow: null, refHigh: null, refText: '', flag: null, section: '' }] }) })
+    await flush()
+    expect(useStore.getState().S.exams[0].results.map(r => r.value)).toEqual([3])
   })
 })

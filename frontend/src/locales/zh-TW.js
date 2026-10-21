@@ -2349,4 +2349,9 @@ export default {
   '{0} out of range': '{0} 項超出範圍',
   'No results yet': '還沒有結果',
   'The server\'s AI key was not accepted. Check ANTHROPIC_API_KEY on the server.': '伺服器的 AI 金鑰未被接受。請檢查伺服器上的 ANTHROPIC_API_KEY。',
+  '{0}: {1} results read and saved.': '{0}：已讀取並儲存 {1} 項結果。',
+  'Reading the report. You can keep using the app; the results are saved when ready.': '正在讀取報告。你可以繼續使用應用程式，結果準備好後會自動儲存。',
+  'The file is sent to the AI only to read the values. Check them against the report.': '檔案僅傳送給 AI 用於讀取數值。請與報告核對。',
+  'You can close this screen; the results are saved when ready.': '可以關閉此頁面，結果準備好後會自動儲存。',
+  'Read by AI. Check the values against the report.': '由 AI 讀取。請將數值與報告核對。',
 }

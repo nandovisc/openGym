@@ -268,12 +268,22 @@ const DEFAULT_DEPS = { decodeImage, encodeImage, probeVideo, playType: m => play
  * as pending. Throws MediaError. `deps` swaps the browser parts (decoding, encoding, the probe)
  * for the tests.
  */
-export async function ingestMediaFile(file, limits = DEFAULT_LIMITS, deps = {}) {
+export async function ingestMediaFile(file, limits = DEFAULT_LIMITS, deps = {}, { docs = false } = {}) {
   const d = { ...DEFAULT_DEPS, ...deps }
   const lim = { ...DEFAULT_LIMITS, ...limits }
   const head = new Uint8Array(await file.slice(0, 64).arrayBuffer())
   const sniffed = sniffKind(head)
   if (!sniffed) throw new MediaError('type')
+  // A PDF only where the picker asks for documents (a medical exam): stored as it is, never read.
+  if (sniffed.kind === 'doc') {
+    if (!docs) throw new MediaError('type')
+    if (file.size > lim.docMB * MB) throw new MediaError('too-large', { mb: lim.docMB })
+    const blob = new Blob([await file.arrayBuffer()], { type: 'application/pdf' })
+    const hash = await sha256Hex(blob)
+    const media = normalizeMediaRef({ kind: 'doc', hash, mime: 'application/pdf', size: blob.size, at: Date.now() })
+    if (!media) throw new MediaError('unreadable')
+    return { media, blobs: [{ hash, blob, mime: 'application/pdf' }], warnings: [] }
+  }
   const out = sniffed.kind === 'video' ? await video(file, sniffed, lim, d)
     : sniffed.kind === 'gif' ? await gif(file, lim, d)
     : await photo(file, sniffed, lim, d)

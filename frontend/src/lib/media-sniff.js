@@ -74,7 +74,8 @@ function ebmlDocType(b) {
 /**
  * { mime, kind, category, input? } from the first bytes, or null. `input: true` marks a type
  * that is read here but never stored or uploaded as it is (HEIC/AVIF — the server refuses them).
- * Everything else is refused: SVG and XML, HTML, PDF, ZIP, BMP, TIFF, ICO, M4A, Matroska.
+ * A PDF is only ever a medical exam's file (Health → Exams). Everything else is refused: SVG and
+ * XML, HTML, ZIP, BMP, TIFF, ICO, M4A, Matroska.
  */
 export function sniffKind(bytes) {
   const b = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes || [])
@@ -90,6 +91,7 @@ export function sniffKind(bytes) {
     if (HEIF_BRANDS.has(brand)) return { mime: brand.startsWith('avi') ? 'image/avif' : 'image/heic', kind: 'image', category: 'still', input: true }
     return null
   }
+  if (ascii(b, 0, 5) === '%PDF-') return { mime: 'application/pdf', kind: 'doc', category: 'doc' }
   if (at(b, 0, [0x1a, 0x45, 0xdf, 0xa3])) {
     return ebmlDocType(b) === 'webm' ? { mime: 'video/webm', kind: 'video', category: 'video' } : null
   }

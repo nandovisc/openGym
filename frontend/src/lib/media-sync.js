@@ -138,7 +138,7 @@ export function createMediaSync(deps = {}) {
     const lim = limitsFrom(cfg)
     const capOf = mime => {
       const kind = MEDIA_MIMES[mime]?.kind
-      return Math.round((kind === 'video' ? lim.videoMB : kind === 'gif' ? lim.gifMB : lim.imageMB) * MB)
+      return Math.round((kind === 'video' ? lim.videoMB : kind === 'gif' ? lim.gifMB : kind === 'doc' ? lim.docMB : lim.imageMB) * MB)
     }
     const refuse = async h => {
       await d.media.markRejected(h)

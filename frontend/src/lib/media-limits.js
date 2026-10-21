@@ -17,6 +17,7 @@ export const DEFAULT_LIMITS = Object.freeze({
   gifMB: 8,
   videoMB: 40,      // videos are not transcoded, so this is the file as picked
   videoSec: 60,
+  docMB: 10,        // a medical exam's PDF (Health → Exams), as picked
   quotaMB: 200      // per profile on the server; 0 = no cap
 })
 
@@ -35,7 +36,7 @@ export function limitsFrom(config) {
   const m = config && typeof config === 'object' ? config.media : null
   const out = { ...DEFAULT_LIMITS }
   if (!m || typeof m !== 'object') return out
-  for (const k of ['imageMB', 'gifMB', 'videoMB', 'videoSec']) if (pos(m[k])) out[k] = m[k]
+  for (const k of ['imageMB', 'gifMB', 'videoMB', 'videoSec', 'docMB']) if (pos(m[k])) out[k] = m[k]
   // 0 is a real answer for the quota (no cap), not a missing one.
   if (typeof m.quotaMB === 'number' && Number.isFinite(m.quotaMB) && m.quotaMB >= 0) out.quotaMB = m.quotaMB
   return out

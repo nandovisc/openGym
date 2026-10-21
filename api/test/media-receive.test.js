@@ -200,7 +200,7 @@ test('a third upload at once is refused as busy', async t => {
 });
 
 test('a refused upload is drained up to twice the largest cap, then cut off', async t => {
-  const h = setup(t, { imageMB: 0.001, gifMB: 0.001, videoMB: 0.01 });
+  const h = setup(t, { imageMB: 0.001, gifMB: 0.001, videoMB: 0.01, docMB: 0.001 });
   const small = M.jpeg(15000);                       // under 2 × 10 KB: read to its end
   const a = M.fakeReq(small);
   h.store.discard(a);
@@ -220,4 +220,18 @@ test('the disk floor refuses an upload with 507 and holds no reservation afterwa
   const bytes = M.jpeg();
   await assert.rejects(h.store.receive('u1', M.sha(bytes), M.fakeReq(bytes)), isMediaError(507, 'storage-full'));
   assert.deepEqual(h.tmpFiles('u1'), []);
+});
+
+test('a medical exam\'s PDF is stored as a document, within its own cap, and cannot pose as a photo', async t => {
+  const h = setup(t, { docMB: 0.01 });
+  const pdf = M.pdf();
+  const r = await h.store.receive('u1', M.sha(pdf), M.fakeReq(pdf, { declare: 'application/pdf' }));
+  assert.equal(r.status, 201);
+  assert.equal(r.body.mime, 'application/pdf');
+  assert.equal(h.store.file('u1', M.sha(pdf)).ext, 'pdf');
+  // declared as a photo: the bytes say document, a different category
+  const other = Buffer.concat([pdf, Buffer.from('x')]);
+  await assert.rejects(h.store.receive('u1', M.sha(other), M.fakeReq(other, { declare: 'image/jpeg' })), isMediaError(415, 'media-type'));
+  const big = Buffer.concat([pdf, Buffer.alloc(20000, 32)]);
+  await assert.rejects(h.store.receive('u1', M.sha(big), M.fakeReq(big, { declare: 'application/pdf' })), isMediaError(413, 'media-too-large'));
 });

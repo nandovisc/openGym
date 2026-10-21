@@ -6,8 +6,11 @@
  * on the server under DATA_DIR/uploads/<uid>/<sha256>.<ext> (api/media.js). Everything here is
  * pure and has no imports, so the store, the sync, the editor and the tests can all use it.
  *
- *   MediaRef = { kind: 'image'|'gif'|'video', hash, mime, size, width, height,
- *                dur?, codec?, poster?: { hash, mime, size, width, height }, at }
+ *   MediaRef = { kind: 'image'|'gif'|'video'|'doc', hash, mime, size, width, height,
+ *                dur?, codec?, pages?, poster?: { hash, mime, size, width, height }, at }
+ *
+ * A 'doc' (a PDF: a lab report under Health → Exams) has no width or height, and may say how many
+ * pages it has.
  *
  * A ref comes from outside whenever a state does: another device, a backup file, a plan file, a
  * hand-edited profile. So nothing trusts one as it stands. normalizeMediaRef() is the gate every
@@ -28,7 +31,8 @@ export const MEDIA_MIMES = {
   'image/gif': { kind: 'gif', category: 'still', ext: 'gif', playExt: 'gif' },
   'video/mp4': { kind: 'video', category: 'video', ext: 'mp4', playExt: 'mp4' },
   'video/quicktime': { kind: 'video', category: 'video', ext: 'mov', playExt: 'mp4' },
-  'video/webm': { kind: 'video', category: 'video', ext: 'webm', playExt: 'webm' }
+  'video/webm': { kind: 'video', category: 'video', ext: 'webm', playExt: 'webm' },
+  'application/pdf': { kind: 'doc', category: 'doc', ext: 'pdf', playExt: 'pdf' }
 }
 // A poster is always a still this app encoded itself, so only the two formats the encoder writes.
 const POSTER_MIMES = new Set(['image/webp', 'image/jpeg'])
@@ -61,7 +65,18 @@ export function normalizeMediaRef(ref) {
   const type = typeof ref.mime === 'string' ? MEDIA_MIMES[ref.mime] : null
   if (!type || ref.kind !== type.kind) return null
   if (typeof ref.hash !== 'string' || !HASH_RE.test(ref.hash)) return null
-  if (!intIn(ref.size, 1, MAX_SIZE) || !intIn(ref.width, 1, MAX_EDGE) || !intIn(ref.height, 1, MAX_EDGE)) return null
+  if (!intIn(ref.size, 1, MAX_SIZE)) return null
+  // A document has pages, not dimensions.
+  if (ref.kind === 'doc') {
+    const out = { kind: 'doc', hash: ref.hash, mime: ref.mime, size: ref.size }
+    if (ref.pages != null) {
+      if (!intIn(ref.pages, 1, 10000)) return null
+      out.pages = ref.pages
+    }
+    out.at = typeof ref.at === 'number' && Number.isFinite(ref.at) && ref.at > 0 ? Math.round(ref.at) : 0
+    return out
+  }
+  if (!intIn(ref.width, 1, MAX_EDGE) || !intIn(ref.height, 1, MAX_EDGE)) return null
   const out = { kind: ref.kind, hash: ref.hash, mime: ref.mime, size: ref.size, width: ref.width, height: ref.height }
   if (ref.dur != null) {
     if (typeof ref.dur !== 'number' || !Number.isFinite(ref.dur) || ref.dur < 0 || ref.dur > MAX_DUR) return null
@@ -129,13 +144,18 @@ export function stateMediaRefs(state) {
     if (!isObj(w) || !Array.isArray(w.media)) continue
     for (const m of w.media) if (isObj(m)) out.push(m)
   }
+  // The files of a medical exam (Health → Exams): the lab's PDF, or photos of the paper.
+  for (const e of Array.isArray(state.exams) ? state.exams : []) {
+    if (!isObj(e) || !Array.isArray(e.files)) continue
+    for (const m of e.files) if (isObj(m)) out.push(m)
+  }
   return out
 }
 
 /**
  * Every blob hash a state refers to, the same answer as api/media.js referencedHashes (the shared
- * fixture api/test/fixtures/media-refs.json pins both): customEx[].media and every entry of
- * workouts[].media. Deliberately looser than normalizeMediaRef and workoutMediaOf: each hash and
+ * fixture api/test/fixtures/media-refs.json pins both): customEx[].media, every entry of
+ * workouts[].media and of exams[].files. Deliberately looser than normalizeMediaRef and workoutMediaOf: each hash and
  * poster hash counts on its own as long as it is well-formed, and a workout's list counts past
  * its cap, because this set decides what is KEPT, and keeping too much is the safe side.
  */

@@ -242,6 +242,44 @@ paths:
                   sent: { type: integer }
         '400': { description: Unknown job. }
         '401': { description: Missing or wrong CRON_SECRET. }
+  /api/exams/read:
+    post:
+      tags: [data]
+      operationId: readExam
+      summary: Read a medical exam report with AI
+      description: |
+        Health → Exams. Only when the instance sets `ANTHROPIC_API_KEY` (absent otherwise, and
+        `/api/config` then has no `exams_ai`). Takes one PDF or up to six photos of one report,
+        base64 in the body, each recognised by its bytes and within the instance's caps
+        (`MEDIA_DOC_MAX_MB`, `MEDIA_IMAGE_MAX_MB`), and answers with the values read off it for
+        the person to check. Nothing is stored: the files go to the Anthropic API for this one
+        reading. Thirty readings an hour per profile.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [files]
+              properties:
+                files:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      mime: { type: string }
+                      data: { type: string, description: base64 }
+      responses:
+        '200':
+          description: The reading — `date`, `lab`, `title` and `results` (key, name, value, valueText, unit, refLow, refHigh, refText, flag, section).
+        '400': { description: No file, more than six, or a PDF together with other files (`exam-files`). }
+        '401': { description: Not signed in. }
+        '413': { description: A file over its cap (`exam-too-large`). }
+        '415': { description: Not a PDF or a photo (`exam-type`). }
+        '422': { description: The model declined to read it (`refused`). }
+        '429': { description: Too many readings this hour (`locked`). }
+        '502': { description: The reading service failed or answered something unreadable. }
+        '504': { description: The reading took too long. }
   /api/config:
     get:
       tags: [meta]

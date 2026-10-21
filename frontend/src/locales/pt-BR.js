@@ -1516,6 +1516,7 @@ export const PT_BR_OVERRIDES = {
   'Over time': 'Evolução',
   '{0} out of range': '{0} fora da referência',
   'No results yet': 'Ainda sem resultados',
+  'The server\'s AI key was not accepted. Check ANTHROPIC_API_KEY on the server.': 'A chave de IA do servidor não foi aceita. Confira a ANTHROPIC_API_KEY no servidor.',
 }
 
 export default { ...pt, ...PT_BR_OVERRIDES }

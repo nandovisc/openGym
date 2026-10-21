@@ -2352,4 +2352,5 @@ export default {
   'Over time': 'Динаміка',
   '{0} out of range': 'поза нормою: {0}',
   'No results yet': 'Ще немає результатів',
+  'The server\'s AI key was not accepted. Check ANTHROPIC_API_KEY on the server.': 'Ключ ШІ на сервері не прийнято. Перевірте ANTHROPIC_API_KEY на сервері.',
 }

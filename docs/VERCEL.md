@@ -75,7 +75,7 @@ Pode rodar de novo sem problema.
 | `FIRST_USER_ADMIN` | `1` (o primeiro perfil criado vira admin) |
 | `MEDIA_GIF_MAX_MB` / `MEDIA_VIDEO_MAX_MB` | `4` |
 | `MEDIA_DOC_MAX_MB` | `3` (PDF de exame: para a leitura por IA ele vai em base64, que precisa caber nos 4,5 MB da Vercel) |
-| `ANTHROPIC_API_KEY` | opcional: liga **Saúde → Exames → Ler com IA** (Sensitive). Sem ela, os exames funcionam sem a leitura |
+| `ANTHROPIC_API_KEY` | opcional: liga **Saúde → Exames → Ler com IA** (Sensitive). Sem ela, os exames funcionam sem a leitura. Use uma chave criada dentro de um workspace; com uma chave da organização inteira, defina também `ANTHROPIC_WORKSPACE_ID` |
 | `RP_ID` / `ORIGIN` | opcionais. Sem eles, valem o domínio de produção da Vercel. Com domínio próprio, use `RP_ID=gym.seudominio.com` e `ORIGIN=https://gym.seudominio.com` |
 
 > O passkey fica preso ao `RP_ID`. Se trocar de domínio depois, cada pessoa precisa cadastrar o passkey de novo.

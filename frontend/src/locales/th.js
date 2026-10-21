@@ -2366,4 +2366,5 @@ export default {
   'Over time': 'ตามช่วงเวลา',
   '{0} out of range': 'นอกเกณฑ์ {0}',
   'No results yet': 'ยังไม่มีผล',
+  'The server\'s AI key was not accepted. Check ANTHROPIC_API_KEY on the server.': 'คีย์ AI ของเซิร์ฟเวอร์ไม่ได้รับการยอมรับ ตรวจสอบ ANTHROPIC_API_KEY บนเซิร์ฟเวอร์',
 }

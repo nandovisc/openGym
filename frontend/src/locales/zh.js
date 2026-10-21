@@ -2355,4 +2355,5 @@ export default {
   'Over time': '变化趋势',
   '{0} out of range': '{0} 项超出范围',
   'No results yet': '还没有结果',
+  'The server\'s AI key was not accepted. Check ANTHROPIC_API_KEY on the server.': '服务器的 AI 密钥未被接受。请检查服务器上的 ANTHROPIC_API_KEY。',
 }

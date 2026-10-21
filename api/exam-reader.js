@@ -20,6 +20,9 @@ export class ExamReadError extends Error {
 export function examReaderConfig(env = process.env) {
   return {
     key: String(env.ANTHROPIC_API_KEY || '').trim(),
+    // A key made for the whole organisation, not for one workspace, has to say which workspace
+    // it spends from; a workspace's own key needs nothing here.
+    workspace: String(env.ANTHROPIC_WORKSPACE_ID || '').trim(),
     base: String(env.ANTHROPIC_BASE_URL || 'https://api.anthropic.com').replace(/\/+$/, ''),
     model: String(env.EXAM_AI_MODEL || 'claude-opus-5-5').trim(),
     // Reading values off a report is transcription: low effort keeps it quick.
@@ -93,7 +96,8 @@ export async function readExam(files, cfg, fetchImpl = globalThis.fetch) {
         'content-type': 'application/json',
         'x-api-key': cfg.key,
         'anthropic-version': ANTHROPIC_VERSION,
-        'anthropic-beta': FALLBACK_BETA
+        'anthropic-beta': FALLBACK_BETA,
+        ...(cfg.workspace ? { 'anthropic-workspace-id': cfg.workspace } : {})
       },
       body: JSON.stringify(body),
       signal: AbortSignal.timeout(cfg.timeoutMs)
@@ -107,7 +111,10 @@ export async function readExam(files, cfg, fetchImpl = globalThis.fetch) {
   if (!r.ok) {
     // Only the API's own message: never the request, which carries the report.
     console.error('exam read failed', r.status, data?.error?.type || '', String(data?.error?.message || '').slice(0, 200));
-    throw new ExamReadError(502, r.status === 429 ? 'busy' : 'unavailable', 'the reading service failed');
+    // The key itself refused (wrong, revoked, or one that needs a workspace): the instance's
+    // setting to fix, not something trying again would change.
+    const code = r.status === 429 ? 'busy' : r.status === 401 || r.status === 403 || (r.status === 400 && data?.error?.type === 'invalid_request_error' && /api key|workspace/i.test(data?.error?.message || '')) ? 'config' : 'unavailable';
+    throw new ExamReadError(502, code, code === 'config' ? 'the server\'s AI key was not accepted' : 'the reading service failed');
   }
   if (data?.stop_reason === 'refusal') throw new ExamReadError(422, 'refused', 'the report could not be read');
   if (data?.stop_reason === 'max_tokens') throw new ExamReadError(502, 'truncated', 'the report is too long to read at once');

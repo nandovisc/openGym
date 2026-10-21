@@ -124,6 +124,15 @@ test('a refusal, a failing API, an unreadable answer and a missing session each 
   assert.doesNotMatch(s.log(), /JVBER/);   // the report itself (base64 "%PDF") never reaches the log
 });
 
+test('an organisation key names its workspace; a key the API refuses is told apart', async t => {
+  const answers = [message(READING), [400, { type: 'error', error: { type: 'invalid_request_error', message: 'This API key is not scoped to a workspace, so this request must include the anthropic-workspace-id header' } }]];
+  const ai = await fakeAnthropic(t, n => answers[n - 1]);
+  const s = await serverWith(t, { ANTHROPIC_API_KEY: 'sk-org', ANTHROPIC_BASE_URL: ai.url, ANTHROPIC_WORKSPACE_ID: 'wrkspc_123' });
+  assert.equal((await s.read([{ data: b64(M.pdf()) }])).status, 200);
+  assert.equal(ai.seen[0].headers['anthropic-workspace-id'], 'wrkspc_123');
+  assert.equal((await s.read([{ data: b64(M.pdf()) }])).body.code, 'config');
+});
+
 test('without ANTHROPIC_API_KEY the feature is not there at all', async t => {
   const s = await serverWith(t, {});
   assert.equal((await s.read([{ data: b64(M.pdf()) }])).status, 404);

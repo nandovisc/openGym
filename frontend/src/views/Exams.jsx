@@ -41,6 +41,7 @@ function readError(e) {
   if (code === 'refused' || code === 'unreadable') return t('The report could not be read. Fill in the values yourself.')
   if (code === 'exam-too-large' || e?.status === 413) return t('That file is too large to be read.')
   if (code === 'locked') return t('Too many readings in the last hour. Try again later.')
+  if (code === 'config') return t('The server\'s AI key was not accepted. Check ANTHROPIC_API_KEY on the server.')
   return t('Reading the report failed. Try again, or fill in the values yourself.')
 }
 

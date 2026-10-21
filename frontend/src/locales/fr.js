@@ -2355,4 +2355,5 @@ export default {
   'Over time': 'Dans le temps',
   '{0} out of range': '{0} hors normes',
   'No results yet': 'Pas encore de résultats',
+  'The server\'s AI key was not accepted. Check ANTHROPIC_API_KEY on the server.': 'La clé d’IA du serveur n’a pas été acceptée. Vérifie ANTHROPIC_API_KEY sur le serveur.',
 }

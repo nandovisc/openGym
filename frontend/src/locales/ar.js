@@ -2410,4 +2410,5 @@ export default {
   'Over time': 'عبر الزمن',
   '{0} out of range': '{0} خارج المعدل',
   'No results yet': 'لا توجد نتائج بعد',
+  'The server\'s AI key was not accepted. Check ANTHROPIC_API_KEY on the server.': 'لم يتم قبول مفتاح الذكاء الاصطناعي على الخادم. تحقق من ANTHROPIC_API_KEY.',
 }

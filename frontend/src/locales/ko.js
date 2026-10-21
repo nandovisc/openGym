@@ -2355,4 +2355,5 @@ export default {
   'Over time': '추이',
   '{0} out of range': '범위 밖 {0}개',
   'No results yet': '아직 결과가 없습니다',
+  'The server\'s AI key was not accepted. Check ANTHROPIC_API_KEY on the server.': '서버의 AI 키가 거부되었습니다. 서버의 ANTHROPIC_API_KEY를 확인하세요.',
 }

@@ -1181,6 +1181,12 @@ function PushCard({ S, update, toast }) {
       {on && S.reminder?.on && (
         <NudgeRows S={S} setReminder={patch => update(s => { s.reminder = { ...(s.reminder || DEF.reminder), ...patch, tz: localTZ() } })} />
       )}
+      {/* At each dose's time (Health → Medications), until it is marked; the server's medTick. */}
+      {on && (
+        <Row icon="pill" iconTint="var(--teal)" title={t('Medication reminders')} subtitle={t('At the time of each dose, until you mark it.')}>
+          <Switch checked={!!S.medReminder?.on} onChange={() => update(s => { s.medReminder = { ...(s.medReminder || DEF.medReminder), on: !s.medReminder?.on, tz: localTZ() } })} />
+        </Row>
+      )}
     </Section>
     {on && <div style={{ marginTop: -12, marginBottom: 22 }}><Button size="sm" icon="bell" onClick={test}>{t('Send test notification')}</Button></div>}
   </>

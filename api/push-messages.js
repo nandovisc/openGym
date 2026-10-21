@@ -9,6 +9,8 @@ const COPY = {
     dayFallbackTitle: 'Workout planned today',
     dayRoutineSuffix: 'today',
     dayBody: "It's on your plan. Let's go 💪",
+    medTitle: 'Time for your medication 💊',
+    medTitleMany: 'Time for your medications 💊',
   },
   'pt-BR': {
     restTitle: 'Descanso terminado 💪',
@@ -17,6 +19,8 @@ const COPY = {
     dayFallbackTitle: 'Treino planejado para hoje',
     dayRoutineSuffix: 'hoje',
     dayBody: 'Está no seu plano. Bora treinar 💪',
+    medTitle: 'Hora do seu remédio 💊',
+    medTitleMany: 'Hora dos seus remédios 💊',
   },
 };
 
@@ -39,6 +43,20 @@ export function dayReminderPush(lang, routine) {
       : copy.dayFallbackTitle,
     body: copy.dayBody,
     tag: 'day-reminder',
+  };
+}
+
+// The doses due at one time of the day (server.js medTick): every medication of that time in one
+// alert, "Losartan 50 mg, Vitamin D 2000 unit". Tagged by the time, so the 08:00 alert does not
+// replace the 20:00 one; opens the day's doses (frontend views/Meds.jsx).
+export function medReminderPush(lang, meds, time) {
+  const copy = copyFor(lang);
+  const what = m => [m.name, [m.dose, m.unit].filter(Boolean).join(' ')].filter(Boolean).join(' ');
+  return {
+    title: meds.length > 1 ? copy.medTitleMany : copy.medTitle,
+    body: `${time} · ${meds.map(what).join(', ')}`,
+    tag: `med-${time}`,
+    url: '#/health/meds',
   };
 }
 

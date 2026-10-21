@@ -15,6 +15,7 @@ import { Button } from '../components/ui.jsx'
 import { tappable } from '../lib/use-sheet-keyboard.js'
 import { glyphOf } from '../lib/glyphs.js'
 import { dayNoteOf } from '../lib/day-notes.js'
+import { medsToday } from './Health.jsx'
 
 // Home = what to do now + a quick glance. Deep charts & history live in Stats.
 export default function Home() {
@@ -37,6 +38,7 @@ export default function Home() {
   // session in progress: the row takes you back to it as an edit, the way the tab bar does.
   const editingSaved = !!S.active?.editingWorkoutId
   const bw = lastBW(S)
+  const meds = medsToday(S)
   const prevBW = S.bodyweight.length > 1 ? S.bodyweight[S.bodyweight.length - 2] : null
   const delta = bw && prevBW ? bw.w - prevBW.w : null
 
@@ -186,6 +188,21 @@ export default function Home() {
         <div style={{ height: 8 }} /><Button onClick={() => nav('/plan')}>{t('Build my own plan')}</Button>
       </div>
     )}
+
+    {/* Health (views/Health.jsx): today's doses when there are medications, the way in otherwise */}
+    <div className="card tappable health-card" style={{ cursor: 'pointer' }} {...tappable(() => nav((S.meds || []).length ? '/health/meds' : '/health'))}>
+      <div className="row" style={{ gap: 12 }}>
+        <span className="lrow-i" style={{ '--tint': 'var(--teal)' }}><Icon name="pill" /></span>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <b>{t('Health')}</b>
+          <div className="small dim">{!(S.meds || []).length ? t('Medications, body and more')
+            : !meds.total ? t('Nothing scheduled today')
+              : [t('{0} of {1} doses taken today', meds.taken, meds.total),
+                meds.late ? t('{0} late', meds.late) : meds.next ? t('next {0} at {1}', meds.next.med.name, meds.next.time) : null].filter(Boolean).join(' · ')}</div>
+        </div>
+        <Icon name="chevronRight" className="dim" />
+      </div>
+    </div>
 
     {S.showWeightCard !== false && <div className="card">
       <div className="row between bw-head" style={{ marginBottom: 6 }}>

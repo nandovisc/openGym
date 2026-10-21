@@ -17,7 +17,11 @@ export const FILES_MAX = 6
 export const RESULTS_MAX = 300
 const DAY_RE = /^\d{4}-\d{2}-\d{2}$/
 const list = v => (Array.isArray(v) ? v : [])
-const text = (v, max) => String(v ?? '').replace(/\s+/g, ' ').trim().slice(0, max)
+// Text copied out of a PDF often carries an accent as a separate spacing mark after its letter
+// ("Magalha˜es", "Jose´"): put it back on the letter, then compose ("Magalhães", "José").
+const SPACING_MARKS = { '\u02dc': '\u0303', '\u00b4': '\u0301', '`': '\u0300', '\u02c6': '\u0302', '\u00a8': '\u0308', '\u00b8': '\u0327' }
+const fixMarks = s => s.replace(/([A-Za-z])([\u02dc\u00b4`\u02c6\u00a8\u00b8])/g, (m, ch, mark) => ch + SPACING_MARKS[mark]).normalize('NFC')
+const text = (v, max) => fixMarks(String(v ?? '')).replace(/\s+/g, ' ').trim().slice(0, max)
 
 /**
  * A number as a lab writes it, or null: "4,5" and "4.5" are 4.5, "1.234,5" and "1,234.5" are

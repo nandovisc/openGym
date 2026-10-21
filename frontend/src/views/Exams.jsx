@@ -128,7 +128,7 @@ function ExamForm({ id, close }) {
         if (!got) throw Object.assign(new Error('missing'), { code: 'missing' })
         files.push({ mime: m.mime, data: await base64Of(got.blob) })
       }
-      const reading = fromReading(await api('/api/exams/read', { method: 'POST', body: { files }, timeout: 150000 }))
+      const reading = fromReading(await api('/api/exams/read', { method: 'POST', body: JSON.stringify({ files }), timeout: 150000 }))
       setF(x => ({ ...x, d: reading.d || x.d, title: x.title || reading.title, lab: x.lab || reading.lab, results: reading.results }))
       toast(reading.results.length ? t('{0} results read. Check them before saving.', reading.results.length) : t('No results were found in this file.'))
     } catch (e) {

@@ -84,8 +84,11 @@ describe('Exams', () => {
     await until(() => api.mock.calls.length && useUI.getState().toastMsg)
     const [path, opts] = api.mock.calls[0]
     expect(path).toBe('/api/exams/read')
-    expect(opts.body.files[0].mime).toBe('application/pdf')
-    expect(atob(opts.body.files[0].data).startsWith('%PDF-')).toBe(true)
+    // fetch sends the body as it gets it: it has to be the JSON text, not the object
+    expect(typeof opts.body).toBe('string')
+    const sent = JSON.parse(opts.body)
+    expect(sent.files[0].mime).toBe('application/pdf')
+    expect(atob(sent.files[0].data).startsWith('%PDF-')).toBe(true)
     expect(useStore.getState().S.exams).toEqual([])          // nothing saved until confirmed
     act(() => button(form, 'Save').click())
     const [exam] = useStore.getState().S.exams

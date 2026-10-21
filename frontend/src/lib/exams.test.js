@@ -46,6 +46,9 @@ describe('results and exams', () => {
     // the report's own flag wins; the AI's key ties labs together
     expect(normalizeResult({ name: 'HIV', valueText: 'Reagente', flag: 'abnormal', key: 'hiv_1_2' })).toMatchObject({ value: null, flag: 'abnormal', key: 'hiv_1_2' })
     expect(keyOf('Colesterol LDL (calculado)')).toBe('colesterol_ldl_calculado')
+    // accents copied out of a PDF as separate marks are put back on their letter
+    expect(normalizeExam({ d: '2026-08-24', lab: 'Marcelo Magalha\u02dces', title: 'Jose\u00b4' }).lab).toBe('Marcelo Magalhães')
+    expect(normalizeExam({ d: '2026-08-24', title: 'Jose\u00b4' }).title).toBe('José')
   })
   it('needs a date, and keeps id, creation and stamps of the exam it edits', () => {
     expect(normalizeExam({ results: [] })).toEqual({ error: 'date' })

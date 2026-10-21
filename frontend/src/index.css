@@ -2135,3 +2135,28 @@ button.wl-summary{width:100%;padding:0 0 10px;text-align:start;border-radius:var
 [dir="rtl"] *{letter-spacing:0}
 .exfix-link{display:inline-flex;align-items:center;gap:5px;margin:14px 0 4px;color:var(--label-3);text-decoration:none}
 .list .similar-label{margin:16px 2px 6px;grid-column:1/-1}
+
+/* ---- Health → Medications (views/Meds.jsx) ---- */
+.med-form{display:flex;flex-direction:column;gap:12px}
+.med-form label > span,.med-label{display:block;font-size:13px;color:var(--label-2);margin-bottom:5px}
+.med-form input[type="time"],.med-form input[type="date"]{width:100%}
+.med-days{display:flex;gap:6px;flex-wrap:wrap}
+.med-days button{flex:1;min-width:38px;padding:8px 0;border-radius:var(--r-sm);border:1px solid var(--sep);background:var(--surface-2);color:var(--label-2);font:inherit;font-size:13px}
+.med-days button.on{background:var(--acc-soft);border-color:var(--acc);color:var(--acc);font-weight:600}
+.med-dose{display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--sep)}
+.med-dose:first-of-type{border-top:0}
+.list > .med-dose{padding:10px 14px;background:var(--surface);border-radius:var(--r);border-top:0;margin-bottom:6px}
+.med-time{font-variant-numeric:tabular-nums;font-weight:600;min-width:44px}
+.med-dose.late .med-time{color:var(--red)}
+.med-dose.due .med-time{color:var(--orange)}
+.med-dose.taken .med-what b,.med-dose.skipped .med-what b{color:var(--label-2)}
+.med-what{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.med-what b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.med-chip{display:inline-flex;align-items:center;gap:4px;background:none;border:0;font:inherit;font-size:13px;color:var(--label-2);padding:4px}
+.med-cal{display:grid;grid-template-columns:repeat(auto-fill,minmax(14px,1fr));gap:4px;margin-top:12px}
+.med-day{aspect-ratio:1;border-radius:3px;background:var(--surface-3)}
+.med-day.all{background:var(--green)}
+.med-day.some{background:var(--orange)}
+.med-day.missed{background:var(--red)}
+.med-hint{display:flex;align-items:center;gap:10px;color:var(--orange)}
+.health-card b{font-size:17px}

@@ -18,7 +18,8 @@ import * as coachJobs from './coach/jobs.js';
 import { coachRoutes } from './coach/routes.js';
 import { startCadence } from './coach/cadence.js';
 import { startWarmup } from './coach/warmup.js';
-import { dayReminderPush, nudgePush, restTimerPush, testPush } from './push-messages.js';
+import { dayReminderPush, medReminderPush, nudgePush, restTimerPush, testPush } from './push-messages.js';
+import { doseId, medsDue } from './meds.js';
 import { verifyError } from './verify-error.js';
 import {
   hashPassword, verifyPassword, needsRehash, passwordProblem, passwordLength, nameKey, BusyError,
@@ -559,6 +560,23 @@ function nudgeTick(user, S, now) {
   saveDb();
   pushLater(user.id, nudgePush(S.lang, toneOf(S.reminder), routine, now.date));
 }
+// Medication reminders (Health → Medications in the app): at each dose's time, every medication
+// of that time in one push, until the dose is marked taken or skipped. The same catch-up window
+// as the day reminder, once per dose (`user.medSent`, the doses already reminded today), on the
+// clock of the zone the app saved when the reminder was switched on. Independent of the workout
+// reminder: it has its own switch (S.medReminder).
+function medTick(user, S, now) {
+  const sent = user.medSent?.date === now.date ? [...(user.medSent.slots || [])] : [];
+  for (const { time, meds } of medsDue(S, now, REMINDER_WINDOW_MIN)) {
+    const fresh = meds.filter(m => !sent.includes(doseId(m.id, now.date, time)));
+    if (!fresh.length) continue;
+    sent.push(...fresh.map(m => doseId(m.id, now.date, time)));
+    user.medSent = { date: now.date, slots: sent };
+    console.log('medication reminder firing', user.id, time, fresh.length);
+    saveDb();
+    pushLater(user.id, medReminderPush(S.lang, fresh, time));
+  }
+}
 // A push decided inside a request. The single process sends it at once. The serverless one sends
 // it only after the decision (lastReminder, lastNudge) has committed, and in a transaction of its
 // own, so a retried tick never sends twice and a dead subscription found by the send is pruned.
@@ -574,6 +592,10 @@ async function reminderTick() {
     // PUT /api/data refuses the obvious shapes, but a file already on disk answers to nobody.
     try {
       const S = await loadStateCached(user.id);
+      if (S?.medReminder?.on) {
+        const medNow = userNow(S.medReminder.tz || 'UTC');
+        if (medNow) medTick(user, S, medNow);
+      }
       if (!S?.reminder?.on) continue;
       const now = userNow(S.reminder.tz || 'UTC');
       if (!now) continue;

@@ -216,15 +216,21 @@ self.addEventListener('push', e => {
       icon: 'icon-512.png',
       badge: 'icon-180.png',
       tag,
-      renotify: true
+      renotify: true,
+      // Where a tap goes (a medication reminder opens the day's doses); the app's start otherwise.
+      data: { url: typeof data.url === 'string' && data.url.startsWith('#/') ? data.url : '' }
     })
   })())
 })
 self.addEventListener('notificationclick', e => {
   e.notification.close()
-  e.waitUntil(self.clients.matchAll({ type: 'window' }).then(clients => {
+  const hash = e.notification.data?.url || ''
+  e.waitUntil(self.clients.matchAll({ type: 'window' }).then(async clients => {
     const c = clients.find(c => 'focus' in c)
-    return c ? c.focus() : self.clients.openWindow('./')
+    if (!c) return self.clients.openWindow('./' + hash)
+    // The open window is taken to the route the alert is about; only the hash changes.
+    if (hash && 'navigate' in c) { try { await c.navigate(c.url.split('#')[0] + hash) } catch {} }
+    return c.focus()
   }))
 })
 // The push service rotated the subscription (key change, expiry): subscribe again with the same

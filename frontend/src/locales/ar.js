@@ -2411,4 +2411,9 @@ export default {
   '{0} out of range': '{0} خارج المعدل',
   'No results yet': 'لا توجد نتائج بعد',
   'The server\'s AI key was not accepted. Check ANTHROPIC_API_KEY on the server.': 'لم يتم قبول مفتاح الذكاء الاصطناعي على الخادم. تحقق من ANTHROPIC_API_KEY.',
+  '{0}: {1} results read and saved.': '{0}: تمت قراءة {1} نتيجة وحفظها.',
+  'Reading the report. You can keep using the app; the results are saved when ready.': 'جارٍ قراءة التقرير. يمكنك متابعة استخدام التطبيق؛ تُحفظ النتائج عند جاهزيتها.',
+  'The file is sent to the AI only to read the values. Check them against the report.': 'يُرسل الملف إلى الذكاء الاصطناعي لقراءة القيم فقط. قارنها بالتقرير.',
+  'You can close this screen; the results are saved when ready.': 'يمكنك إغلاق هذه الشاشة؛ تُحفظ النتائج عند جاهزيتها.',
+  'Read by AI. Check the values against the report.': 'قرأه الذكاء الاصطناعي. قارن القيم بالتقرير.',
 }

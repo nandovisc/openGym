@@ -2353,4 +2353,9 @@ export default {
   '{0} out of range': 'поза нормою: {0}',
   'No results yet': 'Ще немає результатів',
   'The server\'s AI key was not accepted. Check ANTHROPIC_API_KEY on the server.': 'Ключ ШІ на сервері не прийнято. Перевірте ANTHROPIC_API_KEY на сервері.',
+  '{0}: {1} results read and saved.': '{0}: прочитано й збережено результатів: {1}.',
+  'Reading the report. You can keep using the app; the results are saved when ready.': 'Читаю аналіз. Можна користуватися застосунком далі; результати збережуться, коли будуть готові.',
+  'The file is sent to the AI only to read the values. Check them against the report.': 'Файл надсилається ШІ лише для читання значень. Звірте їх із бланком.',
+  'You can close this screen; the results are saved when ready.': 'Можна закрити цей екран; результати збережуться, коли будуть готові.',
+  'Read by AI. Check the values against the report.': 'Прочитано ШІ. Звірте значення з бланком.',
 }

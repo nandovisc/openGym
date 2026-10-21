@@ -2175,3 +2175,6 @@ button.wl-summary{width:100%;padding:0 0 10px;text-align:start;border-radius:var
 .exam-what{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
 .exam-val{text-align:end;font-variant-numeric:tabular-nums;font-weight:600}
 .exam-ai{display:inline-flex;align-items:center;justify-content:center;color:var(--acc);font-size:20px;margin-inline-end:6px}
+.exam-ai.busy{animation:exam-ai-pulse 1.2s ease-in-out infinite}
+@keyframes exam-ai-pulse{50%{opacity:.25}}
+.exam-ai-note{display:flex;align-items:center;gap:6px;margin-bottom:10px;color:var(--acc)}

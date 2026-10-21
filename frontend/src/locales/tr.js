@@ -2356,4 +2356,9 @@ export default {
   '{0} out of range': '{0} aralık dışı',
   'No results yet': 'Henüz sonuç yok',
   'The server\'s AI key was not accepted. Check ANTHROPIC_API_KEY on the server.': 'Sunucunun yapay zekâ anahtarı kabul edilmedi. Sunucudaki ANTHROPIC_API_KEY’i kontrol et.',
+  '{0}: {1} results read and saved.': '{0}: {1} sonuç okundu ve kaydedildi.',
+  'Reading the report. You can keep using the app; the results are saved when ready.': 'Rapor okunuyor. Uygulamayı kullanmaya devam edebilirsin; sonuçlar hazır olunca kaydedilir.',
+  'The file is sent to the AI only to read the values. Check them against the report.': 'Dosya yalnızca değerleri okumak için yapay zekâya gönderilir. Raporla karşılaştır.',
+  'You can close this screen; the results are saved when ready.': 'Bu ekranı kapatabilirsin; sonuçlar hazır olunca kaydedilir.',
+  'Read by AI. Check the values against the report.': 'Yapay zekâ okudu. Değerleri raporla karşılaştır.',
 }

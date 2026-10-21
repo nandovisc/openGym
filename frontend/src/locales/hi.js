@@ -2356,4 +2356,9 @@ export default {
   '{0} out of range': '{0} सीमा से बाहर',
   'No results yet': 'अभी कोई परिणाम नहीं',
   'The server\'s AI key was not accepted. Check ANTHROPIC_API_KEY on the server.': 'सर्वर की AI कुंजी स्वीकार नहीं हुई। सर्वर पर ANTHROPIC_API_KEY जाँचें।',
+  '{0}: {1} results read and saved.': '{0}: {1} परिणाम पढ़े और सहेजे गए।',
+  'Reading the report. You can keep using the app; the results are saved when ready.': 'रिपोर्ट पढ़ी जा रही है। आप ऐप इस्तेमाल करते रहें; परिणाम तैयार होने पर सहेज लिए जाएँगे।',
+  'The file is sent to the AI only to read the values. Check them against the report.': 'फ़ाइल सिर्फ़ मान पढ़ने के लिए AI को भेजी जाती है। उन्हें रिपोर्ट से मिलाएँ।',
+  'You can close this screen; the results are saved when ready.': 'आप यह स्क्रीन बंद कर सकते हैं; परिणाम तैयार होने पर सहेज लिए जाएँगे।',
+  'Read by AI. Check the values against the report.': 'AI द्वारा पढ़ा गया। मानों को रिपोर्ट से मिलाएँ।',
 }

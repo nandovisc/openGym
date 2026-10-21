@@ -2356,4 +2356,9 @@ export default {
   '{0} out of range': 'poza normą: {0}',
   'No results yet': 'Brak wyników',
   'The server\'s AI key was not accepted. Check ANTHROPIC_API_KEY on the server.': 'Klucz AI serwera nie został zaakceptowany. Sprawdź ANTHROPIC_API_KEY na serwerze.',
+  '{0}: {1} results read and saved.': '{0}: odczytano i zapisano wyniki: {1}.',
+  'Reading the report. You can keep using the app; the results are saved when ready.': 'Odczytywanie wyników. Możesz dalej korzystać z aplikacji; wyniki zapiszą się, gdy będą gotowe.',
+  'The file is sent to the AI only to read the values. Check them against the report.': 'Plik trafia do AI tylko po to, by odczytać wartości. Porównaj je z wynikami.',
+  'You can close this screen; the results are saved when ready.': 'Możesz zamknąć ten ekran; wyniki zapiszą się, gdy będą gotowe.',
+  'Read by AI. Check the values against the report.': 'Odczytane przez AI. Porównaj wartości z wynikami.',
 }

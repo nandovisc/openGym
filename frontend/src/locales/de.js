@@ -2376,4 +2376,9 @@ export default {
   '{0} out of range': '{0} außerhalb',
   'No results yet': 'Noch keine Ergebnisse',
   'The server\'s AI key was not accepted. Check ANTHROPIC_API_KEY on the server.': 'Der KI-Schlüssel des Servers wurde nicht akzeptiert. Prüfe ANTHROPIC_API_KEY auf dem Server.',
+  '{0}: {1} results read and saved.': '{0}: {1} Ergebnisse gelesen und gespeichert.',
+  'Reading the report. You can keep using the app; the results are saved when ready.': 'Der Befund wird gelesen. Du kannst die App weiter nutzen; die Ergebnisse werden gespeichert, sobald sie da sind.',
+  'The file is sent to the AI only to read the values. Check them against the report.': 'Die Datei geht nur zum Auslesen der Werte an die KI. Vergleiche sie mit dem Befund.',
+  'You can close this screen; the results are saved when ready.': 'Du kannst diesen Bildschirm schließen; die Ergebnisse werden gespeichert, sobald sie da sind.',
+  'Read by AI. Check the values against the report.': 'Von der KI gelesen. Vergleiche die Werte mit dem Befund.',
 }

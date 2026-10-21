@@ -1517,6 +1517,11 @@ export const PT_BR_OVERRIDES = {
   '{0} out of range': '{0} fora da referência',
   'No results yet': 'Ainda sem resultados',
   'The server\'s AI key was not accepted. Check ANTHROPIC_API_KEY on the server.': 'A chave de IA do servidor não foi aceita. Confira a ANTHROPIC_API_KEY no servidor.',
+  '{0}: {1} results read and saved.': '{0}: {1} resultados lidos e salvos.',
+  'Reading the report. You can keep using the app; the results are saved when ready.': 'Lendo o laudo. Pode continuar usando o app; os resultados são salvos quando ficarem prontos.',
+  'The file is sent to the AI only to read the values. Check them against the report.': 'O arquivo vai para a IA só para ler os valores. Confira com o laudo.',
+  'You can close this screen; the results are saved when ready.': 'Pode fechar esta tela; os resultados são salvos quando ficarem prontos.',
+  'Read by AI. Check the values against the report.': 'Lido pela IA. Confira os valores com o laudo.',
 }
 
 export default { ...pt, ...PT_BR_OVERRIDES }

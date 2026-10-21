@@ -2367,4 +2367,9 @@ export default {
   '{0} out of range': 'นอกเกณฑ์ {0}',
   'No results yet': 'ยังไม่มีผล',
   'The server\'s AI key was not accepted. Check ANTHROPIC_API_KEY on the server.': 'คีย์ AI ของเซิร์ฟเวอร์ไม่ได้รับการยอมรับ ตรวจสอบ ANTHROPIC_API_KEY บนเซิร์ฟเวอร์',
+  '{0}: {1} results read and saved.': '{0}: อ่านและบันทึกแล้ว {1} ผล',
+  'Reading the report. You can keep using the app; the results are saved when ready.': 'กำลังอ่านผลตรวจ ใช้แอปต่อได้เลย ผลจะถูกบันทึกเมื่อพร้อม',
+  'The file is sent to the AI only to read the values. Check them against the report.': 'ไฟล์ถูกส่งให้ AI เพื่ออ่านค่าเท่านั้น ตรวจสอบกับผลตรวจ',
+  'You can close this screen; the results are saved when ready.': 'ปิดหน้านี้ได้ ผลจะถูกบันทึกเมื่อพร้อม',
+  'Read by AI. Check the values against the report.': 'อ่านโดย AI ตรวจสอบค่ากับผลตรวจ',
 }

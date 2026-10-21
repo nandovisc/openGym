@@ -23,6 +23,8 @@ permissions:
 
 jobs:
   build:
+    # Upstream's own repository only: a fork (deployed on Vercel, docs/VERCEL.md) has no use for it.
+    if: github.repository == 'DuarteSantos8/openGym'
     runs-on: ubuntu-latest
     strategy:
       matrix:

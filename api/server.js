@@ -35,11 +35,31 @@ import { effectiveRoutineId } from './queue.js';
 import { stampPut } from './sync-stamps.js';
 import { atomicWrite as durableWrite } from './durable.js';
 import { excusedOn, nudgeFor, nudgeWindowOpen, toneOf } from './nudge.js';
+import { createRemote } from './store/remote.js';
+import { createTx, readRaw, replayRequest, BufferedResponse, ConflictError } from './store/tx.js';
+import { createRemoteMediaStore } from './media-remote.js';
+
+// STORE=supabase: everything below that would live in ./data lives in a Supabase database
+// instead, reached over HTTPS (store/remote.js), and every request runs as one transaction
+// against its own copy of it (store/tx.js). Made for a serverless host (docs/VERCEL.md), where
+// no disk survives a request and several instances answer at once. Unset, nothing changes.
+const SERVERLESS = /^supabase$/i.test(process.env.STORE || '');
+const remote = SERVERLESS ? createRemote({ url: process.env.SUPABASE_URL, key: process.env.SUPABASE_SERVICE_ROLE_KEY }) : null;
+const tx = SERVERLESS ? createTx(remote) : null;
+// The timers of the single process. On a serverless host nothing runs between requests, so
+// they are not started there; POST /api/cron/tick does their work when it is called.
+const every = (fn, ms) => (SERVERLESS ? null : setInterval(fn, ms).unref());
 
 const PORT = +(process.env.PORT || 3000);
 const DATA = process.env.DATA_DIR || '/data';
-const RP_ID = process.env.RP_ID || 'localhost';
-const ORIGIN = process.env.ORIGIN || 'http://localhost:8080';
+// On Vercel, unset, both follow the deployment's own address: the production domain in
+// production, the branch's preview address on a preview. A passkey is bound to RP_ID, so one
+// made on a preview signs in there only.
+const VERCEL_HOST = process.env.VERCEL_ENV === 'production'
+  ? process.env.VERCEL_PROJECT_PRODUCTION_URL
+  : process.env.VERCEL_BRANCH_URL || process.env.VERCEL_URL;
+const RP_ID = process.env.RP_ID || VERCEL_HOST || 'localhost';
+const ORIGIN = process.env.ORIGIN || (VERCEL_HOST ? `https://${VERCEL_HOST}` : 'http://localhost:8080');
 const RP_NAME = process.env.RP_NAME || 'openGym';
 // Admin dashboard (issue): admins are matched by uid (or the admin flag FIRST_USER_ADMIN sets);
 // INVITE_ONLY gates new signups behind a code the admin generates. Off by default, so a fresh
@@ -94,7 +114,7 @@ const MAX_BODY = 5 * 1024 * 1024;
 // Secure cookies require HTTPS; over plain http://localhost the flag would drop the cookie
 const SECURE = /^https:/i.test(ORIGIN) ? ' Secure;' : '';
 
-fs.mkdirSync(DATA, { recursive: true });
+if (!SERVERLESS) fs.mkdirSync(DATA, { recursive: true });
 /* The secrets are locked down file by file rather than by sealing the whole directory.
  *
  * A blanket `chmod 0700` on DATA looks stronger and is worse: ./data is a host bind mount and
@@ -107,12 +127,20 @@ fs.mkdirSync(DATA, { recursive: true });
  * reason to refuse to boot. The privilege drop in adapters/spawn.js is the control that does
  * fail closed. */
 const lock = f => { try { fs.chmodSync(path.join(DATA, f), 0o600); } catch { /* not present yet, or host says no */ } };
-['secret', 'db.json', 'coach.json'].forEach(lock);
+if (!SERVERLESS) ['secret', 'db.json', 'coach.json'].forEach(lock);
 
 /* ---------- secret + db ---------- */
+// On a serverless host the secret and the VAPID keys are made once and kept in the database:
+// whichever instance boots first stores its pair, every other one takes the stored pair.
+const boot = SERVERLESS
+  ? await remote.rpc('opengym_bootstrap', {
+    p_secret: crypto.randomBytes(32).toString('hex'),
+    p_vapid: JSON.stringify(webpush.generateVAPIDKeys())
+  })
+  : null;
 const secretFile = path.join(DATA, 'secret');
-if (!fs.existsSync(secretFile)) fs.writeFileSync(secretFile, crypto.randomBytes(32).toString('hex'), { mode: 0o600 });
-const SECRET = fs.readFileSync(secretFile, 'utf8').trim();
+if (!SERVERLESS && !fs.existsSync(secretFile)) fs.writeFileSync(secretFile, crypto.randomBytes(32).toString('hex'), { mode: 0o600 });
+const SECRET = SERVERLESS ? boot.secret : fs.readFileSync(secretFile, 'utf8').trim();
 
 const dbFile = path.join(DATA, 'db.json');
 // Every account, passkey and invite. Only a missing file starts empty: an unreadable one (a write
@@ -140,12 +168,16 @@ function loadDb() {
     }
   }
 }
-let db = loadDb();
-db.users = db.users || [];
-db.creds = db.creds || [];
-db.subs = db.subs || [];
-db.invites = db.invites || [];
-db.deviceLinks = db.deviceLinks || [];   // unused one-time device links, hashed (device-link.js)
+// Serverless: the current request's own copy, loaded when the request began (store/tx.js), with
+// the same five lists always present.
+let db = SERVERLESS ? tx.db : loadDb();
+if (!SERVERLESS) {
+  db.users = db.users || [];
+  db.creds = db.creds || [];
+  db.subs = db.subs || [];
+  db.invites = db.invites || [];
+  db.deviceLinks = db.deviceLinks || [];   // unused one-time device links, hashed (device-link.js)
+}
 const isAdmin = user => !!user && (user.admin === true || ADMIN_UIDS.includes(user.id));
 // 0600: db.json holds passkey credential material. It used to be covered by a blanket 0700 on
 // the whole directory; now that the directory stays traversable, the file carries its own mode.
@@ -154,6 +186,8 @@ const isAdmin = user => !!user && (user.admin === true || ADMIN_UIDS.includes(us
 // whatever the last save wrote (a profile just created) when db.json was later found unreadable.
 // A write cut short leaves the previous db.json.bak whole (temporary file and rename).
 function saveDb() {
+  // Serverless: written when the request commits, if it changed (store/tx.js).
+  if (SERVERLESS) return;
   const text = JSON.stringify(db, null, 2);
   atomicWrite(dbFile, text, 0o600);
   try { atomicWrite(dbFile + '.bak', text, 0o600); }
@@ -191,6 +225,24 @@ function readStateStrict(uid) {
   catch (e) { return e.code === 'ENOENT' ? null : UNREADABLE; }
   try { return JSON.parse(raw); } catch { return UNREADABLE; }
 }
+// The three readers as the routes call them: awaited, so the same route works against a file and
+// against the database. loadStateCached may hand out a shared object — callers only look.
+async function loadState(uid) {
+  if (!SERVERLESS) return readState(uid);
+  const text = await tx.stateText(uid);
+  try { return text == null ? null : JSON.parse(text); } catch { return null; }
+}
+async function loadStateStrict(uid) {
+  if (!SERVERLESS) return readStateStrict(uid);
+  const text = await tx.stateText(uid);
+  if (text == null) return null;
+  try { return JSON.parse(text); } catch { return UNREADABLE; }
+}
+async function loadStateCached(uid) {
+  if (!SERVERLESS) return readStateCached(uid);
+  const { parsed } = await tx.stateShared(uid);
+  return parsed ?? null;
+}
 // A stored document as a client gets it: without the server's own notes `_unstamped` and `_prior`.
 function forClient(S) {
   if (!S || typeof S !== 'object' || !('_unstamped' in S || '_prior' in S)) return S;
@@ -211,8 +263,11 @@ const records = v => (Array.isArray(v) ? v.filter(record) : []);
 /* ---------- push notifications (Web Push / VAPID) ---------- */
 const vapidFile = path.join(DATA, 'vapid.json');
 let vapid;
-try { vapid = JSON.parse(fs.readFileSync(vapidFile, 'utf8')); }
-catch { vapid = webpush.generateVAPIDKeys(); fs.writeFileSync(vapidFile, JSON.stringify(vapid), { mode: 0o600 }); }
+if (SERVERLESS) vapid = JSON.parse(boot.vapid);
+else {
+  try { vapid = JSON.parse(fs.readFileSync(vapidFile, 'utf8')); }
+  catch { vapid = webpush.generateVAPIDKeys(); fs.writeFileSync(vapidFile, JSON.stringify(vapid), { mode: 0o600 }); }
+}
 const VAPID_SUBJECT = process.env.VAPID_SUBJECT || (SECURE ? ORIGIN : 'mailto:admin@localhost');
 webpush.setVapidDetails(VAPID_SUBJECT, vapid.publicKey, vapid.privateKey);
 
@@ -397,8 +452,14 @@ async function sendPush(userId, payload, deviceId) {
 // In memory only — an API restart drops whatever is pending.
 const restTimers = new Map(); // `${userId}:${deviceId}` -> Timeout
 const restKey = (userId, deviceId) => `${userId}:${deviceId || ''}`;
+// Serverless: a row in the push queue instead of a timer, written with the request's commit and
+// sent by the cron tick that finds it due (POST /api/cron/tick).
 function scheduleRestTimer(userId, deviceId, sec, lang) {
   const k = restKey(userId, deviceId);
+  if (SERVERLESS) {
+    tx.push({ op: 'set', key: k, uid: userId, device: deviceId || null, due: Date.now() + sec * 1000, payload: restTimerPush(lang) });
+    return;
+  }
   const t = restTimers.get(k);
   if (t) clearTimeout(t);
   restTimers.set(k, setTimeout(() => {
@@ -407,6 +468,7 @@ function scheduleRestTimer(userId, deviceId, sec, lang) {
   }, sec * 1000));
 }
 function cancelRestTimer(userId, deviceId) {
+  if (SERVERLESS) { tx.push({ op: 'cancel', uid: userId, key: deviceId ? restKey(userId, deviceId) : null }); return; }
   // no device id: an older client — clear everything the account has pending, as it always did
   for (const [k, t] of restTimers) {
     if (deviceId ? k === restKey(userId, deviceId) : k.startsWith(userId + ':')) { clearTimeout(t); restTimers.delete(k); }
@@ -495,16 +557,23 @@ function nudgeTick(user, S, now) {
   console.log('nudge firing', user.id, rid);
   user.lastNudge = now.date;
   saveDb();
-  sendPush(user.id, nudgePush(S.lang, toneOf(S.reminder), routine, now.date));
+  pushLater(user.id, nudgePush(S.lang, toneOf(S.reminder), routine, now.date));
 }
-setInterval(() => {
+// A push decided inside a request. The single process sends it at once. The serverless one sends
+// it only after the decision (lastReminder, lastNudge) has committed, and in a transaction of its
+// own, so a retried tick never sends twice and a dead subscription found by the send is pruned.
+function pushLater(userId, payload, deviceId) {
+  if (!SERVERLESS) { sendPush(userId, payload, deviceId); return; }
+  tx.after(() => tx.run(() => sendPush(userId, payload, deviceId)));
+}
+async function reminderTick() {
   for (const user of db.users) {
     if (!db.subs.some(s => s.userId === user.id)) continue;
     // One user's state file is one user's problem: a shape this tick cannot read is logged and
     // skipped, not allowed to take the process — and everyone else's reminders — down with it.
     // PUT /api/data refuses the obvious shapes, but a file already on disk answers to nobody.
     try {
-      const S = readStateCached(user.id);
+      const S = await loadStateCached(user.id);
       if (!S?.reminder?.on) continue;
       const now = userNow(S.reminder.tz || 'UTC');
       if (!now) continue;
@@ -520,14 +589,15 @@ setInterval(() => {
       console.log('reminder firing', user.id, rid);
       user.lastReminder = now.date;
       saveDb();
-      sendPush(user.id, dayReminderPush(S.lang, routine));
+      pushLater(user.id, dayReminderPush(S.lang, routine));
     } catch (e) {
       console.error('reminder tick', user.id, e);
     }
   }
+}
 // Checked every 10s (not 60s) — ticks aren't aligned to the top of the minute, so a 60s
 // interval could sit on your target minute for up to 59s before noticing. 10s caps that at ~9s.
-}, REMINDER_TICK_MS).unref();
+every(() => { reminderTick().catch(e => console.error('reminder tick', e)); }, REMINDER_TICK_MS);
 
 /* ---------- sessions (signed cookie) ---------- */
 function sign(payload) {
@@ -684,7 +754,9 @@ function csrfOk(req, key) {
 // POST /api/device-link/options hands to anyone holding a code finished a *sign-up* instead: a
 // passkey on the owner's profile and a session for it, without using the code up, as often as
 // wanted, and past "sign out everywhere".
-const challenges = new Map(); // cid -> {kind, challenge, name?, uid?, exp}
+// Serverless: the current request's copy of the stored map (store/tx.js); expired rows are
+// dropped when it is loaded, which is what the minute sweep below does here.
+const challenges = SERVERLESS ? tx.map('challenges', { sweep: (v, now) => v.exp < now }) : new Map(); // cid -> {kind, challenge, name?, uid?, exp}
 // POST /api/login/options is anonymous and unthrottled, and every call leaves a challenge here
 // for five minutes, so the Map has a ceiling: past it the oldest goes. A ceremony takes seconds,
 // so only a flood far beyond any real sign-in traffic reaches back far enough to cost one.
@@ -701,13 +773,13 @@ function takeChallenge(cid) {
   if (!c || c.exp < Date.now()) return null;
   return c;
 }
-setInterval(() => { for (const [k, v] of challenges) if (v.exp < Date.now()) challenges.delete(k); }, 60000).unref();
+every(() => { for (const [k, v] of challenges) if (v.exp < Date.now()) challenges.delete(k); }, 60000);
 
 // ---------- device pairing (mobile app "connect to my server", no WebAuthn ceremony) ----------
 // A passkey ceremony can't run inside the app's WebView (its origin never matches RP_ID), so the
 // app authenticates by redeeming a short code minted from an already signed-in browser tab —
 // same 5-min-TTL/one-shot shape as the WebAuthn challenge store above.
-const pairings = new Map(); // code -> {uid, exp}
+const pairings = SERVERLESS ? tx.map('pairings', { sweep: (v, now) => v.exp < now }) : new Map(); // code -> {uid, exp}
 const PAIR_CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no 0/O/1/I — read off a screen
 function makePairCode() {
   let code;
@@ -716,7 +788,7 @@ function makePairCode() {
   } while (pairings.has(code));
   return code;
 }
-setInterval(() => { for (const [k, v] of pairings) if (v.exp < Date.now()) pairings.delete(k); }, 60000).unref();
+every(() => { for (const [k, v] of pairings) if (v.exp < Date.now()) pairings.delete(k); }, 60000);
 
 /* ---------- helpers ---------- */
 function json(res, code, obj, extraHeaders) {
@@ -779,7 +851,7 @@ const b64uToBuf = s => Buffer.from(s, 'base64url');
 /* ---------- live presence (in-memory) ---------- */
 // Clients heartbeat /api/activity while a workout is on screen; the admin dashboard reads who's
 // live. Purely ephemeral — never persisted. Expires shortly after the last ping.
-const presence = new Map();               // uid -> { name, exIdx, exTotal, setsDone, setsTotal, startedAt, updatedAt, hiddenAt? }
+const presence = SERVERLESS ? tx.map('presence', { sweep: (v, now) => !presenceListed(v, now) }) : new Map(); // uid -> { name, exIdx, exTotal, setsDone, setsTotal, startedAt, updatedAt, hiddenAt? }
 const PRESENCE_TTL = 70000;               // ~3.5× the 20s client heartbeat
 // A "left" signal with reason `hidden` (the workout page went to the background) marks the row
 // away at that moment instead of dropping it. A phone locked between sets keeps the page running
@@ -800,7 +872,7 @@ function livePresence(uid) {
   const { hiddenAt: _away, ...live } = p;   // the mark is bookkeeping; the dashboard gets the row it always did
   return live;
 }
-setInterval(() => { const now = Date.now(); for (const [k, v] of presence) if (!presenceListed(v, now)) presence.delete(k); }, 30000).unref();
+every(() => { const now = Date.now(); for (const [k, v] of presence) if (!presenceListed(v, now)) presence.delete(k); }, 30000);
 
 /* ---------- audit log ---------- */
 // Who signed in, who tried and failed, and what an admin changed. One JSON object per line in
@@ -876,7 +948,8 @@ function compactAudit() {
 // Never throws: a log that can't be written must not break signing in.
 function audit(req, ev, f = {}) {
   if (!AUDIT_ON) return;
-  const rec = { id: ++auditSeq, ts: Date.now(), ev, ok: f.ok !== false };
+  // Serverless: the database numbers the row when the request commits (opengym.audit.id).
+  const rec = { ...(SERVERLESS ? {} : { id: ++auditSeq }), ts: Date.now(), ev, ok: f.ok !== false };
   if (f.user) { rec.uid = f.user.id; rec.name = String(f.user.name || '').slice(0, 40); }
   else {
     if (f.uid) rec.uid = f.uid;
@@ -888,15 +961,20 @@ function audit(req, ev, f = {}) {
   if (f.act) rec.act = String(f.act).slice(0, 40);
   const ip = clientIp(req);
   if (ip) rec.ip = ip;
+  if (SERVERLESS) { tx.audit(rec); return; }
   try { fs.appendFileSync(auditFile, JSON.stringify(rec) + '\n'); }
   catch (e) { return console.error('audit write failed', e.message); }
   // Amortized: a 5000-event cap rewrites the file once per ~1250 events.
   if (AUDIT_MAX && ++auditCount > AUDIT_MAX * 1.25) compactAudit();
 }
-if (AUDIT_ON) {
+if (AUDIT_ON && !SERVERLESS) {
   compactAudit();                                // prune on boot, seed auditSeq/auditCount
   setInterval(compactAudit, 3600000).unref();    // honour AUDIT_DAYS on an idle instance too
 }
+// Serverless: the same retention, applied in the database by the cron tick.
+const compactAuditRemote = () => remote.rpc('opengym_audit_compact', {
+  p_cut: AUDIT_DAYS ? Date.now() - AUDIT_DAYS * 86400000 : 0, p_max: AUDIT_MAX
+});
 
 /* ---------- sign-in throttle ---------- */
 // The password routes are counted (rate-limit.js) — only on an instance with PASSWORD_LOGIN on,
@@ -943,7 +1021,7 @@ const ACCOUNT_FAILS = createBackoff({
   // At most one per profile with a password, so this cannot grow without bound.
   keep: k => k.startsWith('acct:') && hasPassword(db.users.find(u => u.id === k.slice(5)))
 });
-setInterval(() => { AUTH_BURST.sweep(); ADDR_FAILS.sweep(); ACCOUNT_FAILS.sweep(); }, 60000).unref();
+every(() => { AUTH_BURST.sweep(); ADDR_FAILS.sweep(); ACCOUNT_FAILS.sweep(); }, 60000);
 
 // Route -> the kind of failure it can count. Every route listed here also spends the burst
 // budget; `null` spends only that.
@@ -1009,7 +1087,7 @@ function strikeAddress(req, kind) {
 // dropped is a row that says the same thing as the ten before it.
 const FAIL_AUDIT = createWindow({ max: 10, windowMs: 60000 });
 const FAIL_AUDIT_ALL = createWindow({ max: 120, windowMs: 60000 });
-setInterval(() => { FAIL_AUDIT.sweep(); FAIL_AUDIT_ALL.sweep(); }, 60000).unref();
+every(() => { FAIL_AUDIT.sweep(); FAIL_AUDIT_ALL.sweep(); }, 60000);
 function auditFail(req, ev, f) {
   if (FAIL_AUDIT.take(ev + '|' + limitAddress(req)) || FAIL_AUDIT_ALL.take(ev)) return;
   audit(req, ev, f);
@@ -1758,7 +1836,11 @@ const passkeyRoutes = {
 // either way: an admin deleting a profile must still remove files uploaded while it was on.
 const MEDIA_LIMITS = mediaLimits(process.env);
 const MEDIA_ON = MEDIA_LIMITS.enabled;
-const MEDIA = createMediaStore({ dir: path.join(DATA, 'uploads'), limits: MEDIA_LIMITS, readState });
+// Serverless: the files sit in Supabase Storage (media-remote.js), every method is a network
+// call, and the routes below await them all — a no-op for the store on disk.
+const MEDIA = SERVERLESS
+  ? createRemoteMediaStore({ remote, limits: MEDIA_LIMITS, readState: loadState })
+  : createMediaStore({ dir: path.join(DATA, 'uploads'), limits: MEDIA_LIMITS, readState });
 // Leftovers of uploads the previous process was receiving when it stopped.
 try { MEDIA.cleanTmp(); } catch (e) { console.error('media: boot cleanup failed', e.message); }
 // Per profile, not per address: every upload is signed in, and behind a proxy one address can be
@@ -1770,10 +1852,10 @@ const MEDIA_SWEEPS = createWindow({ max: 10, windowMs: 3600000 });
 // Uid -> until when its throttle has already been recorded, so a client hammering a closed
 // window writes one audit line per window, not one per request.
 const mediaThrottleNoted = new Map();
-setInterval(() => {
+every(() => {
   MEDIA_BURST.sweep(); MEDIA_SWEEPS.sweep();
   for (const [k, until] of mediaThrottleNoted) if (until < Date.now()) mediaThrottleNoted.delete(k);
-}, 600000).unref();
+}, 600000);
 function mediaThrottle(req, user, win) {
   const wait = win.take(user.id);
   if (!wait) return;
@@ -1787,13 +1869,13 @@ function mediaThrottle(req, user, win) {
 // profiles in db.json are swept, and only when their state parses (see media.js for why a
 // missing anything never means "delete"). First pass a few minutes after boot, so an instance
 // that is redeployed more often than hourly still gets one.
-function mediaSweepAll() {
+async function mediaSweepAll() {
   try {
-    const r = MEDIA.sweepAll({ uids: db.users.map(u => u.id) });
+    const r = await MEDIA.sweepAll({ uids: db.users.map(u => u.id) });
     if (r.removed || r.tmp) console.log(`media: swept ${r.removed} unreferenced file(s), ${(r.freedBytes / 1048576).toFixed(1)} MB, ${r.tmp} stale upload(s)`);
   } catch (e) { console.error('media: sweep failed', e); }
 }
-if (MEDIA_ON) {
+if (MEDIA_ON && !SERVERLESS) {
   setInterval(mediaSweepAll, 3600000).unref();
   setTimeout(mediaSweepAll, 5 * 60000).unref();
 }
@@ -1806,9 +1888,12 @@ if (MEDIA_ON) {
 // an HTTP-cache copy would outlive the sign-out purge. No Range and no ETag: nothing asks.
 async function sendMediaFile(res, f, hash) {
   let fd;
-  try { fd = fs.openSync(f.path, 'r'); }
-  catch { throw new MediaError(404, 'media-missing'); }   // swept between the lookup and here
-  const size = fs.fstatSync(fd).size;
+  // A file from Storage arrives as its bytes (media-remote.js), already read whole.
+  if (!f.bytes) {
+    try { fd = fs.openSync(f.path, 'r'); }
+    catch { throw new MediaError(404, 'media-missing'); }   // swept between the lookup and here
+  }
+  const size = f.bytes ? f.bytes.length : fs.fstatSync(fd).size;
   res.writeHead(200, {
     'Content-Type': f.mime,
     'Content-Length': String(size),
@@ -1822,6 +1907,7 @@ async function sendMediaFile(res, f, hash) {
     // CORS-safelisted already, this only spells it out for older WebViews.
     'Access-Control-Expose-Headers': 'Content-Length'
   });
+  if (f.bytes) { res.end(f.bytes); return; }
   try { await pipeline(fs.createReadStream(null, { fd }), res); }
   catch { res.destroy(); }   // the client went away mid-download; nothing left to answer
 }
@@ -1843,7 +1929,7 @@ const mediaRoutes = {
     if (!user) return json(res, 401, { error: 'not signed in' });
     // Only ever the caller's own folder: another profile's file is exactly as missing as one
     // that was never uploaded.
-    const f = MEDIA.file(user.id, req.mediaHash);
+    const f = await MEDIA.file(user.id, req.mediaHash);
     if (!f) throw new MediaError(404, 'media-missing');
     await sendMediaFile(res, f, req.mediaHash);
   },
@@ -1857,7 +1943,7 @@ const mediaRoutes = {
     if (!Array.isArray(hashes) || hashes.length > 1000 || !hashes.every(h => typeof h === 'string' && HASH_RE.test(h))) {
       throw new MediaError(400, 'bad-request', { error: 'hashes must be a list of at most 1000 lowercase sha256 hex strings' });
     }
-    json(res, 200, MEDIA.missing(user.id, hashes));
+    json(res, 200, await MEDIA.missing(user.id, hashes));
   },
   // "Reset everything": every file the caller's current state does not reference goes now,
   // without the grace. A state that cannot be read removes nothing.
@@ -1866,9 +1952,46 @@ const mediaRoutes = {
     if (!user) return json(res, 401, { error: 'not signed in' });
     await readBody(req);
     mediaThrottle(req, user, MEDIA_SWEEPS);
-    const r = MEDIA.sweep(user.id, { graceMs: 0 });
+    const r = await MEDIA.sweep(user.id, { graceMs: 0 });
     audit(req, 'media.sweep', { user, msg: `${r.removed} file(s), ${(r.freedBytes / 1048576).toFixed(1)} MB${r.skipped ? ', state unreadable' : ''}` });
-    json(res, 200, { removed: r.removed, freedBytes: r.freedBytes, usage: MEDIA.usage(user.id) });
+    json(res, 200, { removed: r.removed, freedBytes: r.freedBytes, usage: await MEDIA.usage(user.id) });
+  }
+};
+
+/* ---------- scheduled work, serverless ---------- */
+// What the timers of the single process do, done when something calls this route: on Vercel a
+// pg_cron job in the database itself, through pg_net (api/store/supabase-cron.sql). Bearer
+// CRON_SECRET, compared in constant time; without a CRON_SECRET the route refuses everyone.
+//   job=rest    rest-timer alerts that are due (every few seconds)
+//   job=minute  the day's reminders and missed-workout nudges, then the due alerts too
+//   job=hourly  audit-log retention and the media sweep
+const CRON_SECRET = process.env.CRON_SECRET || '';
+function cronAllowed(req) {
+  if (!CRON_SECRET) return false;
+  const got = Buffer.from(String(req.headers.authorization || ''));
+  const want = Buffer.from('Bearer ' + CRON_SECRET);
+  return got.length === want.length && crypto.timingSafeEqual(got, want);
+}
+const cronRoutes = {
+  'POST /api/cron/tick': async (req, res) => {
+    if (!cronAllowed(req)) return json(res, 401, { error: 'not allowed' });
+    await readBody(req);
+    const job = new URL(req.url, 'http://x').searchParams.get('job') || 'minute';
+    if (!['rest', 'minute', 'hourly'].includes(job)) return json(res, 400, { error: 'unknown job' });
+    let sent = 0;
+    if (job === 'rest' || job === 'minute') {
+      // Taken off the queue as they are read, so a retried or overlapping tick sends none twice.
+      for (const p of (await remote.rpc('opengym_push_take', {})) || []) {
+        await sendPush(p.uid, p.payload, p.device || undefined);
+        sent++;
+      }
+    }
+    if (job === 'minute') await reminderTick();
+    if (job === 'hourly') {
+      if (AUDIT_ON) await compactAuditRemote();
+      if (MEDIA_ON) await mediaSweepAll();
+    }
+    json(res, 200, { ok: true, job, sent });
   }
 };
 
@@ -1887,6 +2010,7 @@ const mediaRoutes = {
 const DATA_PROBE_MS = 5000;
 let dataProbe = { at: 0, ok: false };
 function dataWritable() {
+  if (SERVERLESS) return true;   // no data directory; a database that cannot be reached fails the request itself
   const now = Date.now();
   if (dataProbe.at && now - dataProbe.at < DATA_PROBE_MS) return dataProbe.ok;
   const probe = path.join(DATA, '.health-' + process.pid);
@@ -2174,7 +2298,7 @@ const routes = {
   'GET /api/data': async (req, res) => {
     const user = readSession(req);
     if (!user) return json(res, 401, { error: 'not signed in' });
-    const state = readStateStrict(user.id);
+    const state = await loadStateStrict(user.id);
     if (state === UNREADABLE) { console.error('state file unreadable for', user.id); return json(res, 503, { error: 'state unreadable' }); }
     notePull(user);
     json(res, 200, { state: forClient(state), rev: state?._rev || 0 });
@@ -2188,7 +2312,7 @@ const routes = {
   'GET /api/data/rev': async (req, res) => {
     const user = readSession(req);
     if (!user) return json(res, 401, { error: 'not signed in' });
-    const doc = readStateCached(user.id);
+    const doc = await loadStateCached(user.id);
     json(res, 200, { rev: doc?._rev || 0, ...(doc?._wid ? { wid: doc._wid } : {}) });
   },
 
@@ -2226,8 +2350,9 @@ const routes = {
     // the client can merge and try again without a second request. No `baseRev` (a client from
     // before revisions, or a deliberate replace such as a backup import) overwrites, as before.
     // readState and atomicWrite are synchronous with nothing awaited between them, so the
-    // compare-and-write is atomic for this process.
-    const cur = readStateStrict(user.id);
+    // compare-and-write is atomic for this process. Serverless: the commit of this request
+    // writes the document only if it is still the version read here (store/tx.js).
+    const cur = await loadStateStrict(user.id);
     if (cur === UNREADABLE) { console.error('state file unreadable for', user.id); return json(res, 503, { error: 'state unreadable' }); }
     const curRev = cur?._rev || 0;
     // `_rev` is a counter, so after the data directory went back in time (a restored backup, a
@@ -2273,7 +2398,8 @@ const routes = {
     let text;
     try { text = JSON.stringify(body.state); }
     catch (e) { if (e instanceof RangeError) return json(res, 400, { error: 'invalid state' }); throw e; }
-    atomicWrite(stateFile(user.id), text);
+    if (SERVERLESS) tx.writeState(user.id, text);
+    else atomicWrite(stateFile(user.id), text);
     // The stat cache cannot see this write on its own: mtime granularity is 4 ms here (ext4 on
     // this kernel — 3901 of 3999 back-to-back same-size writes shared one timestamp), and a
     // `_rev` going from 7 to 8 does not change the file's size, so two writes inside one 4 ms
@@ -2285,7 +2411,7 @@ const routes = {
     // referencing. Bookkeeping only: the state is already saved, so nothing here may turn a
     // successful write into an error.
     if (MEDIA_ON) {
-      try { MEDIA.noteState(user.id, body.state); } catch (e) { console.error('media noteState', e); }
+      try { await MEDIA.noteState(user.id, body.state); } catch (e) { console.error('media noteState', e); }
     }
     json(res, 200, { ok: true, ts: body.state._ts || null, rev: curRev + 1, wid: body.state._wid });
   },
@@ -2352,7 +2478,7 @@ const routes = {
   'POST /api/push/test': async (req, res) => {
     const user = readSession(req);
     if (!user) return json(res, 401, { error: 'not signed in' });
-    await sendPush(user.id, testPush(readStateCached(user.id)?.lang));
+    await sendPush(user.id, testPush((await loadStateCached(user.id))?.lang));
     json(res, 200, { ok: true });
   },
 
@@ -2367,7 +2493,7 @@ const routes = {
     const n = typeof raw === 'number' || typeof raw === 'string' ? Number(raw) : NaN;
     if (!(n >= 1)) return json(res, 400, { error: 'seconds required' });
     const sec = Math.min(3600, Math.round(n));
-    scheduleRestTimer(user.id, deviceIdOf(body.deviceId), sec, readStateCached(user.id)?.lang);
+    scheduleRestTimer(user.id, deviceIdOf(body.deviceId), sec, (await loadStateCached(user.id))?.lang);
     json(res, 200, { ok: true });
   },
 
@@ -2407,8 +2533,10 @@ const routes = {
   // One row per user, cheap enough for a personal instance (reads each state file once).
   'GET /api/admin/users': async (req, res) => {
     if (!requireAdmin(req, res)) return;
+    const states = new Map();
+    for (const u of db.users) states.set(u.id, await loadState(u.id));
     const users = db.users.map(u => {
-      const S = readState(u.id) || {};
+      const S = states.get(u.id) || {};
       const workouts = records(S.workouts);
       const last = workouts[workouts.length - 1];
       return {
@@ -2433,7 +2561,7 @@ const routes = {
     const id = new URL(req.url, 'http://x').searchParams.get('id');
     const u = db.users.find(x => x.id === id);
     if (!u) return json(res, 404, { error: 'no such user' });
-    const S = readState(u.id) || {};
+    const S = (await loadState(u.id)) || {};
     json(res, 200, {
       user: {
         id: u.id, name: u.name, created: u.created || null, disabled: !!u.disabled, admin: isAdmin(u), invitedBy: u.invitedBy || null,
@@ -2486,10 +2614,11 @@ const routes = {
     dropDeviceLinks(db, u.id);
     presence.delete(u.id);
     // The training history and any Coach credential of theirs, both outside db.json.
-    try { fs.unlinkSync(stateFile(u.id)); } catch { /* already gone */ }
+    if (SERVERLESS) tx.deleteState(u.id);
+    else try { fs.unlinkSync(stateFile(u.id)); } catch { /* already gone */ }
     try { coachConfig.clearProfileAuth(u.id); } catch { /* nothing stored */ }
     // Their photos and videos — the one place a profile's folder under uploads/ is removed.
-    try { MEDIA.removeUser(u.id); } catch (e) { console.error('media: could not remove uploads of', u.id, e.message); }
+    try { await MEDIA.removeUser(u.id); } catch (e) { console.error('media: could not remove uploads of', u.id, e.message); }
     saveDb();
     // Logged with the name, because the id is about to mean nothing to anyone reading this back.
     audit(req, 'admin.user.delete', { user: admin, msg: name });
@@ -2544,13 +2673,24 @@ const routes = {
     const limit = Math.max(1, Math.min(200, +q.get('limit') || 100));
     const before = +q.get('before') || Infinity;
     const cat = q.get('cat') || '';
-    let rows = auditKeep(auditLines()).reverse();
-    if (cat === 'fail') rows = rows.filter(r => !r.ok);
-    else if (cat) rows = rows.filter(r => String(r.ev).startsWith(cat + '.'));
-    const page = rows.filter(r => r.id < before).slice(0, limit);
+    let page, total;
+    if (SERVERLESS) {
+      // The same retention, filter and page, worked out by the database (opengym_audit_list).
+      const r = await remote.rpc('opengym_audit_list', {
+        p_before: Number.isFinite(before) ? before : Number.MAX_SAFE_INTEGER, p_limit: limit, p_cat: cat,
+        p_cut: AUDIT_DAYS ? Date.now() - AUDIT_DAYS * 86400000 : 0, p_max: AUDIT_MAX
+      });
+      page = r.events; total = r.total;
+    } else {
+      let rows = auditKeep(auditLines()).reverse();
+      if (cat === 'fail') rows = rows.filter(r => !r.ok);
+      else if (cat) rows = rows.filter(r => String(r.ev).startsWith(cat + '.'));
+      page = rows.filter(r => r.id < before).slice(0, limit);
+      total = rows.length;
+    }
     json(res, 200, {
       events: page,
-      total: rows.length,
+      total,
       nextBefore: page.length === limit ? page[page.length - 1].id : null,
       enabled: AUDIT_ON, ip_mode: AUDIT_IP,
       retention: { max: AUDIT_MAX, days: AUDIT_DAYS },
@@ -2563,7 +2703,8 @@ const routes = {
   // ./data/audit.log already is the export, in a format jq reads directly.
   'POST /api/admin/audit/clear': async (req, res) => {
     const admin = requireAdmin(req, res); if (!admin) return;
-    try { fs.unlinkSync(auditFile); } catch { /* nothing logged yet */ }
+    if (SERVERLESS) await remote.rpc('opengym_audit_clear', {});
+    else try { fs.unlinkSync(auditFile); } catch { /* nothing logged yet */ }
     auditCount = 0;
     audit(req, 'admin.audit.clear', { user: admin });
     json(res, 200, { ok: true });
@@ -2578,16 +2719,21 @@ const routes = {
   /* ---------- photos & videos ---------- */
   // Absent, not refusing, when MEDIA_UPLOADS=0: a 404 is what a server from before the feature
   // answers, and the client already treats that as "this server does not store them".
-  ...(MEDIA_ON ? mediaRoutes : {})
+  ...(MEDIA_ON ? mediaRoutes : {}),
+
+  /* ---------- scheduled work (serverless only) ---------- */
+  ...(SERVERLESS ? cronRoutes : {})
 };
 
 /* ---------- Coach: boot recovery, notifications, scheduled reviews ---------- */
 // A job that was running when the process died is not coming back; say so rather than leaving
 // a spinner that never resolves.
-coachJobs.recoverOnBoot();
+// Not on a serverless host: the Coach runs provider processes and keeps its jobs on disk, neither
+// of which a function can do (COACH_DISABLED=1 there, docs/VERCEL.md).
+if (!SERVERLESS) coachJobs.recoverOnBoot();
 // A ready proposal is the one Coach event worth a notification. Failures and "nothing to
 // change" stay silent on purpose (FR-38/E4).
-coachJobs.setProposalHook((uid, pending) => {
+if (!SERVERLESS) coachJobs.setProposalHook((uid, pending) => {
   const n = (pending?.changes || []).length;
   if (!n) return;
   sendPush(uid, {
@@ -2596,8 +2742,10 @@ coachJobs.setProposalHook((uid, pending) => {
     tag: 'coach-proposal', url: '#/coach'
   });
 });
-startCadence({ users: () => db.users, userNow });
-startWarmup();
+if (!SERVERLESS) {
+  startCadence({ users: () => db.users, userNow });
+  startWarmup();
+}
 
 // node's requestTimeout is one number for every route, and it is half an hour (below) for the
 // sake of one: a video uploaded over a slow uplink. Every other request keeps node's old five
@@ -2623,8 +2771,8 @@ function bodyDeadline(req) {
 // The Capacitor WebView origins of the Android and iOS app.
 const APP_ORIGINS = new Set(['https://localhost', 'capacitor://localhost', 'http://localhost']);
 
-const server = http.createServer(async (req, res) => {
-  bodyDeadline(req);
+async function handle(req, res) {
+  if (!SERVERLESS) bodyDeadline(req);
   // Same-origin (the deployed nginx-proxied web app) never triggers CORS, so this only matters
   // for the paired mobile app calling in from its own WebView origin. It carries no cookie
   // (auth is the Authorization header instead), so Allow-Credentials is deliberately never set —
@@ -2695,7 +2843,46 @@ const server = http.createServer(async (req, res) => {
     console.error(key, e);
     if (!res.headersSent) json(res, 500, { error: 'server error' });
   }
-});
+}
+
+// The largest body a serverless request is read into memory for: a JSON body is refused past
+// MAX_BODY by readBody, an upload past its cap by the media store. Vercel itself stops at 4.5 MB.
+const RAW_MAX = Math.max(MAX_BODY, Math.round(Math.max(MEDIA_LIMITS.imageMB, MEDIA_LIMITS.gifMB, MEDIA_LIMITS.videoMB) * 1024 * 1024)) + 1;
+
+/** The request handler, for a host that brings its own server (frontend/api/index.js on Vercel).
+ *  Serverless, each request is one transaction (store/tx.js): the body is read once, the route
+ *  runs against the request's own copy of the data with its answer held back, and the answer
+ *  goes out only after what it changed has been committed — run again from the top if another
+ *  request committed a newer write first. */
+export async function handler(req, res) {
+  if (!SERVERLESS) return handle(req, res);
+  // Nothing to commit and nothing to read: answered without touching the database.
+  if (req.method === 'OPTIONS') return handle(req, res);
+  let raw;
+  try { raw = await readRaw(req, RAW_MAX); }
+  catch (e) { console.warn('client went away mid-body:', e.message); return; }
+  if (raw === null) return json(res, 413, { error: 'body too large' });
+  let answer;
+  try {
+    answer = await tx.run(async () => {
+      const r = new BufferedResponse();
+      await handle(replayRequest(req, raw), r);
+      await r.settled();
+      return r;
+    });
+  } catch (e) {
+    if (e instanceof ConflictError) {
+      console.warn('busy: gave up after repeated write conflicts', req.method, req.url);
+      return json(res, 503, { error: 'the server is busy, try again in a moment', code: 'busy' }, { 'Retry-After': '1' });
+    }
+    console.error('store', req.method, req.url, e.message);
+    return json(res, 503, { error: 'the database could not be reached', code: 'store' }, { 'Retry-After': '2' });
+  }
+  answer.sendTo(res);
+}
+
+// On Vercel the platform owns the server and calls `handler`; everywhere else this one listens.
+const server = http.createServer(handler);
 // Node's default of 300 s for a whole request would answer 408 to a 40 MB video on a ~1 Mbit/s
 // uplink. Half an hour covers that; a stalled upload is cut much sooner by its own 60 s idle
 // timer in media.js, a client that never finishes its headers still meets headersTimeout, and
@@ -2706,4 +2893,4 @@ server.headersTimeout = 60000;
 // port that was actually bound: with PORT=0 the OS picks one, and a caller that did not choose it
 // (the tests spawn the server that way, and so does anyone running two instances on one box) has
 // no other way to learn it.
-server.listen(PORT, () => console.log(`gym-api on :${server.address().port} (rpID=${RP_ID}, origin=${ORIGIN})`));
+if (!process.env.VERCEL) server.listen(PORT, () => console.log(`gym-api on :${server.address().port} (rpID=${RP_ID}, origin=${ORIGIN}${SERVERLESS ? ', store=supabase' : ''})`));

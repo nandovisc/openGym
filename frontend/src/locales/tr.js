@@ -2361,4 +2361,8 @@ export default {
   'The file is sent to the AI only to read the values. Check them against the report.': 'Dosya yalnızca değerleri okumak için yapay zekâya gönderilir. Raporla karşılaştır.',
   'You can close this screen; the results are saved when ready.': 'Bu ekranı kapatabilirsin; sonuçlar hazır olunca kaydedilir.',
   'Read by AI. Check the values against the report.': 'Yapay zekâ okudu. Değerleri raporla karşılaştır.',
+  'Doctor': 'Doktor',
+  'Nothing matches.': 'Eşleşen yok.',
+  'Search': 'Ara',
+  'Out of range': 'Aralık dışı',
 }

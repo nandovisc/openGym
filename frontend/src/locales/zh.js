@@ -2361,4 +2361,8 @@ export default {
   'The file is sent to the AI only to read the values. Check them against the report.': '文件仅发送给 AI 用于读取数值。请与报告核对。',
   'You can close this screen; the results are saved when ready.': '可以关闭此页面，结果准备好后会自动保存。',
   'Read by AI. Check the values against the report.': '由 AI 读取。请将数值与报告核对。',
+  'Doctor': '医生',
+  'Nothing matches.': '没有匹配项。',
+  'Search': '搜索',
+  'Out of range': '超出范围',
 }

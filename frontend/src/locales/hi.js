@@ -2361,4 +2361,8 @@ export default {
   'The file is sent to the AI only to read the values. Check them against the report.': 'फ़ाइल सिर्फ़ मान पढ़ने के लिए AI को भेजी जाती है। उन्हें रिपोर्ट से मिलाएँ।',
   'You can close this screen; the results are saved when ready.': 'आप यह स्क्रीन बंद कर सकते हैं; परिणाम तैयार होने पर सहेज लिए जाएँगे।',
   'Read by AI. Check the values against the report.': 'AI द्वारा पढ़ा गया। मानों को रिपोर्ट से मिलाएँ।',
+  'Doctor': 'डॉक्टर',
+  'Nothing matches.': 'कुछ नहीं मिला।',
+  'Search': 'खोजें',
+  'Out of range': 'सीमा से बाहर',
 }

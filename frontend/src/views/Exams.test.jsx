@@ -183,3 +183,46 @@ describe('an exam waiting to be read', () => {
     expect(useStore.getState().S.exams[0].results.map(r => r.value)).toEqual([3])
   })
 })
+
+describe('the doctor, the search and the filter', () => {
+  const exams = () => {
+    const S = clone(DEF)
+    S.exams = [
+      { id: 'u', d: '2026-01-09', title: 'DR. DIEGO BARROS', lab: '', files: [{ kind: 'doc', hash: 'c'.repeat(64), mime: 'application/pdf', size: 10, at: 1 }], results: [] },
+      { id: 'r', d: '2026-02-13', title: 'Rotina', lab: 'Diagmax', doctor: 'Dra. Ana', results: [
+        { id: 'x', key: 'uric_acid', name: 'ÁCIDO ÚRICO', value: 7.2, valueText: '7,2', unit: 'mg/dL', flag: 'high' },
+        { id: 'y', key: 'albumin', name: 'Albumina', value: 4.4, valueText: '4,4', unit: 'g/dL', flag: 'normal' }
+      ] }
+    ]
+    return S
+  }
+
+  it('narrows the list as the search is typed, and to what is out of range', () => {
+    useStore.setState({ S: exams(), user: null, config: null })
+    const page = render(<MemoryRouter><Exams /></MemoryRouter>)
+    act(() => button(page, 'Over time').click())
+    type(page.querySelector('input[type=search]'), 'acido')
+    expect(page.textContent).toContain('ÁCIDO ÚRICO')
+    expect(page.textContent).not.toContain('Albumina')
+    type(page.querySelector('input[type=search]'), '')
+    act(() => button(page, 'Out of range').click())
+    expect(page.textContent).toContain('ÁCIDO ÚRICO')
+    expect(page.textContent).not.toContain('Albumina')
+    act(() => button(page, 'Exams').click())
+    expect(page.textContent).toContain('Rotina')
+    expect(page.textContent).not.toContain('DR. DIEGO')
+  })
+
+  it('a reading fills in the date, lab and doctor, and replaces a title that was the doctor\'s name', async () => {
+    useStore.setState({ S: exams(), user: { id: 'u1' }, config: { exams_ai: true } })
+    const { mediaStore } = await import('../lib/media-store.js')
+    await mediaStore.put('c'.repeat(64), new Blob(['%PDF-1.7']), { mime: 'application/pdf' })
+    api.mockResolvedValue({ date: '2026-01-08', lab: 'Diagmax', doctor: 'Dr. Diego Barros', title: 'Hemograma completo', results: [
+      { key: 'hemoglobin', name: 'Hemoglobina', value: 14, valueText: '14', unit: 'g/dL', refLow: null, refHigh: null, refText: '', flag: null, section: '' }
+    ] })
+    const { readInBackground } = await import('./Exams.jsx')
+    await act(async () => { readInBackground(useStore.getState().S.exams[0]) })
+    await until(() => useStore.getState().S.exams[0].results.length)
+    expect(useStore.getState().S.exams[0]).toMatchObject({ d: '2026-01-08', lab: 'Diagmax', doctor: 'Dr. Diego Barros', title: 'Hemograma completo' })
+  })
+})

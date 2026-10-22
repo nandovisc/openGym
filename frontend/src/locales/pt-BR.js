@@ -1522,6 +1522,10 @@ export const PT_BR_OVERRIDES = {
   'The file is sent to the AI only to read the values. Check them against the report.': 'O arquivo vai para a IA só para ler os valores. Confira com o laudo.',
   'You can close this screen; the results are saved when ready.': 'Pode fechar esta tela; os resultados são salvos quando ficarem prontos.',
   'Read by AI. Check the values against the report.': 'Lido pela IA. Confira os valores com o laudo.',
+  'Doctor': 'Médico',
+  'Nothing matches.': 'Nada encontrado.',
+  'Search': 'Buscar',
+  'Out of range': 'Fora da referência',
 }
 
 export default { ...pt, ...PT_BR_OVERRIDES }

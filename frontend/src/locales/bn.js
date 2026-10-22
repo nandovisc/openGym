@@ -2440,4 +2440,8 @@ export default {
   'The file is sent to the AI only to read the values. Check them against the report.': 'শুধু মান পড়ার জন্য ফাইলটি AI-তে পাঠানো হয়। রিপোর্টের সাথে মিলিয়ে দেখুন।',
   'You can close this screen; the results are saved when ready.': 'এই স্ক্রিন বন্ধ করতে পারেন; ফলাফল তৈরি হলে সংরক্ষিত হবে।',
   'Read by AI. Check the values against the report.': 'AI দিয়ে পড়া। মানগুলো রিপোর্টের সাথে মিলিয়ে দেখুন।',
+  'Doctor': 'ডাক্তার',
+  'Nothing matches.': 'কিছুই মেলেনি।',
+  'Search': 'খুঁজুন',
+  'Out of range': 'সীমার বাইরে',
 }

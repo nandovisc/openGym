@@ -20,7 +20,7 @@ const API = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SECRET = crypto.randomBytes(32).toString('hex');
 const mint = uid => { const p = `${uid}:${Date.now() + 86400000}:0`; return p + '.' + crypto.createHmac('sha256', SECRET).update(p).digest('base64url'); };
 
-const READING = { date: '2026-10-01', lab: 'Lab Central', title: 'Bioquímica', results: [
+const READING = { date: '2026-10-01', lab: 'Lab Central', doctor: 'Dr. Diego Barros', title: 'Bioquímica', results: [
   { key: 'glucose', name: 'Glicose', value: 104, valueText: '104', unit: 'mg/dL', refLow: 70, refHigh: 99, refText: '70 a 99', flag: 'high', section: 'Bioquímica' }
 ] };
 

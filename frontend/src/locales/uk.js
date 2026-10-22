@@ -2358,4 +2358,8 @@ export default {
   'The file is sent to the AI only to read the values. Check them against the report.': 'Файл надсилається ШІ лише для читання значень. Звірте їх із бланком.',
   'You can close this screen; the results are saved when ready.': 'Можна закрити цей екран; результати збережуться, коли будуть готові.',
   'Read by AI. Check the values against the report.': 'Прочитано ШІ. Звірте значення з бланком.',
+  'Doctor': 'Лікар',
+  'Nothing matches.': 'Нічого не знайдено.',
+  'Search': 'Пошук',
+  'Out of range': 'Поза нормою',
 }

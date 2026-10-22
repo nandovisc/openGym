@@ -2354,4 +2354,8 @@ export default {
   'The file is sent to the AI only to read the values. Check them against the report.': '檔案僅傳送給 AI 用於讀取數值。請與報告核對。',
   'You can close this screen; the results are saved when ready.': '可以關閉此頁面，結果準備好後會自動儲存。',
   'Read by AI. Check the values against the report.': '由 AI 讀取。請將數值與報告核對。',
+  'Doctor': '醫師',
+  'Nothing matches.': '沒有符合項目。',
+  'Search': '搜尋',
+  'Out of range': '超出範圍',
 }

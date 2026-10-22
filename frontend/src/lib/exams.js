@@ -1,7 +1,7 @@
 // Medical exams: the reports and the values read off them (Health → Exams, views/Exams.jsx).
 // Framework-free; the AI's reading (POST /api/exams/read) and the form both come through here.
 //
-//   S.exams [{ id, d, title, lab, files: [MediaRef], results: [Result], notes, created }]
+//   S.exams [{ id, d, title, lab, doctor, files: [MediaRef], results: [Result], notes, created, ai }]
 //     d: the day the sample was taken (ISO). files: the lab's PDF or photos of the paper, kept by
 //     the media store (lib/media-refs.js walks them). Merged across devices entry by entry
 //     (lib/sync-merge.js HEALTH_LISTS).
@@ -119,6 +119,7 @@ export function normalizeExam(input, { prev = null } = {}) {
     d,
     title: text(input?.title, 80),
     lab: text(input?.lab, 80),
+    doctor: text(input?.doctor, 80),
     files: list(input?.files).filter(f => f && typeof f === 'object' && typeof f.hash === 'string').slice(0, FILES_MAX),
     results,
     notes: text(input?.notes, 500),
@@ -134,6 +135,7 @@ export function fromReading(reading) {
     d: DAY_RE.test(reading?.date || '') ? reading.date : '',
     title: text(reading?.title, 80),
     lab: text(reading?.lab, 80),
+    doctor: text(reading?.doctor, 80),
     results: list(reading?.results).map(normalizeResult).filter(Boolean)
   }
 }
@@ -162,7 +164,32 @@ export function analytes(exams) {
       by.set(r.key, a)
     }
   }
-  return [...by.values()].sort((a, b) => a.name.localeCompare(b.name))
+  return [...by.values()].sort((a, b) => byName(a.name, b.name))
+}
+
+// Names in the order a person reads a list: accents and capitals do not count, numbers by value
+// ("ácido úrico" next to "ACIDO FOLICO", "2" before "17").
+export const byName = (a, b) => String(a ?? '').localeCompare(String(b ?? ''), undefined, { sensitivity: 'base', numeric: true })
+
+/** Text folded for a search: no accents, no capitals. */
+export const fold = s => String(s ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()
+const isOut = flag => flag === 'low' || flag === 'high' || flag === 'abnormal'
+
+/** The analytes whose name has every word of `query`, and only those out of range with `out`. */
+export function filterAnalytes(list, { query = '', out = false } = {}) {
+  const words = fold(query).split(/\s+/).filter(Boolean)
+  return list.filter(a => (!out || isOut(a.last?.flag)) && words.every(w => fold(a.name).includes(w) || a.key.includes(w)))
+}
+
+/** The exams whose title, lab, doctor or any result name has every word of `query`; with `out`,
+ *  only those with a result out of range. */
+export function filterExams(list, { query = '', out = false } = {}) {
+  const words = fold(query).split(/\s+/).filter(Boolean)
+  return list.filter(e => {
+    if (out && !outOfRange(e)) return false
+    const hay = fold([e.title, e.lab, e.doctor, ...(e.results || []).map(r => r.name)].join(' '))
+    return words.every(w => hay.includes(w))
+  })
 }
 
 /**

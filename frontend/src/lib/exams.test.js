@@ -103,3 +103,37 @@ describe('kept and synced', () => {
     expect(mergeStates(desk, phone).exams.map(e => e.id).sort()).toEqual(['d', 'p'])
   })
 })
+
+describe('finding results', () => {
+  it('orders names as people read them: accents and capitals aside, numbers by value', async () => {
+    const { byName } = await import('./exams.js')
+    expect(['ÁCIDO ÚRICO', 'acido folico', 'Albumina', '17-alfa', '2-teste'].sort(byName)).toEqual(['2-teste', '17-alfa', 'acido folico', 'ÁCIDO ÚRICO', 'Albumina'])
+  })
+  it('narrows analytes as a search is typed, accents aside, and to the out-of-range ones', async () => {
+    const { filterAnalytes } = await import('./exams.js')
+    const list = [
+      { key: 'uric_acid', name: 'ÁCIDO ÚRICO, soro', last: { flag: 'high' } },
+      { key: 'folic_acid', name: 'Ácido fólico', last: { flag: 'normal' } },
+      { key: 'albumin', name: 'Albumina', last: { flag: null } }
+    ]
+    expect(filterAnalytes(list, { query: 'acido' }).map(a => a.key)).toEqual(['uric_acid', 'folic_acid'])
+    expect(filterAnalytes(list, { query: 'acido uri' }).map(a => a.key)).toEqual(['uric_acid'])
+    expect(filterAnalytes(list, { out: true }).map(a => a.key)).toEqual(['uric_acid'])
+    expect(filterAnalytes(list, { query: '' })).toHaveLength(3)
+  })
+  it('finds exams by title, lab, doctor or a result, and those with anything out of range', async () => {
+    const { filterExams } = await import('./exams.js')
+    const list = [
+      { id: 'a', title: 'Rotina', lab: 'Marcelo Magalhães', doctor: 'Dr. Diego Barros', results: [{ name: 'Glicose', flag: 'high' }] },
+      { id: 'b', title: 'Tireoide', lab: 'Diagmax', doctor: '', results: [{ name: 'TSH', flag: 'normal' }] }
+    ]
+    expect(filterExams(list, { query: 'magalhaes' }).map(e => e.id)).toEqual(['a'])
+    expect(filterExams(list, { query: 'diego' }).map(e => e.id)).toEqual(['a'])
+    expect(filterExams(list, { query: 'tsh' }).map(e => e.id)).toEqual(['b'])
+    expect(filterExams(list, { out: true }).map(e => e.id)).toEqual(['a'])
+  })
+  it('keeps the doctor the reading found', () => {
+    expect(fromReading({ date: '2026-01-09', lab: 'Diagmax', doctor: 'Dr. Diego Barros', title: 'Hemograma', results: [] }).doctor).toBe('Dr. Diego Barros')
+    expect(normalizeExam({ d: '2026-01-09', doctor: ' Dra. Ana ' }).doctor).toBe('Dra. Ana')
+  })
+})

@@ -44,6 +44,16 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
+## Brazilian food composition table (TACO)
+
+The food values in `frontend/src/lib/taco-data.js` come from the **Tabela Brasileira de Composição
+de Alimentos (TACO), 4ª edição revisada e ampliada**, NEPA/UNICAMP, Campinas, 2011, as published in
+machine-readable form by [taco-api](https://github.com/raulfdm/taco-api) (MIT License). Only the
+name, category, energy, protein, carbohydrate, fat and fibre per 100 g were kept.
+
+Products looked up by barcode come at runtime from [Open Food Facts](https://world.openfoodfacts.org),
+whose database is available under the Open Database License; nothing from it ships with openGym.
+
 ## Exercise media (stills and animations)
 
 The exercise stills and animations in `catalogue/media/` (and inside the published container

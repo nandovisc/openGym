@@ -308,6 +308,9 @@ export function referencedHashes(state) {
     if (!isObj(e) || !Array.isArray(e.files)) continue;
     for (const m of e.files) if (isObj(m)) ref(m);
   }
+  for (const m of Array.isArray(state.meals) ? state.meals : []) {
+    if (isObj(m) && isObj(m.photo)) ref(m.photo);
+  }
   return out;
 }
 

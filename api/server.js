@@ -21,6 +21,7 @@ import { startWarmup } from './coach/warmup.js';
 import { dayReminderPush, medReminderPush, nudgePush, restTimerPush, testPush } from './push-messages.js';
 import { doseId, medsDue } from './meds.js';
 import { ExamReadError, examReaderConfig, readExam } from './exam-reader.js';
+import { mealReaderConfig, readMeal } from './meal-reader.js';
 import { verifyError } from './verify-error.js';
 import {
   hashPassword, verifyPassword, needsRehash, passwordProblem, passwordLength, nameKey, BusyError,
@@ -2021,6 +2022,41 @@ const examRoutes = {
   }
 };
 
+/* ---------- the photo of a plate estimated by AI (Health → Food) ---------- */
+// The same shape as the exam reader above: photos sniffed by their bytes and capped, sent on to
+// the Anthropic API (meal-reader.js), the estimate back to the app, nothing stored here. Up to
+// three photos of one meal; sixty estimates an hour per profile.
+const MEAL_AI = mealReaderConfig(process.env);
+const MEAL_READS = createWindow({ max: 60, windowMs: 3600000 });
+const mealRoutes = {
+  'POST /api/meals/read': async (req, res) => {
+    const user = readSession(req);
+    if (!user) return json(res, 401, { error: 'not signed in' });
+    const body = await readBody(req);
+    const raw = Array.isArray(body.files) ? body.files : [];
+    if (!raw.length || raw.length > 3) return json(res, 400, { error: 'send one to three photos', code: 'meal-files' });
+    const files = [];
+    for (const f of raw) {
+      const bytes = typeof f?.data === 'string' ? Buffer.from(f.data, 'base64') : null;
+      const sn = bytes && bytes.length ? sniffMedia(bytes.subarray(0, 64)) : null;
+      if (!sn || sn.kind !== 'image') return json(res, 415, { error: 'a meal is read from photos', code: 'meal-type' });
+      if (bytes.length > MEDIA_LIMITS.imageMB * 1048576) return json(res, 413, { error: 'that photo is too large', code: 'meal-too-large', maxMB: MEDIA_LIMITS.imageMB });
+      files.push({ mime: sn.mime, bytes });
+    }
+    const wait = MEAL_READS.take(user.id);
+    if (wait) return json(res, 429, { error: 'too many readings, try again later', code: 'locked', retryAfter: wait }, { 'Retry-After': String(wait) });
+    try {
+      const reading = await readMeal(files, MEAL_AI);
+      audit(req, 'meals.read', { user, msg: `${files.length} photo(s), ${reading.items.length} item(s)` });
+      json(res, 200, reading);
+    } catch (e) {
+      if (!(e instanceof ExamReadError)) throw e;
+      audit(req, 'meals.read', { ok: false, user, msg: e.code });
+      json(res, e.status, { error: e.message, code: e.code });
+    }
+  }
+};
+
 /* ---------- scheduled work, serverless ---------- */
 // What the timers of the single process do, done when something calls this route: on Vercel a
 // pg_cron job in the database itself, through pg_net (api/store/supabase-cron.sql). Bearer
@@ -2130,6 +2166,8 @@ const routes = {
       ...(MEDIA_ON ? { media: mediaConfig(MEDIA_LIMITS) } : {}),
       // Whether Health → Exams may offer reading a report with AI (POST /api/exams/read).
       ...(EXAM_AI.key ? { exams_ai: true } : {}),
+      // Whether Health → Food may offer estimating a plate from its photo (POST /api/meals/read).
+      ...(MEAL_AI.key ? { meals_ai: true } : {}),
       ...(readSession(req) ? { coach: coachConfig.publicConfig() } : {})
     });
   },
@@ -2789,6 +2827,7 @@ const routes = {
   /* ---------- medical exams read by AI ---------- */
   // Absent without ANTHROPIC_API_KEY, like the media routes without MEDIA_UPLOADS.
   ...(EXAM_AI.key ? examRoutes : {}),
+  ...(MEAL_AI.key ? mealRoutes : {}),
 
   /* ---------- scheduled work (serverless only) ---------- */
   ...(SERVERLESS ? cronRoutes : {})

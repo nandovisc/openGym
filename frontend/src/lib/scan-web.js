@@ -37,12 +37,33 @@ export async function decodeImageData(img) {
   return hit && hit.data ? { value: hit.data, fmt: 'qrcode' } : null
 }
 
+// The barcodes on packaged food (Health → Food): EAN-13/8 and UPC. Only the browser's own
+// detector reads them — jsQR is QR only — so where there is none (Safari on iPhone) the code is
+// typed in instead (productScanSupported says which).
+const PRODUCT_FORMATS = ['ean_13', 'ean_8', 'upc_a', 'upc_e']
+let _productDetector = null
+function productDetector() {
+  if (_productDetector !== null) return _productDetector
+  try {
+    _productDetector = (typeof BarcodeDetector === 'function') ? new BarcodeDetector({ formats: PRODUCT_FORMATS }) : false
+  } catch (e) { _productDetector = false }
+  return _productDetector
+}
+/** Whether this browser can read a product's barcode from the camera. */
+export async function productScanSupported() {
+  if (typeof BarcodeDetector !== 'function') return false
+  try {
+    const have = await BarcodeDetector.getSupportedFormats()
+    return PRODUCT_FORMATS.some(f => have.includes(f))
+  } catch { return false }
+}
+
 // Decode from anything drawImage accepts: <video>, <img>, ImageBitmap, canvas. The source is
 // scaled down to at most MAX px on its long edge — plenty for a QR, and it keeps jsQR fast enough
 // to run on every few video frames on a phone. Reuses one canvas across calls.
 const MAX = 800
 let _canvas = null
-export async function decodeSource(source) {
+export async function decodeSource(source, { products = false } = {}) {
   const sw = source.videoWidth || source.naturalWidth || source.width || 0
   const sh = source.videoHeight || source.naturalHeight || source.height || 0
   if (!sw || !sh) return null
@@ -53,6 +74,15 @@ export async function decodeSource(source) {
   const ctx = _canvas.getContext('2d', { willReadFrequently: true })
   ctx.drawImage(source, 0, 0, w, h)
 
+  if (products) {
+    const pd = productDetector()
+    if (!pd) return null
+    try {
+      const found = await pd.detect(_canvas)
+      const b = found && found.find(x => x.rawValue)
+      return b ? { value: b.rawValue, fmt: String(b.format || '') } : null
+    } catch (e) { return null }
+  }
   const det = nativeDetector()
   if (det) {
     try {

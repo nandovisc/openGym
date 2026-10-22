@@ -2184,3 +2184,21 @@ button.wl-summary{width:100%;padding:0 0 10px;text-align:start;border-radius:var
 .exam-search .iconbtn{width:28px;height:28px;font-size:13px}
 .exam-chip{white-space:nowrap;padding:9px 12px;border-radius:999px;border:1px solid var(--sep);background:var(--surface-2);color:var(--label-2);font:inherit;font-size:13px}
 .exam-chip.on{background:color-mix(in srgb,var(--red) 18%,transparent);border-color:var(--red);color:var(--red);font-weight:600}
+
+/* ---- Health → Food (views/Food.jsx) ---- */
+.food-daynav{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.food-daylabel{background:none;border:0;color:var(--label);font:inherit;font-weight:600;font-size:17px}
+.food-bar{margin-top:10px}
+.food-track{height:6px;border-radius:3px;background:var(--surface-3);margin-top:4px;overflow:hidden}
+.food-fill{height:100%;background:var(--acc);border-radius:3px}
+.food-fill.over{background:var(--red)}
+.food-empty{width:100%;padding:12px;border-radius:var(--r);border:1px dashed var(--sep);background:none;color:var(--label-3);font:inherit;font-size:14px}
+.food-grams{display:block;margin-bottom:10px}
+.food-grams>span,.food-macro-grid label>span{display:block;font-size:13px;color:var(--label-2);margin-bottom:5px}
+.food-macro-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.food-preview{display:flex;gap:12px;align-items:baseline;flex-wrap:wrap;padding:10px 12px;background:var(--surface-2);border-radius:var(--r)}
+.food-preview b{font-size:18px}
+.food-preview span{font-size:13px;color:var(--label-2)}
+.food-suggest{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;background:var(--acc-soft);border-radius:var(--r)}
+.food-meal-head{display:flex;gap:10px;align-items:center;padding:10px 14px}
+.food-photo{width:56px;height:56px;border-radius:var(--r-sm);object-fit:cover}

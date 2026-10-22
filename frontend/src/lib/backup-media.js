@@ -62,6 +62,12 @@ export function sanitizeCustomMedia(state) {
     if (!e || typeof e !== 'object' || !('files' in e)) continue
     e.files = (Array.isArray(e.files) ? e.files : []).map(normalizeMediaRef).filter(Boolean)
   }
+  // The photo of a meal (Health → Food).
+  for (const m of Array.isArray(state?.meals) ? state.meals : []) {
+    if (!m || typeof m !== 'object' || !('photo' in m)) continue
+    const ref = normalizeMediaRef(m.photo)
+    if (ref) m.photo = ref; else delete m.photo
+  }
   return state
 }
 

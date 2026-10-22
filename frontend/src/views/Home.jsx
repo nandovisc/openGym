@@ -16,6 +16,7 @@ import { tappable } from '../lib/use-sheet-keyboard.js'
 import { glyphOf } from '../lib/glyphs.js'
 import { dayNoteOf } from '../lib/day-notes.js'
 import { medsToday } from './Health.jsx'
+import { foodToday } from './Food.jsx'
 
 // Home = what to do now + a quick glance. Deep charts & history live in Stats.
 export default function Home() {
@@ -39,6 +40,7 @@ export default function Home() {
   const editingSaved = !!S.active?.editingWorkoutId
   const bw = lastBW(S)
   const meds = medsToday(S)
+  const food = foodToday(S)
   const prevBW = S.bodyweight.length > 1 ? S.bodyweight[S.bodyweight.length - 2] : null
   const delta = bw && prevBW ? bw.w - prevBW.w : null
 
@@ -199,6 +201,7 @@ export default function Home() {
             : !meds.total ? t('Nothing scheduled today')
               : [t('{0} of {1} doses taken today', meds.taken, meds.total),
                 meds.late ? t('{0} late', meds.late) : meds.next ? t('next {0} at {1}', meds.next.med.name, meds.next.time) : null].filter(Boolean).join(' · ')}</div>
+          {food.logged && <div className="small dim">{food.target ? t('{0} of {1} kcal today', fmtNum(food.kcal), fmtNum(food.target)) : t('{0} kcal today', fmtNum(food.kcal))}</div>}
         </div>
         <Icon name="chevronRight" className="dim" />
       </div>

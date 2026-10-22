@@ -45,6 +45,7 @@ import { usePasskeys, PasskeysRow, DeviceLinkRow, openDeviceLinkRedeem } from '.
 import { Section, Row, SelectRow, Switch, Segmented, Button, TextField, SearchField } from '../components/ui.jsx'
 import { PAGES, ROOT_GROUPS, pageVisible, searchSettings, pageTrail } from './settings-pages.js'
 import { sleepSyncSheet } from './Sleep.jsx'
+import { MODULES, healthOn, moduleOn } from '../lib/modules.js'
 
 /* Settings (v1.3.11). The root is one screen: an account card, eleven rows that each open a page
    (/settings/<page>), and a search over every row. Rare things live one level further down
@@ -411,6 +412,7 @@ export default function Settings({ page = null, find = null, via = null }) {
     units: () => (S.unit || 'kg') + ' · ' + (LANGS[lang] || lang),
     equipment: () => (S.equipFilterOn && activeProfile ? activeProfile.name : t('Everything')),
     look: () => themeLabel + ' · ' + accentLabel(S),
+    modules: () => (healthOn(S) ? t('{0} of {1} on', MODULES.filter(k => moduleOn(S, k)).length, MODULES.length) : t('Training only')),
     coach: () => (coachLocal?.mode === 'server' ? t('Your server') : coachLocal?.mode === 'byok' ? t('Your API key') : t('Off')),
     data: () => '',
     about: () => 'v' + __APP_VERSION__,
@@ -708,6 +710,24 @@ export default function Settings({ page = null, find = null, via = null }) {
     </>,
 
     equipment: () => <EquipmentCard S={S} update={update} />,
+
+    // Settings → Modules (lib/modules.js): switching one off only hides it; all off, the app is
+    // training only again, with the tab bar and Home it always had.
+    modules: () => {
+      const set = (k, v) => update(s => { s.modules = { ...(s.modules || {}), [k]: v } })
+      const rows = [['habits', 'checkCircle', 'var(--green)', 'Habits', 'A tab of its own'], ['food', 'flame', 'var(--orange)', 'Nutrition', 'A card on Today and a tile in Health'],
+        ['sleep', 'moon', 'var(--indigo)', 'Sleep', null], ['meds', 'pill', 'var(--teal)', 'Medications', null], ['exams', 'doc', 'var(--red)', 'Medical exams', null]]
+      return <>
+        <Section footer={t('Switching a module off only hides it: its data stays. With all of them off, the app is the training app it was: the tab bar and Home it always had.')}>
+          {rows.map(([k, icon, tint, title, sub]) => <Row key={k} icon={icon} iconTint={tint} title={t(title)} subtitle={sub ? t(sub) : undefined}>
+            <Switch checked={moduleOn(S, k)} onChange={v => set(k, v)} />
+          </Row>)}
+        </Section>
+        <Section title={t('The tab bar')}>
+          <Row title={healthOn(S) ? [t('Today'), t('Training'), '＋', moduleOn(S, 'habits') ? t('Habits') : t('Stats'), t('Health')].join(' · ') : [t('Home'), t('Plan'), t('Start'), t('Stats'), t('Exercises')].join(' · ')} />
+        </Section>
+      </>
+    },
 
     look: () => <>
       <Section footer={DEMO || MOBILE || !user ? undefined : t('synced with your profile')}>

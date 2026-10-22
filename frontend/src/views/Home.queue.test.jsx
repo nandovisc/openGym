@@ -10,7 +10,10 @@ import { createRoot } from 'react-dom/client'
 import { useStore } from '../store/useStore.js'
 import { startFlow } from '../sheets.jsx'
 import { todayISO, isoOf, fmtDate } from '../lib/format.js'
-import Home from './Home.jsx'
+// The training cards of the old Home (the week, today's session, the streak, weight) live in
+// views/Training.jsx; `home` draws all of them, as Home does with every other module off.
+import Training from './Training.jsx'
+const Home = () => <Training home />
 import { setLang } from '../lib/i18n.js'
 
 vi.mock('react-router-dom', () => ({ useNavigate: () => () => {} }))

@@ -6,6 +6,7 @@ import { t } from '../lib/i18n.js'
 import Icon from './Icon.jsx'
 import Elapsed from './Elapsed.jsx'
 import { useConnectionTrouble } from './SyncBanner.jsx'
+import { healthOn, moduleOn } from '../lib/modules.js'
 
 // Module scope, not TabBar's render body. Declared inside it, `Tab` was a new function on every
 // render, so React saw a different component type each time and threw the button away and built a
@@ -30,7 +31,14 @@ export default function TabBar({ onStart }) {
   const trouble = useConnectionTrouble()
   if (!user && !isGuest) return null
   const cur = loc.pathname.split('/')[1] || 'home'
-  const on = k => cur === k || (cur === 'history' && k === 'stats') || (cur === 'settings' && k === 'home') || (cur === 'health' && k === 'home') || (cur === 'muscles' && k === 'library') || (cur === 'structural-balance' && k === 'stats')
+  // The new navigation (any module beside training on, lib/modules.js): Today · Training · ＋ ·
+  // Habits · Health. Training only: the bar the app always had.
+  const wide = healthOn(S)
+  const TRAINING = ['training', 'plan', 'library', 'stats', 'history', 'muscles', 'structural-balance']
+  const on = k => (wide
+    ? cur === k || (k === 'training' && TRAINING.includes(cur)) || (k === 'home' && cur === 'settings') || (k === 'habits' && loc.pathname.startsWith('/health/habits'))
+      || (k === 'health' && cur === 'health' && !loc.pathname.startsWith('/health/habits'))
+    : cur === k || (cur === 'history' && k === 'stats') || (cur === 'settings' && k === 'home') || (cur === 'health' && k === 'home') || (cur === 'muscles' && k === 'library') || (cur === 'structural-balance' && k === 'stats'))
 
   const running = !!S.active && cur !== 'workout' && !S.active.editingWorkoutId && !S.active.backfill && S.active.start > 0
   const startWorkout = () => {
@@ -42,6 +50,25 @@ export default function TabBar({ onStart }) {
     nav('/workout')
   }
 
+  const start = (
+      <button className={'start' + (S.active ? ' rec' : '') + (S.active && cur === 'workout' ? ' on' : '')} onClick={startWorkout}
+        aria-label={running ? t('Resume') : undefined}>
+        <span className="cir"><Icon name="play" /></span>
+        {running ? <span className="tab-time"><Elapsed start={S.active.start} /></span>
+          : <span>{S.active ? (cur === 'workout' ? t('Workout') : S.active.editingWorkoutId ? t('Edit workout') : t('Resume')) : t('Start')}</span>}
+      </button>
+  )
+  if (wide) return (
+    <nav id="tabbar">
+      <Tab active={on('home')} icon="sun" label={t('Today')} dot={trouble} onClick={() => nav('/home')} />
+      <Tab active={on('training')} icon="dumbbell" label={t('Training')} onClick={() => nav('/training')} />
+      {start}
+      {moduleOn(S, 'habits')
+        ? <Tab active={on('habits')} icon="checkCircle" label={t('Habits')} onClick={() => nav('/habits')} />
+        : <Tab active={on('stats')} icon="chart" label={t('Stats')} onClick={() => nav('/stats')} />}
+      <Tab active={on('health')} icon="heart" label={t('Health')} onClick={() => nav('/health')} />
+    </nav>
+  )
   return (
     <nav id="tabbar">
       <Tab active={on('home')} icon="house" label={t('Home')} dot={trouble} onClick={() => nav('/home')} />
@@ -53,12 +80,7 @@ export default function TabBar({ onStart }) {
           A live session you stepped away from shows its running time instead of a word, the
           button still named Resume; a past workout being edited or logged after the fact has no
           clock to run. */}
-      <button className={'start' + (S.active ? ' rec' : '') + (S.active && cur === 'workout' ? ' on' : '')} onClick={startWorkout}
-        aria-label={running ? t('Resume') : undefined}>
-        <span className="cir"><Icon name="play" /></span>
-        {running ? <span className="tab-time"><Elapsed start={S.active.start} /></span>
-          : <span>{S.active ? (cur === 'workout' ? t('Workout') : S.active.editingWorkoutId ? t('Edit workout') : t('Resume')) : t('Start')}</span>}
-      </button>
+      {start}
       <Tab active={on('stats')} icon="chart" label={t('Stats')} onClick={() => nav('/stats')} />
       <Tab active={on('library')} icon="dumbbell" label={t('Exercises')} onClick={() => nav('/library')} />
     </nav>

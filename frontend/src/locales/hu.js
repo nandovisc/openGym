@@ -2507,7 +2507,7 @@ export default {
   'Make a new token': 'Új token készítése',
   'Make a token': 'Token készítése',
   'Set up the Shortcut': 'A parancs beállítása',
-  'In Shortcuts, make a new shortcut. Add “Find Health Samples”: type Sleep Analysis, start date in the last 2 days.': 'A Parancsok appban hozz létre egy új parancsot. Add hozzá: „Egészségügyi minták keresése”, típus: Alváselemzés, kezdés az elmúlt 2 napban.',
+  'In Shortcuts, make a new shortcut. Add “Find Health Samples”: type Sleep (it keeps that English name), start date in the last 2 days.': 'A Parancsok appban hozz létre egy új parancsot. Add hozzá: „Egészségügyi minták keresése”, típus: Sleep (magyarul is így hívják), kezdés az elmúlt 2 napban.',
   'Add “Repeat with Each” over the samples. Inside it, add a Text: Start Date;End Date;Value;Source, each date formatted as ISO 8601.': 'Adj hozzá „Ismétlés mindegyikkel” blokkot a mintákra. Benne egy Szöveg: Kezdés;Befejezés;Érték;Forrás, minden dátum ISO 8601 formátumban.',
   'After the loop, add “Combine Text” on the Repeat Results, with New Lines.': 'A ciklus után add hozzá a „Szöveg egyesítése” műveletet az Ismétlés eredményeire, Új sorokkal.',
   'Add “Get Contents of URL”: the address above, method POST, header Authorization = Bearer and the token, request body JSON with a field samples = the combined text.': 'Add hozzá: „URL tartalmának lekérése”: a fenti cím, POST metódus, Authorization fejléc = Bearer és a token, JSON törzs samples mezővel = az egyesített szöveg.',

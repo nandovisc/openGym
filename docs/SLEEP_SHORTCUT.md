@@ -23,9 +23,10 @@ The token can do one thing: put nights into your profile. It reads nothing back.
 
 In the **Shortcuts** app, new shortcut (names as on an iPhone in Portuguese, then English):
 
-1. **Encontrar Amostras de Saúde** / *Find Health Samples* — type **Análise do Sono** /
-   *Sleep Analysis*, filter **Data de Início** / *Start Date* **nos últimos 2 dias** / *in the
-   last 2 days*.
+1. **Encontrar Amostras de Saúde** / *Find Health Samples* — type **Sleep** (the name stays in
+   English on a phone set to Portuguese; *Alterações do Sono* / *Sleep Changes* is a symptom you
+   log by hand, not the night), filter **Data de Início** / *Start Date* **nos últimos 2 dias** /
+   *in the last 2 days*.
 2. **Repetir com Cada** / *Repeat with Each* over those samples. Inside it, a **Texto** / *Text*:
 
    ```

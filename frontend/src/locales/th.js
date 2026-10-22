@@ -2515,7 +2515,7 @@ export default {
   'Make a new token': 'สร้างโทเค็นใหม่',
   'Make a token': 'สร้างโทเค็น',
   'Set up the Shortcut': 'ตั้งค่าคำสั่งลัด',
-  'In Shortcuts, make a new shortcut. Add “Find Health Samples”: type Sleep Analysis, start date in the last 2 days.': 'ในแอปคำสั่งลัด สร้างคำสั่งลัดใหม่ เพิ่ม “ค้นหาตัวอย่างสุขภาพ” ประเภท การวิเคราะห์การนอน วันที่เริ่มต้นภายใน 2 วันล่าสุด',
+  'In Shortcuts, make a new shortcut. Add “Find Health Samples”: type Sleep (it keeps that English name), start date in the last 2 days.': 'ในแอปคำสั่งลัด สร้างคำสั่งลัดใหม่ เพิ่ม “ค้นหาตัวอย่างสุขภาพ” ประเภท Sleep (ชื่อภาษาอังกฤษ) วันที่เริ่มต้นภายใน 2 วันล่าสุด',
   'Add “Repeat with Each” over the samples. Inside it, add a Text: Start Date;End Date;Value;Source, each date formatted as ISO 8601.': 'เพิ่ม “ทำซ้ำกับแต่ละรายการ” บนตัวอย่าง ข้างในเพิ่มข้อความ: วันที่เริ่มต้น;วันที่สิ้นสุด;ค่า;แหล่งที่มา โดยจัดรูปแบบวันที่เป็น ISO 8601',
   'After the loop, add “Combine Text” on the Repeat Results, with New Lines.': 'หลังลูป เพิ่ม “รวมข้อความ” กับผลลัพธ์การทำซ้ำ โดยใช้บรรทัดใหม่',
   'Add “Get Contents of URL”: the address above, method POST, header Authorization = Bearer and the token, request body JSON with a field samples = the combined text.': 'เพิ่ม “รับเนื้อหาของ URL”: ที่อยู่ด้านบน วิธี POST ส่วนหัว Authorization = Bearer และโทเค็น เนื้อหาคำขอเป็น JSON ที่มีฟิลด์ samples = ข้อความที่รวมแล้ว',

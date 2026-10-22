@@ -2508,7 +2508,7 @@ export default {
   'Make a new token': 'Создать новый токен',
   'Make a token': 'Создать токен',
   'Set up the Shortcut': 'Настройка быстрой команды',
-  'In Shortcuts, make a new shortcut. Add “Find Health Samples”: type Sleep Analysis, start date in the last 2 days.': 'В приложении «Быстрые команды» создайте новую команду. Добавьте «Найти образцы здоровья»: тип «Анализ сна», дата начала — за последние 2 дня.',
+  'In Shortcuts, make a new shortcut. Add “Find Health Samples”: type Sleep (it keeps that English name), start date in the last 2 days.': 'В приложении «Быстрые команды» создайте новую команду. Добавьте «Найти образцы здоровья»: тип Sleep (так и по-английски), дата начала — за последние 2 дня.',
   'Add “Repeat with Each” over the samples. Inside it, add a Text: Start Date;End Date;Value;Source, each date formatted as ISO 8601.': 'Добавьте «Повторить с каждым» для образцов. Внутри добавьте «Текст»: Дата начала;Дата окончания;Значение;Источник, каждая дата в формате ISO 8601.',
   'After the loop, add “Combine Text” on the Repeat Results, with New Lines.': 'После цикла добавьте «Объединить текст» для «Результатов повтора» с разделителем «Новые строки».',
   'Add “Get Contents of URL”: the address above, method POST, header Authorization = Bearer and the token, request body JSON with a field samples = the combined text.': 'Добавьте «Получить содержимое URL»: адрес выше, метод POST, заголовок Authorization = Bearer и токен, тело запроса JSON с полем samples = объединённый текст.',

@@ -2559,7 +2559,7 @@ export default {
   'Make a new token': 'إنشاء رمز جديد',
   'Make a token': 'إنشاء رمز',
   'Set up the Shortcut': 'إعداد الاختصار',
-  'In Shortcuts, make a new shortcut. Add “Find Health Samples”: type Sleep Analysis, start date in the last 2 days.': 'في تطبيق الاختصارات، أنشئ اختصارًا جديدًا. أضف «العثور على عينات الصحة»: النوع تحليل النوم، تاريخ البدء في آخر يومين.',
+  'In Shortcuts, make a new shortcut. Add “Find Health Samples”: type Sleep (it keeps that English name), start date in the last 2 days.': 'في تطبيق الاختصارات، أنشئ اختصارًا جديدًا. أضف «العثور على عينات الصحة»: النوع Sleep، تاريخ البدء في آخر يومين.',
   'Add “Repeat with Each” over the samples. Inside it, add a Text: Start Date;End Date;Value;Source, each date formatted as ISO 8601.': 'أضف «تكرار مع كل» على العينات. بداخله أضف نصًا: تاريخ البدء;تاريخ الانتهاء;القيمة;المصدر، مع تنسيق كل تاريخ بصيغة ISO 8601.',
   'After the loop, add “Combine Text” on the Repeat Results, with New Lines.': 'بعد الحلقة، أضف «دمج النص» على نتائج التكرار، مع أسطر جديدة.',
   'Add “Get Contents of URL”: the address above, method POST, header Authorization = Bearer and the token, request body JSON with a field samples = the combined text.': 'أضف «الحصول على محتويات URL»: العنوان أعلاه، الطريقة POST، الترويسة Authorization = Bearer والرمز، ونص الطلب JSON بحقل samples = النص المدمج.',

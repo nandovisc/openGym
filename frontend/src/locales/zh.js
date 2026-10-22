@@ -2504,7 +2504,7 @@ export default {
   'Make a new token': '生成新令牌',
   'Make a token': '生成令牌',
   'Set up the Shortcut': '设置快捷指令',
-  'In Shortcuts, make a new shortcut. Add “Find Health Samples”: type Sleep Analysis, start date in the last 2 days.': '在“快捷指令”中新建快捷指令。添加“查找健康样本”：类型为睡眠分析，开始日期在过去 2 天内。',
+  'In Shortcuts, make a new shortcut. Add “Find Health Samples”: type Sleep (it keeps that English name), start date in the last 2 days.': '在“快捷指令”中新建快捷指令。添加“查找健康样本”：类型为Sleep（保留英文名称），开始日期在过去 2 天内。',
   'Add “Repeat with Each” over the samples. Inside it, add a Text: Start Date;End Date;Value;Source, each date formatted as ISO 8601.': '对样本添加“对每一项重复”。在其中添加文本：开始日期;结束日期;值;来源，每个日期格式化为 ISO 8601。',
   'After the loop, add “Combine Text” on the Repeat Results, with New Lines.': '循环后，对“重复结果”添加“合并文本”，使用换行符。',
   'Add “Get Contents of URL”: the address above, method POST, header Authorization = Bearer and the token, request body JSON with a field samples = the combined text.': '添加“获取 URL 内容”：上面的地址，方法 POST，标头 Authorization = Bearer 加令牌，请求正文为 JSON，字段 samples = 合并后的文本。',

@@ -16,6 +16,7 @@ export const PAGES = {
   units: { title: 'Units & language', icon: 'ruler', tint: 'var(--teal)' },
   equipment: { title: 'Equipment', icon: 'kettlebell', tint: 'var(--indigo)' },
   look: { title: 'Look & Home', icon: 'palette', tint: 'var(--purple)' },
+  modules: { title: 'Modules', icon: 'grid', tint: 'var(--teal)' },
   coach: { title: 'AI Coach', icon: 'sparkles', tint: 'var(--green)' },
   data: { title: 'Data & backup', icon: 'folder', tint: 'var(--blue)' },
   about: { title: 'About & updates', icon: 'info', tint: 'var(--grey)' },
@@ -25,7 +26,7 @@ export const PAGES = {
 export const PAGE_IDS = Object.keys(PAGES)
 
 // The root, top to bottom. Whether a row shows is pageVisible's call.
-export const ROOT_GROUPS = [['workout', 'alerts', 'reminders'], ['plan', 'units', 'equipment'], ['look', 'coach'], ['data', 'about']]
+export const ROOT_GROUPS = [['workout', 'alerts', 'reminders'], ['plan', 'units', 'equipment'], ['look', 'modules', 'coach'], ['data', 'about']]
 
 /**
  * Whether a page exists for this device and profile. Reminders need a push server (signed in) or
@@ -104,6 +105,12 @@ export const SEARCH = [
   { page: 'equipment', title: 'Active profile', icon: 'house', tint: 'var(--blue)', kw: 'equipment profile home gym', when: c => c.profiles },
   { page: 'equipment', title: 'Add equipment profile', icon: 'plusCircle', tint: 'var(--green)', kw: 'equipment profile home gym hotel' },
   // Look & Home
+  // Modules
+  { page: 'modules', title: 'Habits', icon: 'checkCircle', tint: 'var(--green)', kw: 'habits module tab show hide' },
+  { page: 'modules', title: 'Nutrition', icon: 'flame', tint: 'var(--orange)', kw: 'food meals calories module show hide' },
+  { page: 'modules', title: 'Sleep', icon: 'moon', tint: 'var(--indigo)', kw: 'sleep nights module show hide' },
+  { page: 'modules', title: 'Medications', icon: 'pill', tint: 'var(--teal)', kw: 'medications pills doses module show hide' },
+  { page: 'modules', title: 'Medical exams', icon: 'doc', tint: 'var(--red)', kw: 'exams lab reports module show hide' },
   { page: 'look', title: 'Theme', icon: 'moon', tint: 'var(--indigo)', kw: 'dark mode light mode theme appearance night', opts: ['Dark', 'Light', 'System'] },
   { page: 'look', title: 'Accent color', icon: 'palette', tint: 'var(--purple)', kw: 'color colour accent tint custom own picker hex rgb', opts: [...Object.values(ACCENT_NAMES), 'Your own color'], tkw: () => t('custom color picker') },
   { page: 'look', title: 'Body diagram', icon: 'figureStrength', tint: 'var(--teal)', kw: 'muscle map body male female', opts: ['Male', 'Female'] },

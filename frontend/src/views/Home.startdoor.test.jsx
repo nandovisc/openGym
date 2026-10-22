@@ -9,7 +9,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createRoot } from 'react-dom/client'
 import { useStore } from '../store/useStore.js'
 import { startFlow } from '../sheets.jsx'
-import Home from './Home.jsx'
+// The training cards of the old Home (the week, today's session, the streak, weight) live in
+// views/Training.jsx; `home` draws all of them, as Home does with every other module off.
+import Training from './Training.jsx'
+const Home = () => <Training home />
 
 const nav = vi.fn()
 vi.mock('react-router-dom', () => ({ useNavigate: () => nav }))

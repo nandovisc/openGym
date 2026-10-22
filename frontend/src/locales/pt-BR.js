@@ -1917,6 +1917,26 @@ export const PT_BR_OVERRIDES = {
   '{0} habits created': '{0} hábitos criados',
   'Add all': 'Adicionar todos',
   '{0} habits made from what you already log: {1}': '{0} hábitos criados a partir do que você já registra: {1}',
+  // Navigation by modules: tab bar, Training, Health, Settings → Modules
+  'Modules': 'Módulos',
+  'Training': 'Treino',
+  'A tab of its own': 'Uma aba própria',
+  'A card on Today and a tile in Health': 'Um cartão em Hoje e um bloco em Saúde',
+  'Your week of workouts': 'Sua semana de treinos',
+  'Weight steady in 30 days': 'Peso estável em 30 dias',
+  'Weight down {0} in 30 days': 'Peso {0} abaixo em 30 dias',
+  'Weight up {0} in 30 days': 'Peso {0} acima em 30 dias',
+  '{0} kcal a day on average, {1} the target': 'Média de {0} kcal por dia, {1} da meta',
+  '{0} under': '{0} abaixo',
+  '{0} kcal a day on average': 'Média de {0} kcal por dia',
+  'Food, sleep, medications, exams and body': 'Alimentação, sono, remédios, exames e corpo',
+  'No nights yet': 'Nenhuma noite ainda',
+  'No exams yet': 'Nenhum exame ainda',
+  'Progress · 30 days': 'Progresso · 30 dias',
+  '{0} of {1} on': '{0} de {1} ligados',
+  'Training only': 'Só treino',
+  'Switching a module off only hides it: its data stays. With all of them off, the app is the training app it was: the tab bar and Home it always had.': 'Desligar um módulo só o esconde: os dados ficam guardados. Com todos desligados, o app volta a ser o app de treino que era, com a barra e a Home de sempre.',
+  'The tab bar': 'A barra inferior',
 }
 
 export default { ...pt, ...PT_BR_OVERRIDES }

@@ -15,7 +15,10 @@ import { EXIDX, exOr } from './lib/exercises.js'
 import { mergeStates } from './lib/sync-merge.js'
 import { todayISO } from './lib/format.js'
 import { beginWorkout, exerciseDetailSheet, exerciseHistorySheet, workoutDetailSheet, finishWorkout } from './sheets.jsx'
-import Home from './views/Home.jsx'
+// The training cards of the old Home (the week, today's session, the streak, weight) live in
+// views/Training.jsx; `home` draws all of them, as Home does with every other module off.
+import Training from './views/Training.jsx'
+const Home = () => <Training home />
 import Plan from './views/Plan.jsx'
 import RoutineEdit from './views/RoutineEdit.jsx'
 import Workout from './views/Workout.jsx'

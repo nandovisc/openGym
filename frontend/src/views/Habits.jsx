@@ -345,8 +345,8 @@ export default function Habits() {
   }, [])
   return <div className="narrow wide-ok">
     <div className="hdr">
-      <button className="iconbtn" onClick={() => nav('/health')} aria-label={t('Health')}><Icon name="chevronLeft" /></button>
-      <div style={{ flex: 1, marginLeft: 10 }}><h1>{t('Habits')}</h1><div className="sub">{t('Habits and tasks, with what the app already logs')}</div></div>
+      {loc.pathname.startsWith('/health') && <button className="iconbtn" onClick={() => nav('/health')} aria-label={t('Health')}><Icon name="chevronLeft" /></button>}
+      <div style={{ flex: 1, marginLeft: loc.pathname.startsWith('/health') ? 10 : 0 }}><h1>{t('Habits')}</h1><div className="sub">{t('Habits and tasks, with what the app already logs')}</div></div>
       <button className="iconbtn" onClick={habitSettingsSheet} aria-label={t('Habit settings')}><Icon name="gear" /></button>
       <button className="iconbtn" onClick={() => habitFormSheet()} aria-label={t('New habit')}><Icon name="plus" /></button>
     </div>

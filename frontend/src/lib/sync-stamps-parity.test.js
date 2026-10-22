@@ -20,7 +20,7 @@ describe('api/sync-stamps.js matches sync-merge.js', () => {
       expect(S.mergeEdits(ea, eb)).toEqual(mergeEdits(ea, eb))
       const doc = { _ts: n(), edited: ea, deleted: a, routines: [{ id: 'r', _ts: n(), _f: { name: n() } }], plates: { kg: { _ts: n() } },
         meds: [{ id: 'm', _ts: n(), _f: { dose: n() } }], medLog: [{ id: 'm|2026-10-01|08:00', _ts: n() }],
-        exams: [{ id: 'e', _ts: n(), _f: { results: n() } }] }
+        exams: [{ id: 'e', _ts: n(), _f: { results: n() } }], meals: [{ id: 'm1', _ts: n() }], foods: [{ id: 'f1', _ts: n(), _f: { name: n() } }] }
       expect(S.highestStamp(doc)).toBe(highestStamp(doc))
       const old = { id: 'r', name: 'A', ex: [1], _f: { ex: 5 }, ...(R() < 0.5 ? { _u: { ex: [1, 5, 5] } } : {}) }
       const x = { id: 'r', name: R() < 0.5 ? 'A' : 'B', ex: [1, R() < 0.5 ? 2 : 1], ...(R() < 0.3 ? { _u: { name: [0, 4], ex: [1, 5, 5] } } : {}) }

@@ -10,7 +10,8 @@ import { Button } from '../components/ui.jsx'
 // Errors are shown in place rather than thrown: a denied permission or a browser without
 // getUserMedia leaves the sheet up with a message, and the add-card form underneath still offers
 // photo import and typing.
-export default function CameraScan({ onFound, onCancel }) {
+// `products`: read the barcode of packaged food (EAN/UPC) instead of a QR code.
+export default function CameraScan({ onFound, onCancel, products = false }) {
   const videoRef = useRef(null)
   const [error, setError] = useState(null)
 
@@ -38,7 +39,7 @@ export default function CameraScan({ onFound, onCancel }) {
         if (done) return
         if (v.readyState >= 2) {
           let code = null
-          try { code = await decodeSource(v) } catch (e) { /* keep trying */ }
+          try { code = await decodeSource(v, { products }) } catch (e) { /* keep trying */ }
           if (code && !done) { stop(); onFound(code); return }
         }
         timer = setTimeout(tick, 150)
@@ -46,7 +47,7 @@ export default function CameraScan({ onFound, onCancel }) {
       tick()
     })()
     return stop
-  }, [onFound])
+  }, [onFound, products])
 
   return <>
     <h3>{t('Scan')}</h3>

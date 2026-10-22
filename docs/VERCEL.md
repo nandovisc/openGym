@@ -34,6 +34,7 @@ Isso substitui a garantia de "um processo só" que a versão em disco tinha. Os 
 
 - **Upload de foto/vídeo até ~4 MB** (a Vercel corta requisições acima de 4,5 MB). Configure `MEDIA_GIF_MAX_MB=4` e `MEDIA_VIDEO_MAX_MB=4`. O app lê esses limites e recusa no aparelho arquivos maiores.
 - **Leitura de exames por IA**: o arquivo vai para a API da Anthropic só no momento da leitura (modelo `claude-opus-5-5`, esforço `low`; `EXAM_AI_MODEL` / `EXAM_AI_EFFORT` mudam isso). Cada leitura é cobrada pela API.
+- **Foto do prato por IA** (Saúde → Alimentação): usa a mesma `ANTHROPIC_API_KEY`; a foto vai para a API só na estimativa (até 60 por hora; `MEAL_AI_MODEL` / `MEAL_AI_EFFORT` mudam o modelo e o esforço). O código de barras consulta o Open Food Facts direto do aparelho, sem passar pelo servidor.
 - **Coach de IA desligado** (`COACH_DISABLED=1`): ele roda programas externos, o que uma função não faz.
 - **Limite de tentativas de login por senha**: vale por instância (memória). Fica mais fraco que no Docker. Passkey não é afetada, e o login por senha já vem desligado por padrão.
 - **Timer de descanso**: chega com até ~15 s de atraso (cron a cada 15 s).
@@ -75,7 +76,7 @@ Pode rodar de novo sem problema.
 | `FIRST_USER_ADMIN` | `1` (o primeiro perfil criado vira admin) |
 | `MEDIA_GIF_MAX_MB` / `MEDIA_VIDEO_MAX_MB` | `4` |
 | `MEDIA_DOC_MAX_MB` | `3` (PDF de exame: para a leitura por IA ele vai em base64, que precisa caber nos 4,5 MB da Vercel) |
-| `ANTHROPIC_API_KEY` | opcional: liga **Saúde → Exames → Ler com IA** (Sensitive). Sem ela, os exames funcionam sem a leitura. Use uma chave criada dentro de um workspace; com uma chave da organização inteira, defina também `ANTHROPIC_WORKSPACE_ID` |
+| `ANTHROPIC_API_KEY` | opcional: liga **Saúde → Exames → Ler com IA** (Sensitive). Também liga a foto do prato em **Saúde → Alimentação**. Sem ela, exames e alimentação funcionam sem a IA. Use uma chave criada dentro de um workspace; com uma chave da organização inteira, defina também `ANTHROPIC_WORKSPACE_ID` |
 | `RP_ID` / `ORIGIN` | opcionais. Sem eles, valem o domínio de produção da Vercel. Com domínio próprio, use `RP_ID=gym.seudominio.com` e `ORIGIN=https://gym.seudominio.com` |
 
 > O passkey fica preso ao `RP_ID`. Se trocar de domínio depois, cada pessoa precisa cadastrar o passkey de novo.

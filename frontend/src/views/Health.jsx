@@ -4,6 +4,7 @@ import { doseState, dosesOn, hhmmOf } from '../lib/meds.js'
 import { examsByDate, outOfRange } from '../lib/exams.js'
 import { foodToday } from './Food.jsx'
 import { sleepLast } from './Sleep.jsx'
+import { habitsToday } from './Habits.jsx'
 import { lastBW } from '../lib/history.js'
 import { fmtDate, fmtDur, fmtNum, todayISO } from '../lib/format.js'
 import { t } from '../lib/i18n.js'
@@ -32,6 +33,7 @@ export default function Health() {
   const lastExam = examsByDate(S.exams)[0]
   const food = foodToday(S)
   const sleep = sleepLast(S)
+  const habits = habitsToday(S)
   const medsSub = !(S.meds || []).length ? t('Add what you take and get reminded')
     : !meds.total ? t('Nothing scheduled today')
       : [t('{0} of {1} doses taken today', meds.taken, meds.total), meds.late ? t('{0} late', meds.late) : null].filter(Boolean).join(' · ')
@@ -42,6 +44,9 @@ export default function Health() {
       <div style={{ flex: 1, marginLeft: 10 }}><h1>{t('Health')}</h1><div className="sub">{t('Medications, body and more')}</div></div>
     </div>
     <Section>
+      <Row icon="check" iconTint="var(--green)" title={t('Habits')}
+        subtitle={habits ? t('{0} of {1} done today', habits.done, habits.total) : t('Habits and tasks, with what the app already logs')}
+        accessory="chevron" onClick={() => nav('/health/habits')} />
       <Row icon="pill" iconTint="var(--teal)" title={t('Medications')} subtitle={medsSub} accessory="chevron" onClick={() => nav('/health/meds')} />
       <Row icon="doc" iconTint="var(--red)" title={t('Medical exams')}
         subtitle={lastExam ? [fmtDate(lastExam.d, true), lastExam.title, outOfRange(lastExam) ? t('{0} out of range', outOfRange(lastExam)) : null].filter(Boolean).join(' · ') : t('Lab reports read for you, results over time')}

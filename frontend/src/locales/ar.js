@@ -2467,6 +2467,7 @@ export default {
   'Take a photo of the plate from above. The AI estimates each food and its amount; adjust the grams afterwards if needed.': 'التقط صورة للطبق من الأعلى. يقدّر الذكاء الاصطناعي كل طعام وكميته؛ عدّل الغرامات لاحقًا إن لزم.',
   'Preparing…': 'جارٍ التحضير…',
   'Photo of the plate': 'صورة الطبق',
+  'From the gallery': 'من المعرض',
   'Type a name and the calories.': 'اكتب اسمًا والسعرات.',
   'e.g. Coffee with milk': 'مثلًا قهوة بالحليب',
   'Protein (g)': 'البروتين (غ)',

@@ -92,6 +92,17 @@ describe('the photo of a plate', () => {
     { name: 'Feijão, carioca, cozido', grams: 100, kcal: 76, protein: 4.8, carbs: 13.6, fat: 0.5 }
   ] }
 
+  it('can come from the camera or from the gallery', () => {
+    useStore.setState({ S: clone(DEF), user: { id: 'u1' }, config: { meals_ai: true } })
+    addFoodSheet(todayISO(), 'lunch')
+    const sheet = topSheet()
+    act(() => button(sheet, 'Photo').click())
+    expect(button(sheet, 'Photo of the plate')).toBeTruthy()
+    expect(button(sheet, 'From the gallery')).toBeTruthy()
+    const inputs = [...sheet.querySelectorAll('input[type=file]')]
+    expect(inputs.map(i => i.getAttribute('capture'))).toEqual(['environment', null])
+  })
+
   it('is estimated in the background and the foods are saved into the meal', async () => {
     withMeal([])
     api.mockResolvedValue(reading)

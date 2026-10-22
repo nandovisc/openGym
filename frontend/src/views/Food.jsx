@@ -191,6 +191,7 @@ function PhotoTab({ d, slot, close }) {
   const user = useStore(s => s.user)
   const config = useStore(s => s.config)
   const ref = useRef(null)
+  const gallery = useRef(null)
   const [busy, setBusy] = useState(false)
   if (!user || !config?.meals_ai) return <div className="muted small">{t('Estimating a meal from its photo needs the AI on your server (ANTHROPIC_API_KEY).')}</div>
   const onFiles = async ev => {
@@ -217,7 +218,10 @@ function PhotoTab({ d, slot, close }) {
   return <>
     <div className="muted small" style={{ marginBottom: 12 }}>{t('Take a photo of the plate from above. The AI estimates each food and its amount; adjust the grams afterwards if needed.')}</div>
     <Button variant="primary" icon="camera" disabled={busy} onClick={() => ref.current?.click()}>{busy ? t('Preparing…') : t('Photo of the plate')}</Button>
+    <Button icon="image" disabled={busy} onClick={() => gallery.current?.click()} style={{ marginTop: 8 }}>{t('From the gallery')}</Button>
     <input ref={ref} type="file" accept="image/*" capture="environment" multiple hidden onChange={onFiles} />
+    {/* No capture attribute: the phone offers its photo library instead of opening the camera. */}
+    <input ref={gallery} type="file" accept="image/*" multiple hidden onChange={onFiles} />
   </>
 }
 

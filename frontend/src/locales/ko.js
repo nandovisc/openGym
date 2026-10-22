@@ -2412,6 +2412,7 @@ export default {
   'Take a photo of the plate from above. The AI estimates each food and its amount; adjust the grams afterwards if needed.': '위에서 접시 사진을 찍으세요. AI가 음식과 양을 추정하며, 필요하면 나중에 그램을 조정하세요.',
   'Preparing…': '준비 중…',
   'Photo of the plate': '접시 사진',
+  'From the gallery': '갤러리에서',
   'Type a name and the calories.': '이름과 칼로리를 입력하세요.',
   'e.g. Coffee with milk': '예: 카페라테',
   'Protein (g)': '단백질 (g)',

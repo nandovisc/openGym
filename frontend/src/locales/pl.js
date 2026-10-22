@@ -2412,6 +2412,7 @@ export default {
   'Take a photo of the plate from above. The AI estimates each food and its amount; adjust the grams afterwards if needed.': 'Zrób zdjęcie talerza z góry. AI oszacuje każdy produkt i jego ilość; w razie potrzeby popraw potem gramy.',
   'Preparing…': 'Przygotowywanie…',
   'Photo of the plate': 'Zdjęcie talerza',
+  'From the gallery': 'Z galerii',
   'Type a name and the calories.': 'Wpisz nazwę i kalorie.',
   'e.g. Coffee with milk': 'np. Kawa z mlekiem',
   'Protein (g)': 'Białko (g)',

@@ -2412,6 +2412,7 @@ export default {
   'Take a photo of the plate from above. The AI estimates each food and its amount; adjust the grams afterwards if needed.': 'ऊपर से प्लेट की फ़ोटो लें। AI हर खाने और उसकी मात्रा का अनुमान लगाता है; ज़रूरत हो तो बाद में ग्राम ठीक करें।',
   'Preparing…': 'तैयार हो रहा है…',
   'Photo of the plate': 'प्लेट की फ़ोटो',
+  'From the gallery': 'गैलरी से',
   'Type a name and the calories.': 'नाम और कैलोरी लिखें।',
   'e.g. Coffee with milk': 'जैसे दूध वाली कॉफ़ी',
   'Protein (g)': 'प्रोटीन (ग्राम)',

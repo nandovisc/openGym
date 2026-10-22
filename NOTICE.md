@@ -51,7 +51,13 @@ de Alimentos (TACO), 4ª edição revisada e ampliada**, NEPA/UNICAMP, Campinas,
 machine-readable form by [taco-api](https://github.com/raulfdm/taco-api) (MIT License). Only the
 name, category, energy, protein, carbohydrate, fat and fibre per 100 g were kept.
 
-Products looked up by barcode come at runtime from [Open Food Facts](https://world.openfoodfacts.org),
+The foods in `frontend/src/lib/usda-data.js` come from **USDA FoodData Central, SR Legacy**
+(U.S. Department of Agriculture, Agricultural Research Service, April 2018), released under
+**CC0 1.0** (public domain): a selection of generic foods, their names translated to Portuguese
+and the ones the TACO table already has left out (`frontend/scripts/usda-build.mjs`). Values per
+100 g only.
+
+Products looked up by barcode or found by name come at runtime from [Open Food Facts](https://world.openfoodfacts.org),
 whose database is available under the Open Database License; nothing from it ships with openGym.
 
 ## Exercise media (stills and animations)

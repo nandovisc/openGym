@@ -3,7 +3,7 @@ import React, { act } from 'react'
 import { createRoot } from 'react-dom/client'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import Food, { addFoodSheet, readMealInBackground, targetsSheet } from './Food.jsx'
+import Food, { addFoodSheet, myFoodsSheet, readMealInBackground, targetsSheet } from './Food.jsx'
 import { DEF, useStore } from '../store/useStore.js'
 import { useUI } from '../store/useUI.js'
 import { api } from '../lib/api.js'
@@ -34,7 +34,7 @@ describe('adding food', () => {
   it('finds a TACO food as it is typed and adds the amount chosen', async () => {
     useStore.setState({ S: clone(DEF), user: null, config: null })
     addFoodSheet(todayISO(), 'lunch')
-    let sheet = topSheet()
+    const sheet = topSheet()
     await until(() => !sheet.textContent.includes('Loading…'))
     setInput(sheet.querySelector('input[type=search]'), 'frango peito grelhado')
     const hit = [...sheet.querySelectorAll('button')].find(b => b.textContent.includes('Frango, peito, sem pele, grelhado'))
@@ -81,6 +81,58 @@ describe('adding food', () => {
   })
 })
 
+describe('finding a food', () => {
+  it('shows products from Open Food Facts for a plural, and keeps the one picked among my foods', async () => {
+    useStore.setState({ S: clone(DEF), user: { id: 'u1' }, config: null })
+    api.mockResolvedValue({ products: [
+      { code: '7893000949270', product_name: 'Empanado de frango Sadia Nuggets', brands: 'Sadia', serving_quantity: 130, serving_quantity_unit: 'g', serving_size: '130 g',
+        nutriments: { 'energy-kcal_100g': 236, proteins_100g: 13, carbohydrates_100g: 16, fat_100g: 13 } }
+    ] })
+    addFoodSheet(todayISO(), 'dinner')
+    const sheet = topSheet()
+    await until(() => !sheet.textContent.includes('Loading…'))
+    setInput(sheet.querySelector('input[type=search]'), 'nuggets')
+    await until(() => sheet.textContent.includes('Sadia'))
+    expect(api.mock.calls[0][0]).toBe('/api/foods/search?q=nuggets')
+    // The translated USDA table answers too.
+    expect(sheet.textContent).toContain('Nuggets de frango')
+    act(() => [...sheet.querySelectorAll('button')].find(b => b.textContent.includes('Empanado de frango Sadia')).click())
+    expect(useStore.getState().S.foods.map(f => f.id)).toEqual(['off:7893000949270'])
+    act(() => button(sheet, 'Add').click())
+    expect(meals()[0].items[0]).toMatchObject({ grams: 130, kcal: 307, src: 'off' })
+  })
+
+  it('creates a food from a label portion when nothing matches', async () => {
+    useStore.setState({ S: clone(DEF), user: null, config: null })
+    addFoodSheet(todayISO(), 'snack')
+    const sheet = topSheet()
+    await until(() => !sheet.textContent.includes('Loading…'))
+    setInput(sheet.querySelector('input[type=search]'), 'bolinho da vó')
+    act(() => [...sheet.querySelectorAll('button')].find(b => b.textContent.includes('Create “bolinho da vó”')).click())
+    const [size, kcal] = [...sheet.querySelectorAll('.food-macro-grid input')]
+    setInput(size, 40)
+    setInput(kcal, 120)
+    act(() => button(sheet, 'Save').click())
+    expect(useStore.getState().S.foods[0]).toMatchObject({ name: 'bolinho da vó', per100: { kcal: 300 }, serving: { g: 40, label: '40 g' }, src: 'mine' })
+    expect(sheet.textContent).toContain('120 kcal')
+  })
+
+  it('edits one of my foods, the most used first', () => {
+    const S = clone(DEF)
+    S.foods = [{ id: 'a', name: 'Granola caseira', per100: { kcal: 400, p: 10, c: 60, f: 12 }, src: 'mine' }, { id: 'b', name: 'Pão de queijo', per100: { kcal: 330, p: 5, c: 35, f: 18 }, src: 'mine' }]
+    S.meals = [{ id: 'm', d: todayISO(), slot: 'snack', items: [{ id: 'i', name: 'Pão de queijo', grams: 50, kcal: 165, p: 2.5, c: 17.5, f: 9, src: 'mine', ref: 'b' }], created: 1 }]
+    useStore.setState({ S, user: null, config: null })
+    myFoodsSheet()
+    const sheet = topSheet()
+    const rows = [...sheet.querySelectorAll('.lrow')].map(r => r.textContent)
+    expect(rows[0]).toContain('Pão de queijo')
+    act(() => [...sheet.querySelectorAll('button')].find(b => b.textContent.includes('Granola caseira')).click())
+    setInput(sheet.querySelector('.med-form input'), 'Granola da casa')
+    act(() => button(sheet, 'Save').click())
+    expect(useStore.getState().S.foods.find(f => f.id === 'a')).toMatchObject({ name: 'Granola da casa', per100: { kcal: 400 } })
+  })
+})
+
 describe('the photo of a plate', () => {
   const withMeal = items => {
     const S = clone(DEF)
@@ -123,6 +175,14 @@ describe('the photo of a plate', () => {
     await until(() => !sheet.textContent.includes('Loading…'))
     setInput(sheet.querySelector('input[type=search]'), 'feijao')
     expect(sheet.querySelector('.lrow').textContent).toContain('Feijão, carioca, cozido')
+    // The plate is a saved meal too: added again with only one of its foods.
+    expect(useStore.getState().S.savedMeals).toHaveLength(1)
+    act(() => button(sheet, 'Meals').click())
+    act(() => [...sheet.querySelectorAll('button')].find(b => b.textContent.includes('Arroz, feijão e frango')).click())
+    act(() => sheet.querySelectorAll('.food-pick input')[0].click())
+    act(() => button(sheet, 'Add the ticked foods (1)').click())
+    const dinner = meals().find(m => m.slot === 'dinner')
+    expect(dinner.items.map(x => [x.name, x.kcal])).toEqual([['Feijão, carioca, cozido', 76]])
   })
 
   it('never replaces food added by hand while the estimate was on its way', async () => {

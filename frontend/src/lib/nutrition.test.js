@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
   dailySeries, dayOf, foodFromOff, foodsFromItems, itemOf, keepEstimatedFoods, itemsFromReading, normalizeFood, normalizeItem, normalizeMeal, recentFoods, rescale,
-  searchFoods, suggestTargets, tacoFood
+  fold, foodFromPortion, foodsFromOffSearch, itemsOfSaved, savedFromEstimates, savedMealFrom, totalsOf,
+  searchFoods, searchSavedMeals, stemWord, suggestTargets, tacoFood, usageCounts, usdaFood
 } from './nutrition.js'
 import { TACO } from './taco-data.js'
 import { mergeStates, stampChange } from './sync-merge.js'
@@ -163,5 +164,89 @@ describe('photo estimates from before', () => {
     expect(r.meals[1].items[0].ref).toBe(r.foods[0].id)
     expect(r.meals[2]).toBe(meals[2])
     expect(keepEstimatedFoods(r.meals, r.foods).changed).toBe(false)
+  })
+})
+
+describe('a search that forgives', () => {
+  const food = (id, name, src = 'mine') => ({ id, name, per100: { kcal: 100, p: 0, c: 0, f: 0 }, src })
+  it('takes plurals and accents as the same word', () => {
+    expect(['nuggets', 'pães', 'feijões', 'ovos', 'pudins', 'animais', 'pastéis', 'abacaxi'].map(stemWord)).toEqual(['nugget', 'pao', 'feijao', 'ovo', 'pudim', 'animal', 'pastel', 'abacaxi'])
+    const mine = [food('a', 'Pão francês'), food('b', 'Ovo cozido')]
+    expect(searchFoods('paes frances', { mine }).map(f => f.id)).toEqual(['a'])
+    expect(searchFoods('OVOS', { mine }).map(f => f.id)).toEqual(['b'])
+  })
+  it('finds a food by another of its names, the name typed first', () => {
+    const mine = [food('n', 'Nugget de frango'), food('e', 'Empanado de frango, assado'), food('m', 'Mandioca, cozida')]
+    expect(searchFoods('nuggets', { mine }).map(f => f.id)).toEqual(['n', 'e'])
+    expect(searchFoods('aipim', { mine }).map(f => f.id)).toEqual(['m'])
+  })
+  it('puts my most used foods first, then TACO, then USDA', () => {
+    const mine = [food('x', 'Quinoa, cozida, da feira'), food('y', 'Quinoa em flocos')]
+    const uses = usageCounts([{ items: [{ ref: 'y' }, { ref: 'y' }] }, { items: [{ ref: 'x' }] }])
+    const usda = [[1, 'Quinoa, cozida', 120, 4.4, 21.3, 1.9, 2.8]]
+    const taco = [[999, 'Quinoa, crua', 'Cereais', 368, 14, 64, 6, 7]]
+    expect(searchFoods('quinoa', { mine, uses, taco, usda }).map(f => f.id)).toEqual(['y', 'x', 'taco:999', 'usda:1'])
+    expect(usdaFood(usda[0])).toMatchObject({ id: 'usda:1', src: 'usda', per100: { kcal: 120 } })
+    expect(itemOf(usdaFood(usda[0]), 200)).toMatchObject({ kcal: 240, src: 'usda', ref: 'usda:1' })
+  })
+  it('finds a saved meal by its name or a food in it', () => {
+    const saved = [{ id: 's', name: 'Almoço de domingo', items: [{ name: 'Feijoada' }], created: 1 }]
+    expect(searchSavedMeals('domingo', saved).map(m => m.id)).toEqual(['s'])
+    expect(searchSavedMeals('feijoada', saved).map(m => m.id)).toEqual(['s'])
+    expect(searchSavedMeals('pizza', saved)).toEqual([])
+  })
+})
+
+describe('foods typed in and products searched', () => {
+  it('turns a portion from a label into values per 100 g, in g or ml', () => {
+    expect(foodFromPortion({ name: 'Nugget de frango', grams: 18, kcal: 50, p: 2.7, c: 2.9, f: 3.1 })).toMatchObject({ per100: { kcal: 278, p: 15, c: 16.1, f: 17.2 }, serving: { g: 18, label: '18 g' } })
+    expect(foodFromPortion({ name: 'Iogurte', grams: 170, unit: 'ml', kcal: 100 }).serving).toEqual({ g: 170, label: '170 ml' })
+    expect(foodFromPortion({ name: 'Sem porção', kcal: 100 })).toBeNull()
+  })
+  it('reads an Open Food Facts search; a serving in ounces is left out', () => {
+    const foods = foodsFromOffSearch({ products: [
+      { code: '7893000949270', product_name: 'Empanado de frango Sadia Nuggets', brands: 'Sadia', serving_quantity: 130, serving_quantity_unit: 'g', serving_size: '130 g (6 unidades)', nutriments: { 'energy-kcal_100g': 236, proteins_100g: 13, carbohydrates_100g: 16, fat_100g: 13 } },
+      { code: '1', product_name: 'Chips', serving_quantity: 1, serving_quantity_unit: 'oz', serving_size: '1 oz', nutriments: { 'energy-kcal_100g': 530 } },
+      { code: '2', product_name: 'Sem energia', nutriments: {} }
+    ] })
+    expect(foods.map(f => f.id)).toEqual(['off:7893000949270', 'off:1'])
+    expect(foods[0]).toMatchObject({ brand: 'Sadia', per100: { kcal: 236 }, serving: { g: 130, label: '130 g (6 unidades)' } })
+    expect(foods[1].serving).toBeUndefined()
+    // A kcal field that holds kJ (above the 900 of pure fat) is read as kJ.
+    expect(foodsFromOffSearch({ products: [{ code: '3', product_name: 'Nuggets', nutriments: { 'energy-kcal_100g': 1104 } }] })[0].per100.kcal).toBe(264)
+  })
+})
+
+describe('saved meals', () => {
+  const meal = { id: 'm1', title: 'Arroz, feijão e frango', ai: 5, items: [
+    { id: 'a', name: 'Arroz', grams: 150, kcal: 192, p: 3.8, c: 42, f: 0.3, src: 'ai', ref: 'f1' },
+    { id: 'b', name: 'Feijão', grams: 100, kcal: 76, p: 4.8, c: 13.6, f: 0.5, src: 'ai' },
+    { id: 'c', name: 'Frango', grams: 120, kcal: 191, p: 38, c: 0, f: 3, src: 'ai' }
+  ] }
+  it('keeps a copy of the items, and adds all or some of them, scaled', () => {
+    const s = savedMealFrom(meal, '', { src: 'ai', now: 1 })
+    expect(s).toMatchObject({ name: 'Arroz, feijão e frango', src: 'ai', fromMeal: 'm1', created: 1 })
+    expect(s.items[0]).toEqual({ name: 'Arroz', grams: 150, kcal: 192, p: 3.8, c: 42, f: 0.3, src: 'ai', ref: 'f1' })
+    const two = itemsOfSaved(s, { picked: new Set([0, 2]), factor: 0.5 })
+    expect(two.map(x => [x.name, x.grams, x.kcal])).toEqual([['Arroz', 75, 96], ['Frango', 60, 96]])
+    expect(new Set(itemsOfSaved(s).map(x => x.id)).size).toBe(3)
+    expect(totalsOf(itemsOfSaved(s)).kcal).toBe(459)
+  })
+  it('makes one for each photo estimate that has none', () => {
+    const made = savedFromEstimates([meal, { id: 'm2', items: [{ name: 'x', kcal: 1 }] }], [])
+    expect(made.map(x => x.fromMeal)).toEqual(['m1'])
+    expect(savedFromEstimates([meal], made)).toEqual([])
+  })
+})
+
+describe('the USDA table', () => {
+  it('has no food the TACO table already has, and no name twice', async () => {
+    const [{ USDA }, { TACO: taco }] = await Promise.all([import('./usda-data.js'), import('./taco-data.js')])
+    const key = n => fold(n).replace(/[^a-z0-9]+/g, ' ').trim()
+    const tacoNames = new Set(taco.map(r => key(r[1])))
+    expect(USDA.length).toBeGreaterThan(1500)
+    expect(USDA.filter(r => tacoNames.has(key(r[1])))).toEqual([])
+    expect(new Set(USDA.map(r => key(r[1]))).size).toBe(USDA.length)
+    expect(USDA.every(r => !/\b(oz|lb|cup|pint|gallon)\b/i.test(r[1]))).toBe(true)
   })
 })

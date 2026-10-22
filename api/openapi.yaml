@@ -318,6 +318,23 @@ paths:
         '429': { description: Too many estimates this hour (`locked`). }
         '502': { description: The service failed, refused the key (`config`) or answered something unreadable. }
         '504': { description: The estimate took too long. }
+  /api/foods/search:
+    get:
+      tags: [data]
+      operationId: searchFoodProducts
+      summary: Packaged products sold in Brazil matching a name, from Open Food Facts
+      description: |
+        Health → Food search. The server asks Open Food Facts (Search-a-licious) for products sold
+        in Brazil matching `q` and answers `{ products }`, each with its name, brand, nutrients per
+        100 g and serving in g or ml. A query is answered from memory for half an hour. Sixty a
+        minute per profile.
+      parameters:
+        - { name: q, in: query, required: true, schema: { type: string }, description: 'At least three letters.' }
+      responses:
+        '200': { description: '`{ products: [{ code, product_name, product_name_pt, brands, nutriments, serving_quantity?, serving_quantity_unit?, serving_size? }] }`.' }
+        '401': { description: Not signed in. }
+        '429': { description: Too many searches this minute (`locked`). }
+        '502': { description: Open Food Facts could not be reached (`unavailable`). }
   /api/sleep/token:
     get:
       tags: [data]

@@ -3,8 +3,9 @@ import { useNavigate } from 'react-router-dom'
 import { useStore } from '../store/useStore.js'
 import { useUI } from '../store/useUI.js'
 import {
-  ACTIVITY, OBJECTIVE, SLOTS, dailySeries, dayOf, foodFromOff, foodsFromItems, itemOf, keepEstimatedFoods, itemsFromReading, normalizeFood, normalizeItem,
-  normalizeMeal, recentFoods, rescale, searchFoods, suggestTargets
+  ACTIVITY, OBJECTIVE, SLOTS, dailySeries, dayOf, foodFromOff, foodFromPortion, foodsFromItems, foodsFromOffSearch, itemOf, itemsOfSaved,
+  keepEstimatedFoods, itemsFromReading, normalizeFood, normalizeItem, normalizeMeal, recentFoods, rescale, savedFromEstimates, savedMealFrom,
+  searchFoods, searchSavedMeals, suggestTargets, totalsOf, usageCounts
 } from '../lib/nutrition.js'
 import { lastBW } from '../lib/history.js'
 import { mediaStore } from '../lib/media-store.js'
@@ -42,6 +43,44 @@ function useTaco() {
     return () => { alive = false }
   }, [])
   return taco
+}
+// The translated USDA table (lib/usda-data.js), loaded the same way.
+let usdaLoad = null
+function useUsda() {
+  const [usda, setUsda] = useState(null)
+  useEffect(() => {
+    let alive = true
+    ;(usdaLoad ??= import('../lib/usda-data.js')).then(m => { if (alive) setUsda(m.USDA) }).catch(() => { usdaLoad = null })
+    return () => { alive = false }
+  }, [])
+  return usda
+}
+
+// Products of Open Food Facts sold in Brazil matching a query, asked through the server
+// (GET /api/foods/search: the search endpoints a browser could call are rarely up) while the person
+// types: after three letters and a pause, the answer of each query remembered.
+// { status: 'idle' | 'loading' | 'done' | 'error' | 'offline', foods }; 'offline' without a server.
+const offCache = new Map()
+export function useOffSearch(query, { wait = 600 } = {}) {
+  const signedIn = useStore(s => !!s.user)
+  const q = String(query || '').trim().toLowerCase()
+  const [st, setSt] = useState({ status: 'idle', foods: [] })
+  useEffect(() => {
+    if (q.length < 3) { setSt({ status: 'idle', foods: [] }); return }
+    if (!signedIn) { setSt({ status: 'offline', foods: [] }); return }
+    if (offCache.has(q)) { setSt({ status: 'done', foods: offCache.get(q) }); return }
+    let alive = true
+    setSt({ status: 'loading', foods: [] })
+    const timer = setTimeout(async () => {
+      try {
+        const foods = foodsFromOffSearch(await api('/api/foods/search?q=' + encodeURIComponent(q), { timeout: 15000 }))
+        offCache.set(q, foods)
+        if (alive) setSt({ status: 'done', foods })
+      } catch { if (alive) setSt({ status: 'error', foods: [] }) }
+    }, wait)
+    return () => { alive = false; clearTimeout(timer) }
+  }, [q, wait, signedIn])
+  return st
 }
 
 /** Adds `items` to the day's `slot`: into its meal typed in by hand, or a new one. */
@@ -101,6 +140,9 @@ export function readMealInBackground(id, blobs) {
       m.items = kept.items
       m.title = String(reading?.title || '').slice(0, 80)
       m.ai = Date.now()
+      // And the plate itself, to add again whole or in part.
+      const plate = savedMealFrom(m, m.title, { src: 'ai' })
+      if (plate) s.savedMeals = [...(s.savedMeals || []), plate]
       saved = true
     })
     if (saved) toast(items.length ? t('{0}: {1} foods estimated and saved.', reading.title || t('Meal'), items.length) : t('No food was found in the photo.'))
@@ -131,15 +173,36 @@ function Amount({ food, onAdd, onBack }) {
   </>
 }
 
-function SearchTab({ taco, onPick }) {
+const SRC_LABEL = { taco: 'TACO', usda: 'USDA', off: 'Open Food Facts' }
+const foodRow = (f, onPick, uses) => <Row key={f.id} title={f.name}
+  subtitle={[f.brand, t('{0} per 100 g', kcalText(f.per100.kcal)), SRC_LABEL[f.src], uses?.get(f.id) ? t('eaten {0}×', uses.get(f.id)) : null].filter(Boolean).join(' · ')}
+  accessory="chevron" onClick={() => onPick(f)}>{f.src === 'ai' && <span className="exam-ai"><Icon name="sparkles" /></span>}</Row>
+const mealRow = (m, onOpen) => <Row key={m.id} icon="list" iconTint="var(--orange)" title={m.name}
+  subtitle={[t('{0} foods', m.items.length), kcalText(totalsOf(m.items).kcal)].join(' · ')} accessory="chevron" onClick={() => onOpen(m)}>
+  {m.src === 'ai' && <span className="exam-ai"><Icon name="sparkles" /></span>}</Row>
+const Heading = ({ children }) => <h4 className="sec" style={{ margin: '12px 2px 6px' }}>{children}</h4>
+
+function SearchTab({ taco, usda, onPick, onMeal, onCreate }) {
   const S = useStore(s => s.S)
   const [q, setQ] = useState('')
+  const uses = useMemo(() => usageCounts(S.meals), [S.meals])
   const mine = useMemo(() => {
-    const recent = recentFoods(S.meals, S.foods, { taco: taco || [] })
+    const recent = recentFoods(S.meals, S.foods, { taco: taco || [], usda: usda || [] })
     const own = (S.foods || []).filter(f => !recent.some(r => r.id === f.id))
     return [...recent, ...own]
-  }, [S.meals, S.foods, taco])
-  const found = useMemo(() => searchFoods(q, { taco: taco || [], mine }), [q, taco, mine])
+  }, [S.meals, S.foods, taco, usda])
+  const found = useMemo(() => searchFoods(q, { taco: taco || [], usda: usda || [], mine, uses, limit: 60 }), [q, taco, usda, mine, uses])
+  const meals = useMemo(() => (q ? searchSavedMeals(q, S.savedMeals, { limit: 5 }) : []), [q, S.savedMeals])
+  const off = useOffSearch(q)
+  // Products already among my foods (a barcode looked up before) are shown there, not twice.
+  const products = off.foods.filter(f => !mine.some(m => m.id === f.id))
+  const pickProduct = f => { update(s => { s.foods = [...(s.foods || []).filter(x => x.id !== f.id), f] }); onPick(f) }
+  const groups = [
+    ['mine', t('My foods'), found.filter(f => !['taco', 'usda'].includes(f.src))],
+    ['taco', t('Brazilian table (TACO)'), found.filter(f => f.src === 'taco')],
+    ['usda', t('More foods (USDA)'), found.filter(f => f.src === 'usda').slice(0, 20)]
+  ]
+  const nothing = !!q && !found.length && !meals.length && !products.length && off.status !== 'loading'
   return <>
     <div className="exam-search" style={{ marginBottom: 10 }}>
       <Icon name="magnifier" />
@@ -147,10 +210,114 @@ function SearchTab({ taco, onPick }) {
     </div>
     {!taco && <div className="muted small">{t('Loading…')}</div>}
     {taco && !q && !mine.length && <div className="muted small">{t('Type a food: rice, beans, chicken… The table has about 600 Brazilian foods.')}</div>}
-    {!!q && taco && !found.length && <div className="muted small">{t('Nothing matches.')}</div>}
-    {(!q && mine.length > 0) && <h4 className="sec" style={{ margin: '6px 2px' }}>{t('Recent and my foods')}</h4>}
-    <Section>{found.map(f => <Row key={f.id} title={f.name} subtitle={[f.brand, t('{0} per 100 g', kcalText(f.per100.kcal)), f.src === 'taco' ? 'TACO' : null].filter(Boolean).join(' · ')}
-      accessory="chevron" onClick={() => onPick(f)}>{f.src === 'ai' && <span className="exam-ai"><Icon name="sparkles" /></span>}</Row>)}</Section>
+    {!q && mine.length > 0 && <><Heading>{t('Recent and my foods')}</Heading><Section>{found.map(f => foodRow(f, onPick, uses))}</Section></>}
+    {!!q && <>
+      {groups[0][2].length > 0 && <><Heading>{groups[0][1]}</Heading><Section>{groups[0][2].map(f => foodRow(f, onPick, uses))}</Section></>}
+      {meals.length > 0 && <><Heading>{t('Saved meals')}</Heading><Section>{meals.map(m => mealRow(m, onMeal))}</Section></>}
+      {groups.slice(1).map(([k, label, xs]) => xs.length > 0 && <div key={k}><Heading>{label}</Heading><Section>{xs.map(f => foodRow(f, onPick))}</Section></div>)}
+      {q.trim().length >= 3 && <>
+        <Heading>{t('Products (Open Food Facts)')}</Heading>
+        {off.status === 'loading' && <div className="muted small">{t('Looking for products…')}</div>}
+        {off.status === 'error' && <div className="muted small">{t('Open Food Facts could not be reached. The rest of the search still works.')}</div>}
+        {off.status === 'offline' && <div className="muted small">{t('Packaged products are searched through your server: sign in to see them. The barcode works without it.')}</div>}
+        {off.status === 'done' && !products.length && <div className="muted small">{t('No product found.')}</div>}
+        {products.length > 0 && <Section>{products.map(f => foodRow(f, pickProduct))}</Section>}
+      </>}
+      {nothing && <div className="muted small" style={{ marginTop: 10 }}>{t('Nothing matches.')}</div>}
+      <div style={{ height: 12 }} />
+      <Button icon="plus" onClick={() => onCreate(q.trim())}>{t('Create “{0}”', q.trim())}</Button>
+    </>}
+  </>
+}
+
+/* ---------- my own foods: create, edit ---------- */
+
+function FoodForm({ prev = null, name = '', onSaved, onBack }) {
+  const [f, setF] = useState(() => prev
+    ? { name: prev.name, mode: '100', grams: prev.serving?.g || null, unit: /ml$/.test(prev.serving?.label || '') ? 'ml' : 'g', kcal: prev.per100.kcal, p: prev.per100.p, c: prev.per100.c, f: prev.per100.f }
+    : { name, mode: 'portion', grams: null, unit: 'g', kcal: null, p: null, c: null, f: null })
+  const set = (k, v) => setF(x => ({ ...x, [k]: v }))
+  const save = () => {
+    const base = { id: prev?.id, src: prev?.src && prev.src !== 'ai' ? prev.src : prev?.src === 'ai' ? 'ai' : 'mine', ...(prev?.barcode ? { barcode: prev.barcode } : {}), ...(prev?.brand ? { brand: prev.brand } : {}) }
+    const food = f.mode === 'portion'
+      ? foodFromPortion({ ...base, name: f.name, grams: f.grams, unit: f.unit, kcal: f.kcal, p: f.p, c: f.c, f: f.f })
+      : normalizeFood({ ...base, name: f.name, per100: { kcal: f.kcal, p: f.p, c: f.c, f: f.f }, ...(f.grams > 0 ? { serving: { g: f.grams, label: `${Math.round(f.grams)} ${f.unit}` } } : {}) })
+    if (!food) { toast(f.mode === 'portion' ? t('Type the name, the portion size and its calories.') : t('Type a name and the calories.')); return }
+    if (prev?.brand) food.brand = prev.brand
+    update(s => { s.foods = [...(s.foods || []).filter(x => x.id !== food.id), food] })
+    toast(prev ? t('Food saved') : t('Added to my foods'))
+    onSaved(food)
+  }
+  const remove = () => confirmSheet({ title: t('Delete this food?'), message: t('Meals already logged keep it.'), confirmText: t('Delete'), danger: true,
+    onConfirm: () => { update(s => { s.foods = (s.foods || []).filter(x => x.id !== prev.id) }); toast(t('Food deleted')); onBack() } })
+  const per = f.mode === 'portion' ? t('in the portion') : t('per 100 g')
+  return <>
+    <h3>{prev ? t('Edit food') : t('Create food')}</h3>
+    <div className="med-form">
+      <label><span>{t('Name')}</span><TextField value={f.name} maxLength={100} placeholder={t('e.g. Chicken nuggets')} onChange={e => set('name', e.target.value)} /></label>
+      <Segmented value={f.mode} onChange={v => set('mode', v)} options={[{ value: 'portion', label: t('Per portion') }, { value: '100', label: t('Per 100 g') }]} />
+      <div className="food-macro-grid">
+        <label><span>{f.mode === 'portion' ? t('Portion size') : t('Usual portion (optional)')}</span><NumberField className="field" nullable value={f.grams} onChange={v => set('grams', v)} /></label>
+        <label><span>{t('Unit')}</span><Segmented value={f.unit} onChange={v => set('unit', v)} options={[{ value: 'g', label: 'g' }, { value: 'ml', label: 'ml' }]} /></label>
+        <label><span>{t('kcal {0}', per)}</span><NumberField className="field" nullable value={f.kcal} onChange={v => set('kcal', v)} /></label>
+        <label><span>{t('Protein (g)')}</span><NumberField className="field" nullable value={f.p} onChange={v => set('p', v)} /></label>
+        <label><span>{t('Carbs (g)')}</span><NumberField className="field" nullable value={f.c} onChange={v => set('c', v)} /></label>
+        <label><span>{t('Fat (g)')}</span><NumberField className="field" nullable value={f.f} onChange={v => set('f', v)} /></label>
+      </div>
+      <div className="small dim">{f.mode === 'portion' ? t('As on the label: the values of one portion. The app works out 100 g.') : t('Values for 100 g (or 100 ml).')}</div>
+    </div>
+    <div style={{ height: 12 }} />
+    <Button variant="primary" onClick={save}>{t('Save')}</Button>
+    {prev && <><div style={{ height: 8 }} /><Button variant="ghost" className="danger" icon="trash" onClick={remove}>{t('Delete food')}</Button></>}
+    <div style={{ height: 8 }} />
+    <Button variant="ghost" className="dim" onClick={onBack}>{t('Back')}</Button>
+  </>
+}
+
+/* ---------- saved meals ---------- */
+
+const FACTORS = [0.5, 1, 1.5, 2]
+function SavedMealPick({ saved, onAdd, onBack }) {
+  const [picked, setPicked] = useState(() => new Set(saved.items.map((_, i) => i)))
+  const [factor, setFactor] = useState(1)
+  const items = itemsOfSaved(saved, { picked, factor })
+  const tot = totalsOf(items)
+  const toggle = i => setPicked(p => { const n = new Set(p); if (n.has(i)) n.delete(i); else n.add(i); return n })
+  const add = () => {
+    update(s => { const m = (s.savedMeals || []).find(x => x.id === saved.id); if (m) m.used = Date.now() })
+    onAdd(items)
+  }
+  return <>
+    <h3>{saved.name}</h3>
+    <div className="muted small" style={{ marginBottom: 10 }}>{t('Add the whole meal, or tick only the foods you ate.')}</div>
+    <Section>{saved.items.map((x, i) => <label key={i} className="lrow food-pick">
+      <input type="checkbox" checked={picked.has(i)} onChange={() => toggle(i)} />
+      <span className="food-pick-name">{x.name}<span className="small dim">{[x.grams ? `${fmtNum(Math.round(x.grams * factor))} g` : null, kcalText(x.kcal * factor)].filter(Boolean).join(' · ')}</span></span>
+    </label>)}</Section>
+    <div style={{ height: 10 }} />
+    <Segmented value={factor} onChange={setFactor} options={FACTORS.map(v => ({ value: v, label: `${fmtNum(v)}×` }))} />
+    <div className="food-preview" style={{ marginTop: 10 }}>
+      <b>{kcalText(tot.kcal)}</b>
+      <span>{t('P {0}', g(tot.p))}</span><span>{t('C {0}', g(tot.c))}</span><span>{t('F {0}', g(tot.f))}</span>
+    </div>
+    <div style={{ height: 12 }} />
+    <Button variant="primary" icon="plus" disabled={!items.length} onClick={add}>{picked.size === saved.items.length ? t('Add the whole meal') : t('Add the ticked foods ({0})', items.length)}</Button>
+    <div style={{ height: 8 }} />
+    <Button variant="ghost" className="dim" onClick={onBack}>{t('Back')}</Button>
+  </>
+}
+
+function MealsTab({ onOpen }) {
+  const saved = useStore(s => s.S.savedMeals)
+  const [q, setQ] = useState('')
+  const list = searchSavedMeals(q, saved, { limit: 50 })
+  if (!(saved || []).length) return <div className="muted small">{t('No saved meals yet. Plates read from a photo are saved here, and any meal of the day can be saved from its list.')}</div>
+  return <>
+    <div className="exam-search" style={{ marginBottom: 10 }}>
+      <Icon name="magnifier" />
+      <input type="search" value={q} placeholder={t('Search saved meals')} aria-label={t('Search saved meals')} onChange={e => setQ(e.target.value)} />
+    </div>
+    {list.length ? <Section>{list.map(m => mealRow(m, onOpen))}</Section> : <div className="muted small">{t('Nothing matches.')}</div>}
   </>
 }
 
@@ -258,15 +425,21 @@ function QuickTab({ onAdd }) {
 
 function AddFood({ d, slot, close }) {
   const taco = useTaco()
+  const usda = useUsda()
   const [tab, setTab] = useState('search')
   const [food, setFood] = useState(null)
+  const [creating, setCreating] = useState(null)
+  const [saved, setSaved] = useState(null)
   const done = items => { addItems(d, slot, items); close(); toast(t('Added to {0}', t(SLOT_LABEL[slot]))) }
   if (food) return <Amount food={food} onBack={() => setFood(null)} onAdd={it => done([it])} />
+  if (creating != null) return <FoodForm name={creating} onBack={() => setCreating(null)} onSaved={f => { setCreating(null); setFood(f) }} />
+  if (saved) return <SavedMealPick saved={saved} onBack={() => setSaved(null)} onAdd={done} />
   return <>
     <h3>{t('Add to {0}', t(SLOT_LABEL[slot]))}</h3>
-    <Segmented value={tab} onChange={setTab} options={[{ value: 'search', label: t('Search') }, { value: 'barcode', label: t('Barcode') }, { value: 'photo', label: t('Photo') }, { value: 'quick', label: t('Quick') }]} />
+    <Segmented value={tab} onChange={setTab} options={[{ value: 'search', label: t('Search') }, { value: 'meals', label: t('Meals') }, { value: 'barcode', label: t('Barcode') }, { value: 'photo', label: t('Photo') }, { value: 'quick', label: t('Quick') }]} />
     <div style={{ height: 12 }} />
-    {tab === 'search' && <SearchTab taco={taco} onPick={setFood} />}
+    {tab === 'search' && <SearchTab taco={taco} usda={usda} onPick={setFood} onMeal={setSaved} onCreate={setCreating} />}
+    {tab === 'meals' && <MealsTab onOpen={setSaved} />}
     {tab === 'barcode' && <BarcodeTab onPick={setFood} />}
     {tab === 'photo' && <PhotoTab d={d} slot={slot} close={close} />}
     {tab === 'quick' && <QuickTab onAdd={it => done([it])} />}
@@ -387,6 +560,89 @@ function Targets({ close }) {
 
 export const targetsSheet = () => ui().openSheet(close => <Targets close={close} />)
 
+/* ---------- my foods and saved meals ---------- */
+
+function SaveMealForm({ mealId, close }) {
+  const meal = useStore(s => (s.S.meals || []).find(m => m.id === mealId))
+  const [name, setName] = useState(meal?.title || '')
+  if (!meal) return <><h3>{t('Save as a meal')}</h3><div className="muted small">{t('This meal was removed.')}</div><Button onClick={close}>{t('Close')}</Button></>
+  const save = () => {
+    const saved = savedMealFrom(meal, name.trim() || meal.title || t(SLOT_LABEL[meal.slot]))
+    if (!saved) return
+    update(s => { s.savedMeals = [...(s.savedMeals || []), saved] })
+    close()
+    toast(t('Meal saved'))
+  }
+  return <>
+    <h3>{t('Save as a meal')}</h3>
+    <div className="muted small" style={{ marginBottom: 10 }}>{(meal.items || []).map(x => x.name).join(', ')}</div>
+    <div className="med-form"><label><span>{t('Name')}</span><TextField value={name} maxLength={80} autoFocus placeholder={t('e.g. Sunday lunch')} onChange={e => setName(e.target.value)} /></label></div>
+    <div style={{ height: 12 }} />
+    <Button variant="primary" onClick={save}>{t('Save')}</Button>
+  </>
+}
+const saveMealSheet = mealId => ui().openSheet(close => <SaveMealForm mealId={mealId} close={close} />)
+
+function SavedMealEdit({ saved, onBack }) {
+  const [name, setName] = useState(saved.name)
+  const save = () => {
+    const n = name.trim()
+    if (!n) return
+    update(s => { const m = (s.savedMeals || []).find(x => x.id === saved.id); if (m) m.name = n.slice(0, 80) })
+    toast(t('Meal saved')); onBack()
+  }
+  const remove = () => confirmSheet({ title: t('Delete this saved meal?'), message: t('Days already logged keep their foods.'), confirmText: t('Delete'), danger: true,
+    onConfirm: () => { update(s => { s.savedMeals = (s.savedMeals || []).filter(x => x.id !== saved.id) }); toast(t('Saved meal deleted')); onBack() } })
+  return <>
+    <h3>{saved.name}</h3>
+    <div className="med-form"><label><span>{t('Name')}</span><TextField value={name} maxLength={80} onChange={e => setName(e.target.value)} /></label></div>
+    <div style={{ height: 10 }} />
+    <Section>{saved.items.map((x, i) => <Row key={i} title={x.name} subtitle={x.grams ? `${fmtNum(x.grams)} g` : ''} value={kcalText(x.kcal)} />)}</Section>
+    <div style={{ height: 12 }} />
+    <Button variant="primary" onClick={save}>{t('Save')}</Button>
+    <div style={{ height: 8 }} />
+    <Button variant="ghost" className="danger" icon="trash" onClick={remove}>{t('Delete saved meal')}</Button>
+    <div style={{ height: 8 }} />
+    <Button variant="ghost" className="dim" onClick={onBack}>{t('Back')}</Button>
+  </>
+}
+
+function MyFoods({ close }) {
+  const S = useStore(s => s.S)
+  const [tab, setTab] = useState('foods')
+  const [q, setQ] = useState('')
+  const [editing, setEditing] = useState(null)
+  const [creating, setCreating] = useState(false)
+  const [meal, setMeal] = useState(null)
+  const uses = useMemo(() => usageCounts(S.meals), [S.meals])
+  if (editing) return <FoodForm prev={editing} onBack={() => setEditing(null)} onSaved={() => setEditing(null)} />
+  if (creating) return <FoodForm name={q.trim()} onBack={() => setCreating(false)} onSaved={() => setCreating(false)} />
+  if (meal) return <SavedMealEdit saved={meal} onBack={() => setMeal(null)} />
+  const foods = searchFoods(q, { mine: S.foods || [], uses, limit: 500 })
+  const meals = searchSavedMeals(q, S.savedMeals, { limit: 200 })
+  return <>
+    <h3>{t('My foods')}</h3>
+    <Segmented value={tab} onChange={setTab} options={[{ value: 'foods', label: t('Foods') }, { value: 'meals', label: t('Meals') }]} />
+    <div className="exam-search" style={{ margin: '10px 0' }}>
+      <Icon name="magnifier" />
+      <input type="search" value={q} placeholder={t('Search')} aria-label={t('Search')} onChange={e => setQ(e.target.value)} />
+    </div>
+    {tab === 'foods' ? <>
+      {foods.length ? <Section>{foods.map(f => <Row key={f.id} title={f.name}
+        subtitle={[f.brand, t('{0} per 100 g', kcalText(f.per100.kcal)), f.serving?.label].filter(Boolean).join(' · ')}
+        value={uses.get(f.id) ? t('{0}×', uses.get(f.id)) : ''} accessory="chevron" onClick={() => setEditing(f)}>
+        {f.src === 'ai' && <span className="exam-ai"><Icon name="sparkles" /></span>}</Row>)}</Section>
+        : <div className="muted small">{q ? t('Nothing matches.') : t('No foods of your own yet. Foods from photos, barcodes and the ones you create show up here.')}</div>}
+      <div style={{ height: 10 }} />
+      <Button icon="plus" onClick={() => setCreating(true)}>{t('Create food')}</Button>
+    </> : meals.length ? <Section>{meals.map(m => mealRow(m, setMeal))}</Section>
+      : <div className="muted small">{q ? t('Nothing matches.') : t('No saved meals yet. Plates read from a photo are saved here, and any meal of the day can be saved from its list.')}</div>}
+    <div style={{ height: 12 }} />
+    <Button variant="ghost" className="dim" onClick={close}>{t('Close')}</Button>
+  </>
+}
+export const myFoodsSheet = () => ui().openSheet(close => <MyFoods close={close} />)
+
 /* ---------- the screen ---------- */
 
 function Bar({ label, value, target }) {
@@ -417,6 +673,8 @@ function MealBlock({ meal }) {
       value={kcalText(it.kcal)} onClick={() => ui().openSheet(close => <EditItem mealId={meal.id} itemId={it.id} close={close} />)}>
       {it.src === 'ai' && <span className="exam-ai"><Icon name="sparkles" /></span>}
     </Row>)}
+    {(meal.items || []).length > 0 && !reading && <Row icon="list" iconTint="var(--orange)" title={t('Save as a meal')} subtitle={t('To add it again, whole or in part')}
+      className="food-save-meal" onClick={() => saveMealSheet(meal.id)} />}
     {meal.photo && !reading && !(meal.items || []).length && <Row title={t('No food estimated')} subtitle={t('Add the foods by hand, or delete this photo.')}
       onClick={() => confirmSheet({ title: t('Delete this meal?'), message: t('Deletes the photo and the meal.'), confirmText: t('Delete'), danger: true,
         onConfirm: () => update(s => { s.meals = s.meals.filter(x => x.id !== meal.id) }) })} />}
@@ -481,10 +739,14 @@ function Trends() {
 
 export default function Food() {
   const nav = useNavigate()
-  // Foods of photo estimates made before they were kept among my foods: kept now, once.
+  // Foods of photo estimates made before they were kept among my foods: kept now, once,
+  // And their plates among the saved meals.
   useEffect(() => {
-    if (!keepEstimatedFoods(useStore.getState().S.meals, useStore.getState().S.foods).changed) return
-    update(s => { const r = keepEstimatedFoods(s.meals, s.foods); s.meals = r.meals; s.foods = r.foods })
+    const { S } = useStore.getState()
+    if (keepEstimatedFoods(S.meals, S.foods).changed) update(s => { const r = keepEstimatedFoods(s.meals, s.foods); s.meals = r.meals; s.foods = r.foods })
+    if (savedFromEstimates(useStore.getState().S.meals, useStore.getState().S.savedMeals).length) {
+      update(s => { s.savedMeals = [...(s.savedMeals || []), ...savedFromEstimates(s.meals, s.savedMeals)] })
+    }
   }, [])
   const [tab, setTab] = useState('day')
   const [d, setD] = useState(todayISO())
@@ -492,6 +754,7 @@ export default function Food() {
     <div className="hdr">
       <button className="iconbtn" onClick={() => nav('/health')} aria-label={t('Health')}><Icon name="chevronLeft" /></button>
       <div style={{ flex: 1, marginLeft: 10 }}><h1>{t('Nutrition')}</h1><div className="sub">{t('Meals, calories and macros')}</div></div>
+      <button className="iconbtn" onClick={myFoodsSheet} aria-label={t('My foods')}><Icon name="list" /></button>
       <button className="iconbtn" onClick={targetsSheet} aria-label={t('Daily targets')}><Icon name="target" /></button>
     </div>
     <Segmented value={tab} onChange={setTab} options={[{ value: 'day', label: t('Day') }, { value: 'trends', label: t('Over time') }]} />

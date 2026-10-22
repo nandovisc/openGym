@@ -23,6 +23,7 @@ import { doseId, medsDue } from './meds.js';
 import { ExamReadError, examReaderConfig, readExam } from './exam-reader.js';
 import { mealReaderConfig, readMeal } from './meal-reader.js';
 import { mergeNights, nightsFrom, parseSamples } from './sleep.js';
+import { OFF_SEARCH_URL, searchProducts } from './food-search.js';
 import { verifyError } from './verify-error.js';
 import {
   hashPassword, verifyPassword, needsRehash, passwordProblem, passwordLength, nameKey, BusyError,
@@ -2058,6 +2059,24 @@ const mealRoutes = {
   }
 };
 
+/* ---------- products by name, from Open Food Facts (Health → Food) ---------- */
+// The app's food search asks here for packaged products (food-search.js). Signed-in profiles only
+// — not an open proxy — and a share each, so one person typing fast does not spend the instance's
+// welcome at Open Food Facts.
+const FOOD_SEARCHES = createWindow({ max: 60, windowMs: 60000 });
+const FOOD_SEARCH_URL = String(process.env.OFF_SEARCH_URL || OFF_SEARCH_URL);
+const foodRoutes = {
+  'GET /api/foods/search': async (req, res) => {
+    const user = readSession(req);
+    if (!user) return json(res, 401, { error: 'not signed in' });
+    const wait = FOOD_SEARCHES.take(user.id);
+    if (wait) return json(res, 429, { error: 'too many searches, try again later', code: 'locked', retryAfter: wait }, { 'Retry-After': String(wait) });
+    const q = new URL(req.url, 'http://x').searchParams.get('q') || '';
+    try { json(res, 200, await searchProducts(q, { base: FOOD_SEARCH_URL })); }
+    catch (e) { console.error('food search', String(e?.message || e).slice(0, 120)); json(res, 502, { error: 'Open Food Facts could not be reached', code: 'unavailable' }); }
+  }
+};
+
 /* ---------- sleep sent from Apple Health (Health → Sleep) ---------- */
 // An iPhone Shortcut reads the night from the Health app every morning — what a watch or a ring
 // wrote there — and posts the samples here with a token of the person's own (sleep.js turns them
@@ -2914,6 +2933,7 @@ const routes = {
   ...(EXAM_AI.key ? examRoutes : {}),
   ...(MEAL_AI.key ? mealRoutes : {}),
   ...sleepRoutes,
+  ...foodRoutes,
 
   /* ---------- scheduled work (serverless only) ---------- */
   ...(SERVERLESS ? cronRoutes : {})

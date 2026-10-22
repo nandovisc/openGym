@@ -67,7 +67,7 @@ function act(h, d, fn) {
   if (after.length > before) toast(t('🏆 {0}: {1} in a row!', h.name, t(after.at(-1).unit === 'weeks' ? '{0} weeks' : '{0} days', after.at(-1).days)))
 }
 
-function useNow(running) {
+export function useNow(running) {
   const [now, setNow] = useState(Date.now())
   useEffect(() => { if (!running) return; const id = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(id) }, [running])
   return now
@@ -107,7 +107,7 @@ function TimerButton({ h, d, entry, now }) {
   </button>
 }
 
-function HabitRow({ h, d, S, today, now, drag }) {
+export function HabitRow({ h, d, S, today, now, drag }) {
   const entry = logOf(S, h, d)
   const st = statusOn(h, d, S, today, now)
   const sk = h.showStreak !== false && !S.habitPrefs?.hideStreaks && h.kind !== 'task' ? streak(h, S, today) : null
@@ -447,14 +447,14 @@ function DayChips({ values, options, labels, onChange }) {
     onClick={() => { const n = new Set(set); if (n.has(v)) n.delete(v); else n.add(v); onChange([...n]) }}>{labels[i]}</button>)}</div>
 }
 
-function HabitForm({ id, close }) {
+function HabitForm({ id, preset, close }) {
   const S = useStore(s => s.S)
   const prev = id ? list(S.habits).find(x => x.id === id) : null
   const today = todayOf(S)
   const [f, setF] = useState(() => {
     const s = prev ? scheduleFor(prev, today) : { type: 'daily' }
     return {
-      name: prev?.name || '', kind: prev?.kind || 'check', icon: prev?.icon || '', color: prev?.color || '',
+      name: prev?.name || '', kind: prev?.kind || preset?.kind || 'check', icon: prev?.icon || '', color: prev?.color || '',
       goal: { value: prev?.goal?.value || null, unit: prev?.goal?.unit || 'ml' },
       auto: { source: prev?.auto?.source || 'workout', mode: prev?.auto?.mode || '', slots: prev?.auto?.slots || ['breakfast', 'lunch', 'dinner'], bedBy: prev?.auto?.bedBy || '23:30' },
       schedule: { type: s.type, days: s.days || [], times: s.times || 3 }, start: prev?.start || today, end: prev?.end || '', due: prev?.due || '',
@@ -557,7 +557,7 @@ function HabitForm({ id, close }) {
     <Button variant="ghost" className="dim" onClick={close}>{t('Cancel')}</Button>
   </>
 }
-export const habitFormSheet = id => ui().openSheet(close => <HabitForm id={id} close={close} />)
+export const habitFormSheet = (id, preset) => ui().openSheet(close => <HabitForm id={id} preset={preset} close={close} />)
 
 /* ---------- settings ---------- */
 

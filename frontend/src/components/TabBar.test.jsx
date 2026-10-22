@@ -53,7 +53,7 @@ describe('the tab bar across a store write', () => {
     act(() => { root.render(<TabBar onStart={() => {}} />) })
     expect(tabs()[0].className).toBe('on')
     expect(tabs()[1].className).toBe('')
-    expect(tabs()[2].className).toBe('start')
+    expect(tabs()[2].className).toBe('start quick-add')   // the ＋ (components/QuickAdd.jsx)
 
     act(() => { useStore.getState().update(s => { s.active = { id: 'a', entries: [], cur: 0 } }, false) })
     expect(tabs()[2].className).toBe('start rec')
@@ -89,11 +89,11 @@ describe('the tab icons and labels', () => {
   it('labels every tab and uses one icon per concept', () => {
     act(() => { root.render(<TabBar onStart={() => {}} />) })
     // The modules beside training on (the default, lib/modules.js): Today · Training · Start · Habits · Health.
-    expect(tabs().map(icon)).toEqual(['sun', 'dumbbell', 'play', 'checkCircle', 'heart'])
-    expect(tabs().map(label)).toEqual(['Today', 'Training', 'Start', 'Habits', 'Health'])
+    expect(tabs().map(icon)).toEqual(['sun', 'dumbbell', 'plus', 'checkCircle', 'heart'])
+    expect(tabs().map(label)).toEqual(['Today', 'Training', 'Log', 'Habits', 'Health'])
     // Habits switched off: its place goes to Stats.
     act(() => { useStore.getState().update(s => { s.modules = { habits: false } }, false) })
-    expect(tabs().map(label)).toEqual(['Today', 'Training', 'Start', 'Stats', 'Health'])
+    expect(tabs().map(label)).toEqual(['Today', 'Training', 'Log', 'Stats', 'Health'])
     // Every module off: training only, the bar the app always had.
     act(() => { useStore.getState().update(s => { s.modules = { habits: false, food: false, sleep: false, meds: false, exams: false } }, false) })
     expect(tabs().map(icon)).toEqual(['house', 'calendar', 'play', 'chart', 'dumbbell'])

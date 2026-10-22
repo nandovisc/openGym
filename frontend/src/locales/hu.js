@@ -2368,4 +2368,10 @@ export default {
   'Nothing matches.': 'Nincs találat.',
   'Search': 'Keresés',
   'Out of range': 'Tartományon kívül',
+  'Read again with AI?': 'Újra beolvasod MI-vel?',
+  'Read {0} exams again with AI?': '{0} vizsgálatot újra beolvasol MI-vel?',
+  'The values read now replace the current results. Each reading is charged by the AI service.': 'Az most beolvasott értékek felülírják a jelenlegi eredményeket. Minden beolvasást az MI-szolgáltatás kiszámláz.',
+  'Read again': 'Újraolvasás',
+  'Read again with AI': 'Újraolvasás MI-vel',
+  'Read all again with AI': 'Mind újraolvasása MI-vel',
 }

@@ -1526,6 +1526,12 @@ export const PT_BR_OVERRIDES = {
   'Nothing matches.': 'Nada encontrado.',
   'Search': 'Buscar',
   'Out of range': 'Fora da referência',
+  'Read again with AI?': 'Ler de novo com IA?',
+  'Read {0} exams again with AI?': 'Ler de novo {0} exames com IA?',
+  'The values read now replace the current results. Each reading is charged by the AI service.': 'Os valores lidos agora substituem os resultados atuais. Cada leitura é cobrada pelo serviço de IA.',
+  'Read again': 'Ler de novo',
+  'Read again with AI': 'Ler de novo com IA',
+  'Read all again with AI': 'Ler todos de novo com IA',
 }
 
 export default { ...pt, ...PT_BR_OVERRIDES }

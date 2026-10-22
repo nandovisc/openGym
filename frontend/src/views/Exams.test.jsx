@@ -226,3 +226,61 @@ describe('the doctor, the search and the filter', () => {
     expect(useStore.getState().S.exams[0]).toMatchObject({ d: '2026-01-08', lab: 'Diagmax', doctor: 'Dr. Diego Barros', title: 'Hemograma completo' })
   })
 })
+
+describe('reading an exam again', () => {
+  const read = () => {
+    const S = clone(DEF)
+    S.exams = [
+      { id: 'a', d: '2026-01-09', title: 'DR. DIEGO BARROS', lab: 'Diagmax', ai: 1, files: [{ kind: 'doc', hash: 'd'.repeat(64), mime: 'application/pdf', size: 10, at: 1 }],
+        results: [{ id: 'x', key: 'tsh', name: 'TSH', value: 2, valueText: '2', unit: '' }] },
+      { id: 'b', d: '2026-02-13', title: 'Rotina', lab: 'Lab', files: [{ kind: 'doc', hash: 'e'.repeat(64), mime: 'application/pdf', size: 10, at: 1 }],
+        results: [{ id: 'y', key: 'glucose', name: 'Glicose', value: 90, valueText: '90', unit: 'mg/dL' }] }
+    ]
+    return S
+  }
+  const reading = (title, value) => ({ date: '2026-01-08', lab: 'Diagmax', doctor: 'Dr. Diego Barros', title, results: [
+    { key: 'tsh', name: 'TSH', value, valueText: String(value), unit: 'µUI/mL', refLow: null, refHigh: null, refText: '', flag: null, section: '' }
+  ] })
+  async function withFiles() {
+    const { mediaStore } = await import('../lib/media-store.js')
+    await mediaStore.put('d'.repeat(64), new Blob(['%PDF-1.7']), { mime: 'application/pdf' })
+    await mediaStore.put('e'.repeat(64), new Blob(['%PDF-1.7']), { mime: 'application/pdf' })
+  }
+
+  it('from the detail, after asking, replaces the results and fills in the doctor and the title', async () => {
+    useStore.setState({ S: read(), user: { id: 'u1' }, config: { exams_ai: true } })
+    await withFiles()
+    api.mockResolvedValue(reading('Tireoide', 2.4))
+    const page = render(<MemoryRouter><Exams /></MemoryRouter>)
+    act(() => [...page.querySelectorAll('button')].find(b => b.textContent.includes('DR. DIEGO')).click())
+    const detail = topSheet()
+    act(() => button(detail, 'Read again with AI').click())
+    const ask = topSheet()
+    expect(ask.textContent).toContain('Read again with AI?')
+    await act(async () => { button(ask, 'Read again').click() })
+    await until(() => useStore.getState().S.exams[0].doctor)
+    expect(useStore.getState().S.exams[0]).toMatchObject({ title: 'Tireoide', doctor: 'Dr. Diego Barros', d: '2026-01-08' })
+    expect(useStore.getState().S.exams[0].results.map(r => r.value)).toEqual([2.4])
+  })
+
+  it('reads all again, two at a time, and leaves alone an exam edited meanwhile', async () => {
+    useStore.setState({ S: read(), user: { id: 'u1' }, config: { exams_ai: true } })
+    await withFiles()
+    const answers = []
+    api.mockImplementation(() => new Promise(r => answers.push(r)))
+    const page = render(<MemoryRouter><Exams /></MemoryRouter>)
+    act(() => button(page, 'Read all again with AI').click())
+    const ask = topSheet()
+    expect(ask.textContent).toContain('Read 2 exams again with AI?')
+    await act(async () => { button(ask, 'Read again').click() })
+    await until(() => answers.length === 2)
+    // exam b is edited by hand while its reading is on its way: that reading is not saved
+    useStore.getState().update(s => { s.exams[1].results[0].valueText = '91'; s.exams[1].results[0].value = 91 })
+    // newest first: the first reading asked is exam b's, the second exam a's
+    await act(async () => { answers[0](reading('Outro', 5)); answers[1](reading('Tireoide', 2.4)) })
+    await until(() => useStore.getState().S.exams[0].doctor)
+    await flush()
+    expect(useStore.getState().S.exams[0].results.map(r => r.value)).toEqual([2.4])
+    expect(useStore.getState().S.exams[1].results.map(r => r.value)).toEqual([91])
+  })
+})

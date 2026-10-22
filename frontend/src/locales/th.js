@@ -2376,4 +2376,10 @@ export default {
   'Nothing matches.': 'ไม่พบรายการที่ตรงกัน',
   'Search': 'ค้นหา',
   'Out of range': 'นอกเกณฑ์',
+  'Read again with AI?': 'อ่านอีกครั้งด้วย AI?',
+  'Read {0} exams again with AI?': 'อ่านผลตรวจ {0} รายการอีกครั้งด้วย AI?',
+  'The values read now replace the current results. Each reading is charged by the AI service.': 'ค่าที่อ่านตอนนี้จะแทนที่ผลปัจจุบัน การอ่านแต่ละครั้งมีค่าบริการ AI',
+  'Read again': 'อ่านอีกครั้ง',
+  'Read again with AI': 'อ่านอีกครั้งด้วย AI',
+  'Read all again with AI': 'อ่านทั้งหมดอีกครั้งด้วย AI',
 }

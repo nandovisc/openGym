@@ -2420,4 +2420,10 @@ export default {
   'Nothing matches.': 'لا توجد نتائج مطابقة.',
   'Search': 'بحث',
   'Out of range': 'خارج المعدل',
+  'Read again with AI?': 'إعادة القراءة بالذكاء الاصطناعي؟',
+  'Read {0} exams again with AI?': 'إعادة قراءة {0} فحوصات بالذكاء الاصطناعي؟',
+  'The values read now replace the current results. Each reading is charged by the AI service.': 'تحل القيم المقروءة الآن محل النتائج الحالية. كل قراءة تُحتسب من خدمة الذكاء الاصطناعي.',
+  'Read again': 'إعادة القراءة',
+  'Read again with AI': 'إعادة القراءة بالذكاء الاصطناعي',
+  'Read all again with AI': 'إعادة قراءة الكل بالذكاء الاصطناعي',
 }

@@ -123,15 +123,22 @@ const setReading = (id, on) => {
  * never replaced. The detail then says the values were read by AI, to be checked against the
  * report. Lasts as long as the app stays open.
  */
-export function readInBackground(exam) {
+//
+// `replace`: read an exam that already has results again (to fill in the doctor, a better title),
+// and put the new reading in their place — unless they were changed while it was on its way.
+export function readInBackground(exam, { replace = false } = {}) {
   const id = exam.id
-  if (useUI.getState().examReads?.[id]) return
+  if (useUI.getState().examReads?.[id] || !(exam.files || []).length) return
+  const before = JSON.stringify(exam.results || [])
   setReading(id, true)
-  readReport(exam.files).then(got => {
+  queued(() => readReport(exam.files)).then(got => {
     let saved = null
     update(s => {
       const e = (s.exams || []).find(x => x.id === id)
-      if (!e || (e.results || []).length) return
+      if (!e) return
+      if (replace ? JSON.stringify(e.results || []) !== before : (e.results || []).length) return
+      // A new reading that finds nothing never empties an exam that had results.
+      if (replace && !got.results.length && (e.results || []).length) return
       saved = normalizeExam(withReading(e, got), { prev: e })
       s.exams = s.exams.map(x => (x.id === id ? saved : x))
     })
@@ -140,6 +147,35 @@ export function readInBackground(exam) {
       ? t('{0}: {1} results read and saved.', saved.title || t('Exam'), saved.results.length)
       : t('No results were found in this file.'))
   }).catch(e => toast(readFailText(e))).finally(() => setReading(id, false))
+}
+
+// Two readings at a time: "read all again" starts one per exam, and each is a long request.
+const QUEUE_MAX = 2
+let running = 0
+const waiting = []
+function queued(job) {
+  return new Promise((resolve, reject) => {
+    const go = () => {
+      running++
+      job().then(resolve, reject).finally(() => { running--; waiting.shift()?.() })
+    }
+    if (running < QUEUE_MAX) go(); else waiting.push(go)
+  })
+}
+
+/** Asks, then reads again with AI every given exam that has its report on file. */
+export function readAgainSheet(exams) {
+  const list = exams.filter(e => (e.files || []).length && !useUI.getState().examReads?.[e.id])
+  if (!list.length) return
+  confirmSheet({
+    title: list.length === 1 ? t('Read again with AI?') : t('Read {0} exams again with AI?', list.length),
+    message: t('The values read now replace the current results. Each reading is charged by the AI service.'),
+    confirmText: t('Read again'),
+    onConfirm: () => {
+      for (const e of list) readInBackground(e, { replace: (e.results || []).length > 0 })
+      toast(t('Reading the report. You can keep using the app; the results are saved when ready.'))
+    }
+  })
 }
 
 function ExamForm({ id, reading = null, close }) {
@@ -294,6 +330,10 @@ function ExamDetail({ id, close }) {
       {reading && <div className="small dim" style={{ marginTop: 6 }}>{t('You can close this screen; the results are saved when ready.')}</div>}
     </div>}
     {exam.ai > 0 && exam.results.length > 0 && <div className="small dim exam-ai-note"><Icon name="sparkles" /> {t('Read by AI. Check the values against the report.')}</div>}
+    {/* Already read (by AI or by hand): reading it again fills in what an earlier reading missed. */}
+    {canRead && exam.files?.length > 0 && exam.results.length > 0 && <div style={{ marginBottom: 12 }}>
+      <Button size="sm" variant="ghost" icon="sparkles" disabled={reading} onClick={() => readAgainSheet([exam])}>{reading ? t('Reading the report…') : t('Read again with AI')}</Button>
+    </div>}
     {exam.results.length > 5 && <ExamFilters query={query} setQuery={setQuery} onlyOut={onlyOut} setOnlyOut={setOnlyOut} />}
     {exam.results.length > 0 && !shown.length && <div className="muted small">{t('Nothing matches.')}</div>}
     {sections.map(sec => <div key={sec} style={{ marginBottom: 12 }}>
@@ -403,6 +443,9 @@ export default function Exams() {
         subtitle={[fmtDate(e.d, true), e.lab, e.doctor, t('{0} results', e.results.length), out ? t('{0} out of range', out) : null].filter(Boolean).join(' · ')}
         accessory="chevron" onClick={() => examDetailSheet(e.id)} />
     })}</Section>}
+    {tab === 'exams' && aiOn && list.some(e => (e.files || []).length) && <div style={{ margin: '4px 0 18px' }}>
+      <Button size="sm" variant="ghost" icon="sparkles" onClick={() => readAgainSheet(list)}>{t('Read all again with AI')}</Button>
+    </div>}
 
     {tab === 'trends' && (all.length ? shownAll.length > 0 && <Section>{shownAll.map(a => {
       const look = FLAG[a.last.flag]

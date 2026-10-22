@@ -1573,6 +1573,7 @@ export const PT_BR_OVERRIDES = {
   'Take a photo of the plate from above. The AI estimates each food and its amount; adjust the grams afterwards if needed.': 'Tire uma foto do prato de cima. A IA estima cada alimento e a quantidade; ajuste os gramas depois se precisar.',
   'Preparing…': 'Preparando…',
   'Photo of the plate': 'Foto do prato',
+  'From the gallery': 'Da galeria',
   'Type a name and the calories.': 'Digite um nome e as calorias.',
   'e.g. Coffee with milk': 'ex.: Café com leite',
   'Protein (g)': 'Proteína (g)',

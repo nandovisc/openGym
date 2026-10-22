@@ -2491,6 +2491,7 @@ export default {
   'Take a photo of the plate from above. The AI estimates each food and its amount; adjust the grams afterwards if needed.': 'উপর থেকে প্লেটের ছবি তুলুন। AI প্রতিটি খাবার ও পরিমাণ অনুমান করে; দরকার হলে পরে গ্রাম ঠিক করুন।',
   'Preparing…': 'প্রস্তুত হচ্ছে…',
   'Photo of the plate': 'প্লেটের ছবি',
+  'From the gallery': 'গ্যালারি থেকে',
   'Type a name and the calories.': 'নাম ও ক্যালোরি লিখুন।',
   'e.g. Coffee with milk': 'যেমন দুধ-কফি',
   'Protein (g)': 'প্রোটিন (গ্রাম)',

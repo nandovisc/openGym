@@ -2415,6 +2415,7 @@ export default {
   'Take a photo of the plate from above. The AI estimates each food and its amount; adjust the grams afterwards if needed.': 'Fotózd le a tányért felülről. Az MI megbecsli az ételeket és mennyiségüket; utána szükség szerint módosítsd a grammokat.',
   'Preparing…': 'Előkészítés…',
   'Photo of the plate': 'Fotó a tányérról',
+  'From the gallery': 'A galériából',
   'Type a name and the calories.': 'Adj meg egy nevet és a kalóriát.',
   'e.g. Coffee with milk': 'pl. Tejeskávé',
   'Protein (g)': 'Fehérje (g)',

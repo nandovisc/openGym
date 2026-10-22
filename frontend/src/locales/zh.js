@@ -2412,6 +2412,7 @@ export default {
   'Take a photo of the plate from above. The AI estimates each food and its amount; adjust the grams afterwards if needed.': '从上方拍摄餐盘。AI 会估算每种食物及其份量，之后可按需调整克数。',
   'Preparing…': '准备中…',
   'Photo of the plate': '餐盘照片',
+  'From the gallery': '从相册选择',
   'Type a name and the calories.': '请输入名称和热量。',
   'e.g. Coffee with milk': '例如：牛奶咖啡',
   'Protein (g)': '蛋白质（克）',

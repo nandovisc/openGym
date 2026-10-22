@@ -2423,6 +2423,7 @@ export default {
   'Take a photo of the plate from above. The AI estimates each food and its amount; adjust the grams afterwards if needed.': 'ถ่ายรูปจานจากด้านบน AI จะประเมินอาหารแต่ละอย่างและปริมาณ ปรับกรัมภายหลังได้หากจำเป็น',
   'Preparing…': 'กำลังเตรียม…',
   'Photo of the plate': 'รูปจานอาหาร',
+  'From the gallery': 'จากคลังรูปภาพ',
   'Type a name and the calories.': 'พิมพ์ชื่อและแคลอรี',
   'e.g. Coffee with milk': 'เช่น กาแฟนม',
   'Protein (g)': 'โปรตีน (ก.)',

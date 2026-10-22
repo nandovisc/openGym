@@ -2409,6 +2409,7 @@ export default {
   'Take a photo of the plate from above. The AI estimates each food and its amount; adjust the grams afterwards if needed.': 'Сфотографуйте тарілку згори. ШІ оцінить кожен продукт і його кількість; за потреби потім виправте грами.',
   'Preparing…': 'Підготовка…',
   'Photo of the plate': 'Фото тарілки',
+  'From the gallery': 'З галереї',
   'Type a name and the calories.': 'Введіть назву й калорії.',
   'e.g. Coffee with milk': 'напр., кава з молоком',
   'Protein (g)': 'Білки (г)',

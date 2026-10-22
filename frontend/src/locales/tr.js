@@ -2412,6 +2412,7 @@ export default {
   'Take a photo of the plate from above. The AI estimates each food and its amount; adjust the grams afterwards if needed.': 'Tabağın fotoğrafını yukarıdan çek. Yapay zekâ her yiyeceği ve miktarını tahmin eder; gerekirse gramları sonra düzelt.',
   'Preparing…': 'Hazırlanıyor…',
   'Photo of the plate': 'Tabak fotoğrafı',
+  'From the gallery': 'Galeriden',
   'Type a name and the calories.': 'Bir ad ve kaloriyi yaz.',
   'e.g. Coffee with milk': 'örn. Sütlü kahve',
   'Protein (g)': 'Protein (g)',

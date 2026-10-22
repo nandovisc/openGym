@@ -7,7 +7,8 @@
 //     p/c/f: grams of protein, carbohydrate and fat in this amount. src: taco | off | mine | ai |
 //     quick. ref: the food it came from ('taco:<id>', or the id of one of S.foods), to scale again.
 //   S.foods [{ id, name, brand?, per100: { kcal, p, c, f }, serving?: { g, label }, barcode?, src }]
-//     the person's own foods: a product found by its barcode, one typed in and kept.
+//     the person's own foods: a product found by its barcode, one typed in and kept, one the AI
+//     estimated from a photo (src 'ai', kept by foodsFromItems).
 //   S.nutrition { birthYear, heightCm, activity, objective, targets: { kcal, p, c, f }, custom }
 // meals and foods merge across devices entry by entry (lib/sync-merge.js HEALTH_LISTS).
 import { uid } from './format.js'
@@ -194,6 +195,31 @@ export function normalizeFood(x) {
 export const itemsFromReading = reading => list(reading?.items)
   .map(x => normalizeItem({ name: x.name, grams: x.grams, kcal: x.kcal, protein: x.protein, carbs: x.carbs, fat: x.fat, src: 'ai' }, 'ai'))
   .filter(Boolean)
+
+/**
+ * The items of a photo estimate kept among the person's foods, so the next time the food is found
+ * by searching instead of photographed again: { foods: the new ones to add, items: each linked to
+ * its food by `ref` }. A food is the item per 100 g, with the amount on the plate as its serving.
+ * A name already among `foods` (accents and capitals aside) links to that one and adds nothing —
+ * a food the person saved or corrected stays as it is. An item with no grams has no per 100 g.
+ */
+export function foodsFromItems(items, foods) {
+  const byName = new Map(list(foods).filter(f => f?.name).map(f => [fold(f.name), f]))
+  const added = []
+  const linked = list(items).map(it => {
+    if (!it?.name || !(it.grams > 0)) return it
+    const key = fold(it.name)
+    let food = byName.get(key)
+    if (!food) {
+      const k = 100 / it.grams
+      food = normalizeFood({ name: it.name, per100: { kcal: it.kcal * k, p: it.p * k, c: it.c * k, f: it.f * k }, serving: { g: it.grams, label: `${Math.round(it.grams)} g` }, src: 'ai' })
+      if (!food) return it
+      byName.set(key, food); added.push(food)
+    }
+    return { ...it, ref: food.id }
+  })
+  return { foods: added, items: linked }
+}
 
 /** What part of the target has been eaten, 0..1+ (null without a target). */
 export const share = (value, target) => (target > 0 ? value / target : null)

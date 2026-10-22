@@ -114,6 +114,15 @@ describe('the photo of a plate', () => {
     expect(meals()[0]).toMatchObject({ title: 'Arroz, feijão e frango' })
     expect(meals()[0].items.map(x => [x.name, x.kcal, x.src])).toEqual([['Arroz, tipo 1, cozido', 192, 'ai'], ['Feijão, carioca, cozido', 76, 'ai']])
     expect(meals()[0].ai).toBeGreaterThan(0)
+    // Kept among my foods, so the next time it is found by searching instead of photographed.
+    const foods = useStore.getState().S.foods
+    expect(foods.map(f => [f.name, f.src, f.serving.g])).toEqual([['Arroz, tipo 1, cozido', 'ai', 150], ['Feijão, carioca, cozido', 'ai', 100]])
+    expect(meals()[0].items.map(x => x.ref)).toEqual(foods.map(f => f.id))
+    addFoodSheet(todayISO(), 'dinner')
+    const sheet = topSheet()
+    await until(() => !sheet.textContent.includes('Loading…'))
+    setInput(sheet.querySelector('input[type=search]'), 'feijao')
+    expect(sheet.querySelector('.lrow').textContent).toContain('Feijão, carioca, cozido')
   })
 
   it('never replaces food added by hand while the estimate was on its way', async () => {

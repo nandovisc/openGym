@@ -100,7 +100,10 @@ const REASONS = {
   'email': 'e-mail addresses already in use',
   // What a `media.throttled` pause was for.
   'upload': 'photo and video uploads',
-  'sweep': 'clearing unused photos and videos'
+  'sweep': 'clearing unused photos and videos',
+  // The token the sleep Shortcut posts with (`sleep.token`).
+  'token-created': 'a new sleep token was made, replacing any earlier one',
+  'token-revoked': 'the sleep token was revoked'
 }
 export const auditReason = msg => REASONS[msg] || (msg ? String(msg) : '')
 

@@ -3,8 +3,9 @@ import { useStore } from '../store/useStore.js'
 import { doseState, dosesOn, hhmmOf } from '../lib/meds.js'
 import { examsByDate, outOfRange } from '../lib/exams.js'
 import { foodToday } from './Food.jsx'
+import { sleepLast } from './Sleep.jsx'
 import { lastBW } from '../lib/history.js'
-import { fmtDate, fmtNum, todayISO } from '../lib/format.js'
+import { fmtDate, fmtDur, fmtNum, todayISO } from '../lib/format.js'
 import { t } from '../lib/i18n.js'
 import Icon from '../components/Icon.jsx'
 import { Row, Section } from '../components/ui.jsx'
@@ -30,6 +31,7 @@ export default function Health() {
   const lastMeasure = (S.measurements || []).at(-1)
   const lastExam = examsByDate(S.exams)[0]
   const food = foodToday(S)
+  const sleep = sleepLast(S)
   const medsSub = !(S.meds || []).length ? t('Add what you take and get reminded')
     : !meds.total ? t('Nothing scheduled today')
       : [t('{0} of {1} doses taken today', meds.taken, meds.total), meds.late ? t('{0} late', meds.late) : null].filter(Boolean).join(' · ')
@@ -47,6 +49,9 @@ export default function Health() {
       <Row icon="flame" iconTint="var(--orange)" title={t('Nutrition')}
         subtitle={food.logged ? (food.target ? t('{0} of {1} kcal today', fmtNum(food.kcal), fmtNum(food.target)) : t('{0} kcal today', fmtNum(food.kcal))) : t('Meals, calories and macros')}
         accessory="chevron" onClick={() => nav('/health/food')} />
+      <Row icon="moon" iconTint="var(--indigo)" title={t('Sleep')}
+        subtitle={sleep ? `${t('Last night: {0}', fmtDur(sleep.min * 60000))} · ${sleep.bed} → ${sleep.wake}` : t('Your nights, from Apple Health or by hand')}
+        accessory="chevron" onClick={() => nav('/health/sleep')} />
       <Row icon="scale" iconTint="var(--blue)" title={t('Body weight')}
         subtitle={bw ? `${fmtNum(bw.w)} ${S.unit} · ${fmtDate(bw.d, true)}` : t('No weigh-ins yet')} accessory="chevron" onClick={weighInsSheet} />
       <Row icon="ruler" iconTint="var(--indigo)" title={t('Body measurements')}

@@ -48,6 +48,7 @@ import Health from './views/Health.jsx'
 import Meds from './views/Meds.jsx'
 import Exams from './views/Exams.jsx'
 import Food from './views/Food.jsx'
+import Sleep from './views/Sleep.jsx'
 import CoachIntake from './views/CoachIntake.jsx'
 import CoachSetup from './views/CoachSetup.jsx'
 
@@ -226,6 +227,7 @@ function Shell() {
               <Route path="/health/meds" element={<Meds />} />
               <Route path="/health/exams" element={<Exams />} />
               <Route path="/health/food" element={<Food />} />
+              <Route path="/health/sleep" element={<Sleep />} />
               <Route path="/settings" element={<SettingsRoute />} />
               <Route path="/settings/:page" element={<SettingsRoute />} />
               {/* The Coach screens gate themselves on the instance config; the routes exist

@@ -318,6 +318,76 @@ paths:
         '429': { description: Too many estimates this hour (`locked`). }
         '502': { description: The service failed, refused the key (`config`) or answered something unreadable. }
         '504': { description: The estimate took too long. }
+  /api/sleep/token:
+    get:
+      tags: [data]
+      operationId: getSleepToken
+      summary: Whether a sleep token is set, and when it was last used
+      description: |
+        Health → Sleep. `{ on: false }`, or `{ on: true, at, last, nights }`: when the token was
+        made, when the Shortcut last posted with it, and how many nights that post carried. The
+        token itself is never shown again after it was made.
+      responses:
+        '200': { description: The token's state. }
+        '401': { description: Not signed in. }
+    post:
+      tags: [data]
+      operationId: makeSleepToken
+      summary: Make the token the iPhone Shortcut posts sleep with
+      description: |
+        A new token (`ogs_…`) replaces the one before. It is answered this once and stored only as
+        a SHA-256; all it can do is put nights into this profile through `/api/sleep/ingest`.
+      responses:
+        '200': { description: '`{ token, on: true, at, last: null, nights: null }`.' }
+        '401': { description: Not signed in. }
+    delete:
+      tags: [data]
+      operationId: revokeSleepToken
+      summary: Revoke the sleep token
+      responses:
+        '200': { description: '`{ on: false }`.' }
+        '401': { description: Not signed in. }
+  /api/sleep/ingest:
+    post:
+      tags: [data]
+      operationId: ingestSleep
+      summary: Put the nights a watch or a ring wrote to Apple Health into the profile
+      description: |
+        Posted by an iPhone Shortcut every morning (docs/SLEEP_SHORTCUT.md), with
+        `Authorization: Bearer <sleep token>` instead of a session. `samples` is the text the
+        Shortcut builds, one sample a line (`start;end;value;source`, times in ISO 8601 with
+        their offset), or an array of `{ start, end, value, source }`. The value is Apple's name
+        for the stage, its number, or the label the Shortcut shows (Portuguese or English).
+        Samples become one night a day — the longest sleep ending that day, from the source with
+        the most staged minutes — written as `S.sleep` entries with id `hk:<day>`: sent again,
+        a night replaces itself; a day logged by hand, or a night the person edited, is left as
+        it is. A write is a new revision of the profile, which the app picks up on its next poll.
+        Sixty posts an hour.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [samples]
+              properties:
+                samples:
+                  oneOf:
+                    - { type: string }
+                    - type: array
+                      items:
+                        type: object
+                        properties:
+                          start: { type: string }
+                          end: { type: string }
+                          value: { type: string }
+                          source: { type: string }
+      responses:
+        '200': { description: '`{ ok, nights: [{ d, asleepMin, source }], written: [days written] }`.' }
+        '401': { description: No token, or not a valid one (`sleep-token`). }
+        '429': { description: Too many posts this hour (`locked`). }
+        '503': { description: The profile could not be read. }
   /api/config:
     get:
       tags: [meta]

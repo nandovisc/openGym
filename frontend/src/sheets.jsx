@@ -30,7 +30,8 @@ import MuscleExplorer from './components/MuscleExplorer.jsx'
 import ExerciseViewToggle from './components/ExerciseViewToggle.jsx'
 import { sameMuscleFirst, swapMuscleOf } from './lib/similar-exercises.js'
 import { exerciseMuscleSnapshot, loadOfWorkouts, MUSCLES, MUSCLE_NAME, muscleWeightsOf, normalizeMuscleGroups, hasExplicitMuscleMetadata, inMuscleOrder } from './lib/muscles.js'
-import { parseImport, mergeImport } from './lib/import-csv.js'
+import { parseBodyweight, parseImport, mergeImport } from './lib/import-csv.js'
+import { isHealthExport, parseSleepExport, scanHealthExport } from './lib/health-export.js'
 import { importHevyData, HevyApiError, HEVY_DEV_SETTINGS, mergeHevyRoutines } from './lib/import-hevy.js'
 import { buildPlanBundle, parsePlan, mergePlan, printPlan, planPrintHTML } from './lib/plan-share.js'
 import { estimate1RM, best1RM, is1RMRecord, REP_CAP, formulaOf, FORMULA_NAMES } from './lib/onerm.js'
@@ -419,31 +420,39 @@ const effortLine = (effort, n, scale) => effort === 'none'
 // are all on screen before the confirm button.
 function ImportSummary({ parsed, close }) {
   const st = useStore(s => s.S)
-  const isBW = parsed.kind === 'bodyweight'
-  const have = isBW
+  const isSleep = parsed.kind === 'sleep'
+  const isBW = parsed.kind === 'bodyweight' || isSleep
+  const sleep = isSleep ? parsed : parsed.sleep
+  const have = isSleep ? 0 : isBW
     ? parsed.bodyweight.filter(b => st.bodyweight.some(x => x.d === b.d)).length
     : parsed.workouts.filter(w => st.workouts.some(x => x.d === w.d)).length
-  const fresh = (isBW ? parsed.bodyweight.length : parsed.workouts.length) - have
+  const fresh = isSleep ? 0 : (isBW ? parsed.bodyweight.length : parsed.workouts.length) - have
+  const freshNights = sleep ? sleep.nights.filter(n => !(st.sleep || []).some(x => x.d === n.d)).length : 0
+  const range = sleep && !isSleep ? [parsed.from < sleep.from ? parsed.from : sleep.from, parsed.to > sleep.to ? parsed.to : sleep.to] : [parsed.from, parsed.to]
 
   const doImport = () => {
     let res
     update(s => { res = mergeImport(s, parsed) })
     close()
-    toast(isBW
-      ? tn('{0} weigh-in imported', '{0} weigh-ins imported', res.added)
-      : tn('{0} workout imported', '{0} workouts imported', res.added))
+    const nights = isSleep ? res : res.nights
+    toast([
+      isSleep ? null : isBW ? tn('{0} weigh-in imported', '{0} weigh-ins imported', res.added) : tn('{0} workout imported', '{0} workouts imported', res.added),
+      nights ? tn('{0} night imported', '{0} nights imported', nights.added) : null
+    ].filter(Boolean).join(' · '))
   }
 
   return <>
     <h3>{parsed.source ? t('Import from {0}', parsed.source) : t('Import history')}</h3>
     <div className="muted small" style={{ marginBottom: 12 }}>
-      {fmtDateRange(parsed.from, parsed.to, true)}
+      {fmtDateRange(range[0], range[1], true)}
     </div>
 
     <div className="tiles" style={{ textAlign: 'start' }}>
       {isBW ? <>
-        <div className="tile"><div className="l">{t('Weigh-ins')}</div><div className="v" style={{ fontSize: '1.1rem' }}>{parsed.bodyweight.length}</div></div>
-        <div className="tile"><div className="l">{t('New')}</div><div className="v" style={{ fontSize: '1.1rem' }}>{fresh}</div></div>
+        {!isSleep && <div className="tile"><div className="l">{t('Weigh-ins')}</div><div className="v" style={{ fontSize: '1.1rem' }}>{parsed.bodyweight.length}</div></div>}
+        {!isSleep && <div className="tile"><div className="l">{t('New')}</div><div className="v" style={{ fontSize: '1.1rem' }}>{fresh}</div></div>}
+        {sleep && <div className="tile"><div className="l">{t('Nights of sleep')}</div><div className="v" style={{ fontSize: '1.1rem' }}>{sleep.nights.length}</div></div>}
+        {sleep && <div className="tile"><div className="l">{t('New nights')}</div><div className="v" style={{ fontSize: '1.1rem' }}>{freshNights}</div></div>}
       </> : <>
         <div className="tile"><div className="l">{t('Workouts')}</div><div className="v" style={{ fontSize: '1.1rem' }}>{parsed.workouts.length}</div></div>
         <div className="tile"><div className="l">{t('Sets')}</div><div className="v" style={{ fontSize: '1.1rem' }}>{parsed.sets}</div></div>
@@ -490,7 +499,24 @@ function ImportSummary({ parsed, close }) {
 }
 
 /** Read a CSV/XML export, then show what it would do. */
-export function importFromApp(file, onDone) {
+export async function importFromApp(file, onDone) {
+  // The Apple Health export: read in slices for its weigh-ins and nights (lib/health-export.js).
+  let health = false
+  try { health = await isHealthExport(file) } catch { /* not a Blob this browser can slice: read it whole below */ }
+  if (health) {
+    let parsed
+    try {
+      toast(t('Reading the Apple Health export…'))
+      const records = await scanHealthExport(file)
+      const bw = records.includes('HKQuantityTypeIdentifierBodyMass') ? parseBodyweight(records, { unit: S().unit }) : { error: 'unrecognised' }
+      const sl = parseSleepExport(records)
+      parsed = !bw.error ? (sl.error ? bw : { ...bw, sleep: sl }) : sl
+    } catch { toast(t('Could not read that file')); return }
+    if (parsed.error) { toast(t('Nothing to import from that file')); return }
+    ui().openSheet(close => <ImportSummary parsed={parsed} close={close} />)
+    onDone && onDone()
+    return
+  }
   const rd = new FileReader()
   rd.onload = () => {
     let parsed

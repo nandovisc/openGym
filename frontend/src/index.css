@@ -2202,3 +2202,17 @@ button.wl-summary{width:100%;padding:0 0 10px;text-align:start;border-radius:var
 .food-suggest{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;background:var(--acc-soft);border-radius:var(--r)}
 .food-meal-head{display:flex;gap:10px;align-items:center;padding:10px 14px}
 .food-photo{width:56px;height:56px;border-radius:var(--r-sm);object-fit:cover}
+.sleep-stages{display:flex;height:10px;border-radius:5px;overflow:hidden;margin-top:12px;background:var(--surface-3)}
+.sleep-legend{display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:6px;color:var(--label-2)}
+.sleep-legend i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-inline-end:5px}
+.sleep-deep{background:var(--indigo)}
+.sleep-core{background:var(--blue)}
+.sleep-rem{background:var(--teal)}
+.sleep-awake{background:var(--orange)}
+.sleep-stars{display:flex;gap:2px}
+.sleep-stars .iconbtn{color:var(--label-3)}
+.sleep-stars .iconbtn.on{color:var(--yellow,#f5c400)}
+.sleep-secret{padding:10px 12px;background:var(--surface-2);border-radius:var(--r)}
+.sleep-secret code{font-size:12px;word-break:break-all;flex:1;margin-inline-end:8px}
+.sleep-steps{margin:0;padding-inline-start:20px;color:var(--label-2);line-height:1.45}
+.sleep-steps li{margin-bottom:6px}

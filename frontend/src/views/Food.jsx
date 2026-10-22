@@ -119,7 +119,7 @@ function Amount({ food, onAdd, onBack }) {
       <button className="exam-chip" onClick={() => setGrams(food.serving.g)}>{food.serving.label || `${food.serving.g} g`}</button>
       <button className="exam-chip" onClick={() => setGrams(100)}>100 g</button>
     </div>}
-    <label className="food-grams"><span>{t('Amount (g)')}</span><NumberField value={grams} onChange={v => setGrams(v)} /></label>
+    <label className="food-grams"><span>{t('Amount (g)')}</span><NumberField className="field" value={grams} onChange={v => setGrams(v)} /></label>
     <div className="food-preview">
       <b>{kcalText(it.kcal)}</b>
       <span>{t('P {0}', g(it.p))}</span><span>{t('C {0}', g(it.c))}</span><span>{t('F {0}', g(it.f))}</span>
@@ -244,11 +244,11 @@ function QuickTab({ onAdd }) {
   return <div className="med-form">
     <label><span>{t('Name')}</span><TextField value={f.name} maxLength={100} placeholder={t('e.g. Coffee with milk')} onChange={e => set('name', e.target.value)} /></label>
     <div className="food-macro-grid">
-      <label><span>kcal</span><NumberField nullable value={f.kcal} onChange={v => set('kcal', v)} /></label>
-      <label><span>{t('Amount (g)')}</span><NumberField nullable value={f.grams} onChange={v => set('grams', v)} /></label>
-      <label><span>{t('Protein (g)')}</span><NumberField nullable value={f.p} onChange={v => set('p', v)} /></label>
-      <label><span>{t('Carbs (g)')}</span><NumberField nullable value={f.c} onChange={v => set('c', v)} /></label>
-      <label><span>{t('Fat (g)')}</span><NumberField nullable value={f.f} onChange={v => set('f', v)} /></label>
+      <label><span>kcal</span><NumberField className="field" nullable value={f.kcal} onChange={v => set('kcal', v)} /></label>
+      <label><span>{t('Amount (g)')}</span><NumberField className="field" nullable value={f.grams} onChange={v => set('grams', v)} /></label>
+      <label><span>{t('Protein (g)')}</span><NumberField className="field" nullable value={f.p} onChange={v => set('p', v)} /></label>
+      <label><span>{t('Carbs (g)')}</span><NumberField className="field" nullable value={f.c} onChange={v => set('c', v)} /></label>
+      <label><span>{t('Fat (g)')}</span><NumberField className="field" nullable value={f.f} onChange={v => set('f', v)} /></label>
     </div>
     <label className="row" style={{ gap: 8 }}><input type="checkbox" checked={f.keep} disabled={!(f.grams > 0)} onChange={e => set('keep', e.target.checked)} />
       <span className="small">{t('Save as one of my foods (needs the amount)')}</span></label>
@@ -313,7 +313,7 @@ function EditItem({ mealId, itemId, close }) {
   return <>
     <h3>{item.name}</h3>
     {item.src === 'ai' && <div className="small dim exam-ai-note"><Icon name="sparkles" /> {t('Estimated by AI. Adjust the grams if needed.')}</div>}
-    {item.grams > 0 && <label className="food-grams"><span>{t('Amount (g)')}</span><NumberField value={grams} onChange={v => setGrams(v)} /></label>}
+    {item.grams > 0 && <label className="food-grams"><span>{t('Amount (g)')}</span><NumberField className="field" value={grams} onChange={v => setGrams(v)} /></label>}
     <div className="food-preview">
       <b>{kcalText(next.kcal)}</b>
       <span>{t('P {0}', g(next.p))}</span><span>{t('C {0}', g(next.c))}</span><span>{t('F {0}', g(next.f))}</span>
@@ -360,8 +360,8 @@ function Targets({ close }) {
     </div>
     <div className="med-form">
       <div className="food-macro-grid">
-        <label><span>{t('Year of birth')}</span><NumberField nullable decimal={false} value={f.birthYear} onChange={v => set('birthYear', v)} /></label>
-        <label><span>{t('Height (cm)')}</span><NumberField nullable decimal={false} value={f.heightCm} onChange={v => set('heightCm', v)} /></label>
+        <label><span>{t('Year of birth')}</span><NumberField className="field" nullable decimal={false} value={f.birthYear} onChange={v => set('birthYear', v)} /></label>
+        <label><span>{t('Height (cm)')}</span><NumberField className="field" nullable decimal={false} value={f.heightCm} onChange={v => set('heightCm', v)} /></label>
       </div>
       <div className="sect-b">
         <SelectRow title={t('Activity')} sheetTitle={t('Activity')} value={f.activity} onChange={v => set('activity', v)} options={Object.keys(ACTIVITY).map(k => ({ value: k, label: t(ACTIVITY_LABEL[k]) }))} />
@@ -372,10 +372,10 @@ function Targets({ close }) {
         <Button size="sm" onClick={apply}>{t('Use')}</Button>
       </div>}
       <div className="food-macro-grid">
-        <label><span>kcal</span><NumberField nullable decimal={false} value={f.kcal} onChange={v => set('kcal', v)} /></label>
-        <label><span>{t('Protein (g)')}</span><NumberField nullable decimal={false} value={f.p} onChange={v => set('p', v)} /></label>
-        <label><span>{t('Carbs (g)')}</span><NumberField nullable decimal={false} value={f.c} onChange={v => set('c', v)} /></label>
-        <label><span>{t('Fat (g)')}</span><NumberField nullable decimal={false} value={f.f} onChange={v => set('f', v)} /></label>
+        <label><span>kcal</span><NumberField className="field" nullable decimal={false} value={f.kcal} onChange={v => set('kcal', v)} /></label>
+        <label><span>{t('Protein (g)')}</span><NumberField className="field" nullable decimal={false} value={f.p} onChange={v => set('p', v)} /></label>
+        <label><span>{t('Carbs (g)')}</span><NumberField className="field" nullable decimal={false} value={f.c} onChange={v => set('c', v)} /></label>
+        <label><span>{t('Fat (g)')}</span><NumberField className="field" nullable decimal={false} value={f.f} onChange={v => set('f', v)} /></label>
       </div>
     </div>
     <div style={{ height: 12 }} />

@@ -159,6 +159,8 @@ describe('the day and the targets', () => {
     useStore.setState({ S, user: null, config: null })
     targetsSheet()
     const sheet = topSheet()
+    // Styled as the app's fields (dark background in the dark theme), not the browser's white box.
+    expect([...sheet.querySelectorAll('.food-macro-grid input')].every(i => i.classList.contains('field'))).toBe(true)
     const [birth, height] = [...sheet.querySelectorAll('.food-macro-grid input')]
     setInput(birth, new Date().getFullYear() - 35)
     setInput(height, 180)

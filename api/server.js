@@ -22,6 +22,7 @@ import { dayReminderPush, medReminderPush, nudgePush, restTimerPush, testPush } 
 import { doseId, medsDue } from './meds.js';
 import { ExamReadError, examReaderConfig, readExam } from './exam-reader.js';
 import { mealReaderConfig, readMeal } from './meal-reader.js';
+import { mergeNights, nightsFrom, parseSamples } from './sleep.js';
 import { verifyError } from './verify-error.js';
 import {
   hashPassword, verifyPassword, needsRehash, passwordProblem, passwordLength, nameKey, BusyError,
@@ -35,7 +36,7 @@ import {
 import { createDeviceLink, findDeviceLink, burnDeviceLink, dropDeviceLinks } from './device-link.js';
 import { createMediaStore, mediaLimits, mediaConfig, MediaError, HASH_RE, sniffMedia } from './media.js';
 import { effectiveRoutineId } from './queue.js';
-import { stampPut } from './sync-stamps.js';
+import { stampEntry, stampPut } from './sync-stamps.js';
 import { atomicWrite as durableWrite } from './durable.js';
 import { excusedOn, nudgeFor, nudgeWindowOpen, toneOf } from './nudge.js';
 import { createRemote } from './store/remote.js';
@@ -2057,6 +2058,80 @@ const mealRoutes = {
   }
 };
 
+/* ---------- sleep sent from Apple Health (Health → Sleep) ---------- */
+// An iPhone Shortcut reads the night from the Health app every morning — what a watch or a ring
+// wrote there — and posts the samples here with a token of the person's own (sleep.js turns them
+// into nights). The token can do this one thing: put nights into its owner's profile. It reads
+// nothing back. Made in Settings, shown once, kept only as a SHA-256 like a device link's code;
+// a new one replaces the old, and it can be revoked.
+const SLEEP_INGESTS = createWindow({ max: 60, windowMs: 3600000 });
+const hashSleepToken = tok => crypto.createHash('sha256').update('opengym-sleep:' + tok).digest('hex');
+function sleepTokenUser(req) {
+  const auth = String(req.headers.authorization || '');
+  const tok = auth.startsWith('Bearer ') ? auth.slice(7).trim() : '';
+  if (!/^ogs_[A-Za-z0-9_-]{20,100}$/.test(tok)) return null;
+  const want = Buffer.from(hashSleepToken(tok), 'hex');
+  return db.users.find(u => {
+    const h = u.sleepToken?.h;
+    if (typeof h !== 'string' || h.length !== 64 || u.disabled) return false;
+    return crypto.timingSafeEqual(Buffer.from(h, 'hex'), want);
+  }) || null;
+}
+const sleepTokenView = user => {
+  const t = user.sleepToken;
+  return t?.h ? { on: true, at: t.at || null, last: t.last || null, nights: t.nights ?? null } : { on: false };
+};
+const sleepRoutes = {
+  'GET /api/sleep/token': async (req, res) => {
+    const user = readSession(req);
+    if (!user) return json(res, 401, { error: 'not signed in' });
+    json(res, 200, sleepTokenView(user));
+  },
+  'POST /api/sleep/token': async (req, res) => {
+    const user = readSession(req);
+    if (!user) return json(res, 401, { error: 'not signed in' });
+    const token = 'ogs_' + crypto.randomBytes(24).toString('base64url');
+    user.sleepToken = { h: hashSleepToken(token), at: Date.now(), last: null, nights: null };
+    saveDb();
+    audit(req, 'sleep.token', { user, msg: 'token-created' });
+    json(res, 200, { token, ...sleepTokenView(user) });
+  },
+  'DELETE /api/sleep/token': async (req, res) => {
+    const user = readSession(req);
+    if (!user) return json(res, 401, { error: 'not signed in' });
+    if (user.sleepToken) { delete user.sleepToken; saveDb(); audit(req, 'sleep.token', { user, msg: 'token-revoked' }); }
+    json(res, 200, { on: false });
+  },
+  'POST /api/sleep/ingest': async (req, res) => {
+    const user = sleepTokenUser(req);
+    if (!user) return json(res, 401, { error: 'invalid sleep token', code: 'sleep-token' });
+    const wait = SLEEP_INGESTS.take(user.id);
+    if (wait) return json(res, 429, { error: 'too many uploads, try again later', code: 'locked', retryAfter: wait }, { 'Retry-After': String(wait) });
+    const body = await readBody(req);
+    const nights = nightsFrom(parseSamples(body));
+    let put = [];
+    if (nights.length) {
+      const cur = await loadStateStrict(user.id);
+      if (cur === UNREADABLE) { console.error('state file unreadable for', user.id); return json(res, 503, { error: 'state unreadable' }); }
+      const merged = mergeNights(cur?.sleep, nights);
+      put = merged.put;
+      if (put.length) {
+        // Stamped here, field by field, as a device stamps its own edit: a device merging later
+        // keeps these nights, and keeps what it changed itself (a quality, a note) on the same one.
+        const now = Date.now();
+        const before = new Map((Array.isArray(cur?.sleep) ? cur.sleep : []).filter(x => x?.id).map(x => [x.id, x]));
+        for (const n of merged.list) if (n && put.includes(n.d) && n.id === 'hk:' + n.d) stampEntry(before.get(n.id), n, now);
+        const done = await commitState(user, cur, { ...(cur || {}), sleep: merged.list }, { overRead: true, stamped: true });
+        if (!done) return json(res, 400, { error: 'invalid state' });
+      }
+    }
+    user.sleepToken = { ...user.sleepToken, last: Date.now(), nights: nights.length };
+    saveDb();
+    audit(req, 'sleep.ingest', { user, msg: `${nights.length} night(s), ${put.length} written` });
+    json(res, 200, { ok: true, nights: nights.map(n => ({ d: n.d, asleepMin: n.asleepMin, source: n.source })), written: put });
+  }
+};
+
 /* ---------- scheduled work, serverless ---------- */
 // What the timers of the single process do, done when something calls this route: on Vercel a
 // pg_cron job in the database itself, through pg_net (api/store/supabase-cron.sql). Bearer
@@ -2125,6 +2200,63 @@ function dataWritable() {
   }
   dataProbe = { at: now, ok };
   return ok;
+}
+
+// Writes `state` over the stored profile `cur` of `user`: what PUT /api/data does once the request
+// has been checked, and what POST /api/sleep/ingest does with the nights it puts in. null when the
+// document cannot be stored (nested too deep to compare or to stringify), else { rev, wid, ts }.
+async function commitState(user, cur, state, { overRead = false, stamped = false } = {}) {
+  const curRev = cur?._rev || 0;
+  delete state.active;              // in-progress workouts stay device-local
+  // "Reset everything" stamps the profile (`resetAt`, with `resetIds`: what it wiped). The stamp
+  // only moves forward: a write without it, or with an older one — a client from before it, a
+  // backup restored over the profile — keeps the stored stamp. Otherwise every device that saw
+  // the reset would take that copy for one older than the reset, and wipe it again on its next
+  // merge (frontend/src/lib/sync-merge.js).
+  const storedReset = Number(cur?.resetAt) || 0;
+  if (storedReset > (Number(state.resetAt) || 0)) {
+    state.resetAt = cur.resetAt;
+    if (cur.resetIds && typeof cur.resetIds === 'object') state.resetIds = cur.resetIds;
+    else delete state.resetIds;
+  }
+  // The records of removals and edits only grow, and what a writer that does not stamp its own
+  // changes (an older app, an API script) changed is stamped here, so it is neither wiped nor
+  // undone by the next device that merges (sync-stamps.js).
+  // A document nested too deep to compare is the bad request the stringify below refuses too.
+  const report = {};
+  try { stampPut(cur, state, { overRead, stamped, report }); }
+  catch (e) { if (e instanceof RangeError) return null; throw e; }
+  state._rev = curRev + 1;          // server-owned; whatever the client sent is ignored
+  // A writer that does not stamp (an older app) takes the revision it is told for the document it
+  // sent, and only reads the profile again once the revision moves. When the server put back
+  // something it left out or set back (sync-stamps.js), the document stored is not that one: it
+  // goes in one revision further, so the writer's next check of the revision (every half minute)
+  // finds it moved and reads it, and its next push over the one it was told is a conflict to merge.
+  if (report.changed) state._rev = curRev + 2;
+  state._wids = [...(Array.isArray(cur?._wids) ? cur._wids : []), ...(cur?._wid ? [cur._wid] : [])]
+    .filter(x => typeof x === 'string').slice(-WID_KEEP);
+  state._wid = crypto.randomBytes(8).toString('hex');
+  // JSON.parse takes any nesting, JSON.stringify recurses and runs out of stack on a document
+  // nested some thousands deep. No client builds one; it is a bad request, not a server error.
+  let text;
+  try { text = JSON.stringify(state); }
+  catch (e) { if (e instanceof RangeError) return null; throw e; }
+  if (SERVERLESS) tx.writeState(user.id, text);
+  else atomicWrite(stateFile(user.id), text);
+  // The stat cache cannot see this write on its own: mtime granularity is 4 ms here (ext4 on
+  // this kernel — 3901 of 3999 back-to-back same-size writes shared one timestamp), and a
+  // `_rev` going from 7 to 8 does not change the file's size, so two writes inside one 4 ms
+  // tick are the same (mtimeMs, size) key. A reader that sampled between them would then serve
+  // the old revision until some later write happened to land on a different tick. This is the
+  // one writer of a state file in the tree, so evicting here is the whole fix.
+  stateCache.delete(user.id);
+  // Starts (or stops) the grace clock of every stored file this write stopped (or started)
+  // referencing. Bookkeeping only: the state is already saved, so nothing here may turn a
+  // successful write into an error.
+  if (MEDIA_ON) {
+    try { await MEDIA.noteState(user.id, state); } catch (e) { console.error('media noteState', e); }
+  }
+  return { rev: curRev + 1, wid: state._wid, ts: state._ts || null };
 }
 
 const routes = {
@@ -2467,56 +2599,9 @@ const routes = {
         (body.baseRev != null && typeof body.baseWid === 'string' && cur?._wid && body.baseWid !== cur._wid)) {
       return json(res, 409, { error: 'conflict', rev: curRev, state: forClient(cur) });
     }
-    delete body.state.active;              // in-progress workouts stay device-local
-    // "Reset everything" stamps the profile (`resetAt`, with `resetIds`: what it wiped). The stamp
-    // only moves forward: a write without it, or with an older one — a client from before it, a
-    // backup restored over the profile — keeps the stored stamp. Otherwise every device that saw
-    // the reset would take that copy for one older than the reset, and wipe it again on its next
-    // merge (frontend/src/lib/sync-merge.js).
-    const storedReset = Number(cur?.resetAt) || 0;
-    if (storedReset > (Number(body.state.resetAt) || 0)) {
-      body.state.resetAt = cur.resetAt;
-      if (cur.resetIds && typeof cur.resetIds === 'object') body.state.resetIds = cur.resetIds;
-      else delete body.state.resetIds;
-    }
-    // The records of removals and edits only grow, and what a writer that does not stamp its own
-    // changes (an older app, an API script) changed is stamped here, so it is neither wiped nor
-    // undone by the next device that merges (sync-stamps.js).
-    // A document nested too deep to compare is the bad request the stringify below refuses too.
-    const report = {};
-    try { stampPut(cur, body.state, { overRead: body.baseRev != null && body.baseRev === curRev, stamped: body.stamped === true, report }); }
-    catch (e) { if (e instanceof RangeError) return json(res, 400, { error: 'invalid state' }); throw e; }
-    body.state._rev = curRev + 1;          // server-owned; whatever the client sent is ignored
-    // A writer that does not stamp (an older app) takes the revision it is told for the document it
-    // sent, and only reads the profile again once the revision moves. When the server put back
-    // something it left out or set back (sync-stamps.js), the document stored is not that one: it
-    // goes in one revision further, so the writer's next check of the revision (every half minute)
-    // finds it moved and reads it, and its next push over the one it was told is a conflict to merge.
-    if (report.changed) body.state._rev = curRev + 2;
-    body.state._wids = [...(Array.isArray(cur?._wids) ? cur._wids : []), ...(cur?._wid ? [cur._wid] : [])]
-      .filter(x => typeof x === 'string').slice(-WID_KEEP);
-    body.state._wid = crypto.randomBytes(8).toString('hex');
-    // JSON.parse takes any nesting, JSON.stringify recurses and runs out of stack on a document
-    // nested some thousands deep. No client builds one; it is a bad request, not a server error.
-    let text;
-    try { text = JSON.stringify(body.state); }
-    catch (e) { if (e instanceof RangeError) return json(res, 400, { error: 'invalid state' }); throw e; }
-    if (SERVERLESS) tx.writeState(user.id, text);
-    else atomicWrite(stateFile(user.id), text);
-    // The stat cache cannot see this write on its own: mtime granularity is 4 ms here (ext4 on
-    // this kernel — 3901 of 3999 back-to-back same-size writes shared one timestamp), and a
-    // `_rev` going from 7 to 8 does not change the file's size, so two writes inside one 4 ms
-    // tick are the same (mtimeMs, size) key. A reader that sampled between them would then serve
-    // the old revision until some later write happened to land on a different tick. This is the
-    // only writer of a state file in the tree, so evicting here is the whole fix.
-    stateCache.delete(user.id);
-    // Starts (or stops) the grace clock of every stored file this write stopped (or started)
-    // referencing. Bookkeeping only: the state is already saved, so nothing here may turn a
-    // successful write into an error.
-    if (MEDIA_ON) {
-      try { await MEDIA.noteState(user.id, body.state); } catch (e) { console.error('media noteState', e); }
-    }
-    json(res, 200, { ok: true, ts: body.state._ts || null, rev: curRev + 1, wid: body.state._wid });
+    const done = await commitState(user, cur, body.state, { overRead: body.baseRev != null && body.baseRev === curRev, stamped: body.stamped === true });
+    if (!done) return json(res, 400, { error: 'invalid state' });
+    json(res, 200, { ok: true, ts: done.ts, rev: done.rev, wid: done.wid });
   },
 
   'GET /api/push/public-key': async (req, res) => json(res, 200, { key: vapid.publicKey }),
@@ -2828,6 +2913,7 @@ const routes = {
   // Absent without ANTHROPIC_API_KEY, like the media routes without MEDIA_UPLOADS.
   ...(EXAM_AI.key ? examRoutes : {}),
   ...(MEAL_AI.key ? mealRoutes : {}),
+  ...sleepRoutes,
 
   /* ---------- scheduled work (serverless only) ---------- */
   ...(SERVERLESS ? cronRoutes : {})

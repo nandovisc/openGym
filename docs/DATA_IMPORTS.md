@@ -50,8 +50,10 @@ Routines always arrive as new plans; nothing you already have is overwritten.
 
 In the Health app on your iPhone, tap your profile picture, then **Export All Health Data**. Unzip
 the result and pick `export.xml` under **Import from another app**. The file is often hundreds of
-megabytes; openGym reads only the body-weight records from it, in whatever unit each one was saved
-in, and keeps one weigh-in per day. Days that already have a weigh-in are left alone.
+megabytes; openGym reads it in slices and keeps only the body-weight and sleep records, each
+weight in whatever unit it was saved in, one weigh-in per day. Days that already have a weigh-in
+are left alone. The nights land in Health → Sleep; for last night every morning, see
+[Sleep from Apple Health](SLEEP_SHORTCUT.md).
 
 A CSV with a date column and a weight column works the same way.
 

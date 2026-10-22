@@ -23,6 +23,7 @@ import { uid } from './format.js'
 import { isWarmupRow } from './workout-model.js'
 import { HEVY_TITLE_MAP } from './hevy-id-map.js'
 import { clampIncline, inclineFrom } from './incline.js'
+import { mergeNights } from './sleep-samples.js'
 
 /* ----------------------------------------------------------------- CSV ---- */
 
@@ -783,11 +784,20 @@ export function parseImport(text, opts) {
  * not against each other); a day already in the history brings neither.
  */
 export function mergeImport(S, parsed) {
+  if (parsed.kind === 'sleep') {
+    // A night already here from the Shortcut has the same id and is brought up to date; a day
+    // logged by hand, or a night the person edited, is left alone (sleep-samples.js mergeNights).
+    const res = mergeNights(S.sleep, parsed.nights)
+    S.sleep = res.list
+    return { added: res.put.length, skipped: parsed.nights.length - res.put.length }
+  }
   if (parsed.kind === 'bodyweight') {
+    // An Apple Health export brings its nights along with the weigh-ins.
+    const nights = parsed.sleep ? mergeImport(S, parsed.sleep) : null
     const have = new Set(S.bodyweight.map(b => b.d))
     const fresh = parsed.bodyweight.filter(b => !have.has(b.d))
     S.bodyweight = [...S.bodyweight, ...fresh].sort((a, b) => (a.d < b.d ? -1 : 1))
-    return { added: fresh.length, skipped: parsed.bodyweight.length - fresh.length }
+    return { added: fresh.length, skipped: parsed.bodyweight.length - fresh.length, ...(nights ? { nights } : {}) }
   }
   const have = new Set(S.workouts.map(w => w.d))
   // Every parse invents fresh ids for the names it cannot match, and a later export of the same

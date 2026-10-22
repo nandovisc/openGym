@@ -398,16 +398,16 @@ const workoutTime = w => Number(w?._ts) || Number(w?.end) || Number(w?.start) ||
 
 // What a reset records of the entries it wiped (resetIds), by field: how an entry is named.
 const bodyweightKey = e => `${e?.d}|${e?.t ?? ''}`
-// The health lists (medications, the doses taken or skipped, medical exams, meals and the person's
-// own foods): entries with an id, merged the
+// The health lists (medications, the doses taken or skipped, medical exams, meals, the person's
+// own foods and the nights of sleep): entries with an id, merged the
 // way gym cards are — union by id, field by field for an id both copies have, removals stamped.
 // A dose of a schedule has an id made of the medication, the day and the time (lib/meds.js), so
 // the same dose marked on two devices is one entry, not two.
-export const HEALTH_LISTS = ['meds', 'medLog', 'exams', 'meals', 'foods']
+export const HEALTH_LISTS = ['meds', 'medLog', 'exams', 'meals', 'foods', 'sleep']
 const RESET_LISTS = {
   workouts: workoutKey, routines: x => x?.id, customEx: x => x?.id, bodyweight: bodyweightKey,
   measurements: bodyweightKey, gymCards: x => x?.id, equipProfiles: x => x?.id, favEx: x => x,
-  meds: x => x?.id, medLog: x => x?.id, exams: x => x?.id, meals: x => x?.id, foods: x => x?.id,
+  meds: x => x?.id, medLog: x => x?.id, exams: x => x?.id, meals: x => x?.id, foods: x => x?.id, sleep: x => x?.id,
 }
 const RESET_MAPS = ['exNotes', 'barWeights', ...STAMPED_MAPS]
 /** An entry's name in resetIds: a workout's id (or day and start), a weigh-in's day and time, … */
@@ -468,6 +468,7 @@ export function sinceReset(S, at, ids) {
     out.exams = list(S.exams).filter(x => x && after(x._ts))
     out.meals = list(S.meals).filter(x => x && after(x._ts))
     out.foods = list(S.foods).filter(x => x && after(x._ts))
+    out.sleep = list(S.sleep).filter(x => x && after(x._ts))
     // No time of their own: taken for what they were before the reset, which cleared them.
     out.equipProfiles = []
     out.gymCards = []
@@ -510,7 +511,7 @@ export function sinceReset(S, at, ids) {
 const DEL_LISTS = {
   workouts: workoutKey, routines: x => x?.id, customEx: x => x?.id, bodyweight: e => e?.d,
   measurements: e => e?.d, gymCards: x => x?.id, equipProfiles: x => x?.id, favEx: x => x,
-  meds: x => x?.id, medLog: x => x?.id, exams: x => x?.id, meals: x => x?.id, foods: x => x?.id,
+  meds: x => x?.id, medLog: x => x?.id, exams: x => x?.id, meals: x => x?.id, foods: x => x?.id, sleep: x => x?.id,
 }
 // When an entry was last edited, to hold against a removal. Entries with no time of their own
 // (favourites, and cards and profiles saved before they were stamped) count as older than any
@@ -520,7 +521,7 @@ const DEL_TIME = {
   bodyweight: e => Number(e?.t) || 0, measurements: e => Number(e?.t) || 0,
   gymCards: x => Number(x?._ts) || 0, equipProfiles: x => Number(x?._ts) || 0,
   meds: x => Number(x?._ts) || 0, medLog: x => Number(x?._ts) || 0, exams: x => Number(x?._ts) || 0,
-  meals: x => Number(x?._ts) || 0, foods: x => Number(x?._ts) || 0,
+  meals: x => Number(x?._ts) || 0, foods: x => Number(x?._ts) || 0, sleep: x => Number(x?._ts) || 0,
 }
 // Per field, the most stamps kept; past it the oldest go first.
 export const DELETED_MAX = 5000
@@ -627,7 +628,7 @@ function applyDeletions(S, deleted) {
 const OWN_MERGE = new Set([
   '_ts', '_rev', '_wid', '_wids', '_unstamped', '_prior', 'active', 'unit', 'unitSet', 'resetAt', 'resetIds', 'deleted', 'edited', 'undone', 'routineOrder',
   'workouts', 'routines', 'customEx', 'equipProfiles', 'gymCards', 'bodyweight', 'measurements', 'favEx',
-  'meds', 'medLog', 'exams', 'meals', 'foods',
+  'meds', 'medLog', 'exams', 'meals', 'foods', 'sleep',
   'exWeights', 'balanceOverrides', 'loadKind', 'plates', 'dbLoad', 'dumbbells', 'dayNotes',
 ])
 // Stamped per key instead of whole: one day of the plan, one exercise's note or bar.

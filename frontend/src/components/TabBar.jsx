@@ -7,6 +7,7 @@ import Icon from './Icon.jsx'
 import Elapsed from './Elapsed.jsx'
 import { useConnectionTrouble } from './SyncBanner.jsx'
 import { healthOn, moduleOn } from '../lib/modules.js'
+import { QuickAddButton } from './QuickAdd.jsx'
 
 // Module scope, not TabBar's render body. Declared inside it, `Tab` was a new function on every
 // render, so React saw a different component type each time and threw the button away and built a
@@ -62,7 +63,8 @@ export default function TabBar({ onStart }) {
     <nav id="tabbar">
       <Tab active={on('home')} icon="sun" label={t('Today')} dot={trouble} onClick={() => nav('/home')} />
       <Tab active={on('training')} icon="dumbbell" label={t('Training')} onClick={() => nav('/training')} />
-      {start}
+      {/* A session under way keeps its own button (resume, the clock); otherwise the ＋. */}
+      {S.active ? start : <QuickAddButton onStartWorkout={startWorkout} />}
       {moduleOn(S, 'habits')
         ? <Tab active={on('habits')} icon="checkCircle" label={t('Habits')} onClick={() => nav('/habits')} />
         : <Tab active={on('stats')} icon="chart" label={t('Stats')} onClick={() => nav('/stats')} />}

@@ -47,7 +47,7 @@ describe('navigation by modules', () => {
     withModules({})
     const home = render(<Home />)
     expect(home.textContent).toContain('Hi Ana')
-    expect(home.textContent).not.toContain('week streak')
-    expect(home.textContent).toContain('Health')
+    expect(home.querySelector('.wday')).toBeNull()           // the week strip lives in Training
+    expect(home.textContent).toContain('Customize Today')    // views/Today.jsx
   })
 })

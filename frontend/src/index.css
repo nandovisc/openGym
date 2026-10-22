@@ -2221,3 +2221,40 @@ a.btn{text-decoration:none;box-sizing:border-box}
 .food-pick input{width:20px;height:20px;accent-color:var(--acc);flex:none}
 .food-pick-name{display:flex;flex-direction:column;gap:2px;font-size:15px}
 .food-save-meal .lrow-title,.food-save-meal{color:var(--label-2)}
+.hab-week{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:10px}
+.hab-day{display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:0;color:var(--label);font:inherit;padding:4px 0;border-radius:var(--r-sm)}
+.hab-day.sel{background:var(--surface-2)}
+.hab-ring{--p:0;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:conic-gradient(var(--acc) calc(var(--p)*360deg),var(--surface-3) 0)}
+.hab-ring b{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:var(--bg);font-size:12px}
+.hab-chips{gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.hab-groups{display:grid;gap:10px}
+@media (min-width:900px){.wide-ok .hab-groups{grid-template-columns:1fr 1fr;align-items:start}}
+.hab-ghead{display:flex;align-items:center;gap:6px;background:none;border:0;color:var(--label-2);font:inherit;font-weight:600;font-size:14px;padding:6px 2px}
+.hab-list{display:flex;flex-direction:column;gap:6px}
+.hab-row{display:flex;align-items:center;gap:8px;background:var(--surface);border-radius:var(--r);padding:8px 10px}
+.hab-row.done{opacity:.72}
+.hab-main{flex:1;display:flex;align-items:center;gap:10px;background:none;border:0;color:var(--label);font:inherit;text-align:start;min-width:0;padding:0}
+.hab-icon{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;background:var(--surface-2);font-size:19px;flex:none}
+.hab-icon.big{width:48px;height:48px;font-size:26px;border-radius:14px}
+.hab-text{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}
+.hab-name{font-weight:600;font-size:16px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hab-bar{height:10px;border-radius:5px;background:var(--surface-3);overflow:hidden;margin-top:4px;touch-action:none;cursor:ew-resize}
+.hab-fill{height:100%;background:var(--blue);border-radius:5px}
+.hab-fill.done{background:var(--acc)}
+.hab-act{width:40px;height:40px;border-radius:50%;border:2px solid var(--sep);background:none;color:var(--label-3);display:grid;place-items:center;font-size:20px;flex:none}
+.hab-act.on{background:var(--acc);border-color:var(--acc);color:#000}
+.hab-act.slip{color:var(--red)}
+.hab-auto{min-width:40px;text-align:center;font-size:13px;color:var(--label-3);flex:none}
+.hab-auto.done{color:var(--acc);font-size:20px}
+.hab-bars{display:flex;gap:6px;align-items:flex-end;margin-top:10px}
+.hab-bcol{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px}
+.hab-b{width:100%;border-radius:4px 4px 0 0}
+.hab-color{width:28px;height:28px;border-radius:50%;border:2px solid transparent}
+.hab-color.on{border-color:var(--label)}
+.hab-more{border-top:1px solid var(--sep);padding-top:8px;display:flex;flex-direction:column;gap:10px}
+.hab-more[open]{gap:10px}
+.hab-more label{display:block;margin-top:8px}
+.hab-year .hm-c.miss{background:color-mix(in srgb,var(--red) 55%,transparent)}
+.hab-year .hm-c.skip{background:var(--surface-3);opacity:.5}
+.hab-won{border-color:var(--orange)!important;color:var(--orange)!important;background:color-mix(in srgb,var(--orange) 16%,transparent)!important}
+.hab-chips .exam-chip.on{background:color-mix(in srgb,var(--acc) 18%,transparent);border-color:var(--acc);color:var(--acc);font-weight:600}

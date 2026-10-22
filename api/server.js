@@ -18,7 +18,8 @@ import * as coachJobs from './coach/jobs.js';
 import { coachRoutes } from './coach/routes.js';
 import { startCadence } from './coach/cadence.js';
 import { startWarmup } from './coach/warmup.js';
-import { dayReminderPush, medReminderPush, nudgePush, restTimerPush, testPush } from './push-messages.js';
+import { dayReminderPush, habitReminderPush, medReminderPush, nudgePush, restTimerPush, testPush } from './push-messages.js';
+import { habitsDue } from './habits.js';
 import { doseId, medsDue } from './meds.js';
 import { ExamReadError, examReaderConfig, readExam } from './exam-reader.js';
 import { mealReaderConfig, readMeal } from './meal-reader.js';
@@ -581,6 +582,20 @@ function medTick(user, S, now) {
     pushLater(user.id, medReminderPush(S.lang, fresh, time));
   }
 }
+// Habit reminders (habits.js): at a habit's reminder time, a push only when it is not done yet,
+// once a habit and time a day (user.habitSent). The zone is the habits' own (S.habitPrefs.tz).
+function habitTick(user, S, now) {
+  const sent = user.habitSent?.date === now.date ? [...(user.habitSent.ids || [])] : [];
+  for (const { habit, time, status } of habitsDue(S, now, REMINDER_WINDOW_MIN)) {
+    const key = `${habit.id}@${time}`;
+    if (sent.includes(key)) continue;
+    sent.push(key);
+    user.habitSent = { date: now.date, ids: sent };
+    console.log('habit reminder firing', user.id, habit.id, time);
+    saveDb();
+    pushLater(user.id, habitReminderPush(S.lang, habit, status, time));
+  }
+}
 // A push decided inside a request. The single process sends it at once. The serverless one sends
 // it only after the decision (lastReminder, lastNudge) has committed, and in a transaction of its
 // own, so a retried tick never sends twice and a dead subscription found by the send is pruned.
@@ -599,6 +614,10 @@ async function reminderTick() {
       if (S?.medReminder?.on) {
         const medNow = userNow(S.medReminder.tz || 'UTC');
         if (medNow) medTick(user, S, medNow);
+      }
+      if (S?.habitPrefs?.on && Array.isArray(S.habits) && S.habits.length) {
+        const habitNow = userNow(S.habitPrefs.tz || 'UTC');
+        if (habitNow) habitTick(user, S, habitNow);
       }
       if (!S?.reminder?.on) continue;
       const now = userNow(S.reminder.tz || 'UTC');

@@ -11,6 +11,12 @@ const COPY = {
     dayBody: "It's on your plan. Let's go 💪",
     medTitle: 'Time for your medication 💊',
     medTitleMany: 'Time for your medications 💊',
+    habitTitle: 'Habit: {0}',
+    habitBody: 'Not done yet today.',
+    habitProgress: '{0} of {1} {2} so far.',
+    habitMeals: 'Not logged yet: {0}.',
+    habitTask: 'On your list for today.',
+    meals: { breakfast: 'breakfast', lunch: 'lunch', dinner: 'dinner', snack: 'snacks' },
   },
   'pt-BR': {
     restTitle: 'Descanso terminado 💪',
@@ -21,6 +27,12 @@ const COPY = {
     dayBody: 'Está no seu plano. Bora treinar 💪',
     medTitle: 'Hora do seu remédio 💊',
     medTitleMany: 'Hora dos seus remédios 💊',
+    habitTitle: 'Hábito: {0}',
+    habitBody: 'Ainda não feito hoje.',
+    habitProgress: '{0} de {1} {2} até agora.',
+    habitMeals: 'Ainda sem registro: {0}.',
+    habitTask: 'Na sua lista de hoje.',
+    meals: { breakfast: 'café da manhã', lunch: 'almoço', dinner: 'jantar', snack: 'lanches' },
   },
 };
 
@@ -58,6 +70,23 @@ export function medReminderPush(lang, meds, time) {
     tag: `med-${time}`,
     url: '#/health/meds',
   };
+}
+
+const fill = (s, ...args) => args.reduce((t, a, i) => t.replaceAll(`{${i}}`, a), s);
+// A habit not done yet at one of its reminder times (habits.js habitsDue): its name, and how far
+// it got — the amount so far, the meals not logged yet.
+export function habitReminderPush(lang, habit, status, time) {
+  const copy = copyFor(lang);
+  let body = copy.habitBody;
+  if (habit.kind === 'task') body = copy.habitTask;
+  else if ((habit.kind === 'quantity' || habit.kind === 'timer') && status.value > 0) body = fill(copy.habitProgress, String(Math.round(status.value * 10) / 10), String(habit.goal?.value), habit.goal?.unit || '');
+  else if (habit.kind === 'auto' && habit.auto?.source === 'meals' && habit.auto?.mode !== 'target') {
+    const want = (habit.auto.slots?.length ? habit.auto.slots : ['breakfast', 'lunch', 'dinner']);
+    const have = String(status.detail || '').split(',');
+    const missing = want.filter(s => !have.includes(s)).map(s => copy.meals[s] || s);
+    if (missing.length) body = fill(copy.habitMeals, missing.join(', '));
+  }
+  return { title: fill(copy.habitTitle, habit.name), body, tag: `habit-${habit.id}-${time}`, url: '#/health/habits' };
 }
 
 // The missed-workout nudge (nudge.js). Its copy is translated in the frontend packs and generated

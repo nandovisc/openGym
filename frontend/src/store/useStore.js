@@ -108,6 +108,9 @@ export const DEF = {
   sleep: [], sleepPrefs: { goalMin: 480 },
   // Saved meals (lib/nutrition.js savedMealFrom): plates to eat again, whole or in part.
   savedMeals: [],
+  // Habits (lib/habits.js): the habits and tasks, a day's mark of each, their groups, and the
+  // preferences — reminders (tz stamped on boot), when the day starts, vacations, filters.
+  habits: [], habitLog: [], habitGroups: [], habitPrefs: { on: false, tz: null, dayStartsAt: '00:00', vacations: [], hideDone: false, hideFailed: false, hideSkipped: false, hideStreaks: false },
   queue: null,   // a planner's floating week (lib/queue.js) — via the API, or by this rotation feature (below)
   // The in-app rotation's reusable definition — { id, sequence, label } (lib/rotation.js). Never
   // a live queue: it only ever feeds `queue`, and `queue.rotationId` says the pass is managed here.
@@ -308,7 +311,7 @@ function loadState() {
 // photo or video, which the server counts as unreferenced until the state that names it lands —
 // so a profile created from such a copy takes it at once, like one holding a workout.
 const hasData = st => !!((st.workouts || []).length || (st.routines || []).length || (st.bodyweight || []).length || (st.customEx || []).length || (st.measurements || []).length ||
-  (st.meds || []).length || (st.medLog || []).length || (st.exams || []).length || (st.meals || []).length || (st.sleep || []).length)
+  (st.meds || []).length || (st.medLog || []).length || (st.exams || []).length || (st.meals || []).length || (st.sleep || []).length || (st.habits || []).length)
 
 // Decide whether a pulled account state may replace the local saved state. A local active workout
 // is deliberately carried forward: the server stores completed/saved state, while the in-progress
@@ -1962,6 +1965,10 @@ export const useStore = create((set, get) => {
           const tz = localTZ()
           if (get().S.reminder?.on && get().S.reminder.tz !== tz) {
             get().update(s => { s.reminder = { ...s.reminder, tz } })
+          }
+          // The habits' reminders keep the zone of the phone that last opened the app, too.
+          if (get().S.habitPrefs?.on && get().S.habitPrefs.tz !== tz) {
+            get().update(s => { s.habitPrefs = { ...s.habitPrefs, tz } })
           }
         }
         // Closed with the sign-in's question still open: asked again once the app is up (see the

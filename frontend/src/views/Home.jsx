@@ -18,6 +18,7 @@ import { dayNoteOf } from '../lib/day-notes.js'
 import { medsToday } from './Health.jsx'
 import { foodToday } from './Food.jsx'
 import { sleepLast } from './Sleep.jsx'
+import { habitsToday } from './Habits.jsx'
 
 // Home = what to do now + a quick glance. Deep charts & history live in Stats.
 export default function Home() {
@@ -43,6 +44,7 @@ export default function Home() {
   const meds = medsToday(S)
   const food = foodToday(S)
   const sleep = sleepLast(S)
+  const habits = habitsToday(S)
   const prevBW = S.bodyweight.length > 1 ? S.bodyweight[S.bodyweight.length - 2] : null
   const delta = bw && prevBW ? bw.w - prevBW.w : null
 
@@ -205,6 +207,7 @@ export default function Home() {
                 meds.late ? t('{0} late', meds.late) : meds.next ? t('next {0} at {1}', meds.next.med.name, meds.next.time) : null].filter(Boolean).join(' · ')}</div>
           {food.logged && <div className="small dim">{food.target ? t('{0} of {1} kcal today', fmtNum(food.kcal), fmtNum(food.target)) : t('{0} kcal today', fmtNum(food.kcal))}</div>}
           {sleep && <div className="small dim">{t('Last night: {0}', fmtDur(sleep.min * 60000))}</div>}
+          {habits && habits.total > 0 && <div className="small dim">{t('Habits {0}/{1} today', habits.done, habits.total)}</div>}
         </div>
         <Icon name="chevronRight" className="dim" />
       </div>

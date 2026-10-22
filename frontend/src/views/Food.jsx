@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useStore } from '../store/useStore.js'
 import { useUI } from '../store/useUI.js'
 import {
-  ACTIVITY, OBJECTIVE, SLOTS, dailySeries, dayOf, foodFromOff, foodsFromItems, itemOf, itemsFromReading, normalizeFood, normalizeItem,
+  ACTIVITY, OBJECTIVE, SLOTS, dailySeries, dayOf, foodFromOff, foodsFromItems, itemOf, keepEstimatedFoods, itemsFromReading, normalizeFood, normalizeItem,
   normalizeMeal, recentFoods, rescale, searchFoods, suggestTargets
 } from '../lib/nutrition.js'
 import { lastBW } from '../lib/history.js'
@@ -481,6 +481,11 @@ function Trends() {
 
 export default function Food() {
   const nav = useNavigate()
+  // Foods of photo estimates made before they were kept among my foods: kept now, once.
+  useEffect(() => {
+    if (!keepEstimatedFoods(useStore.getState().S.meals, useStore.getState().S.foods).changed) return
+    update(s => { const r = keepEstimatedFoods(s.meals, s.foods); s.meals = r.meals; s.foods = r.foods })
+  }, [])
   const [tab, setTab] = useState('day')
   const [d, setD] = useState(todayISO())
   return <div className="narrow">

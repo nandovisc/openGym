@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  dailySeries, dayOf, foodFromOff, foodsFromItems, itemOf, itemsFromReading, normalizeFood, normalizeItem, normalizeMeal, recentFoods, rescale,
+  dailySeries, dayOf, foodFromOff, foodsFromItems, itemOf, keepEstimatedFoods, itemsFromReading, normalizeFood, normalizeItem, normalizeMeal, recentFoods, rescale,
   searchFoods, suggestTargets, tacoFood
 } from './nutrition.js'
 import { TACO } from './taco-data.js'
@@ -146,5 +146,22 @@ describe('foods estimated from a photo', () => {
     expect(linked[0]).toMatchObject({ src: 'ai', kcal: 192 })
     expect(searchFoods('arroz cozido', { mine: [...mine, ...foods] })[0].id).toBe(foods[0].id)
     expect(foodsFromItems(items, [...mine, ...foods]).foods).toEqual([])
+  })
+})
+
+describe('photo estimates from before', () => {
+  it('have their AI foods kept once, and nothing else is touched', () => {
+    const meals = [
+      { id: 'm1', items: [{ id: 'a', name: 'Arroz cozido', grams: 100, kcal: 128, p: 2.5, c: 28, f: 0.2, src: 'ai' }, { id: 'q', name: 'Café', grams: 0, kcal: 10, p: 0, c: 1, f: 0, src: 'quick' }] },
+      { id: 'm2', items: [{ id: 'b', name: 'arroz COZIDO', grams: 200, kcal: 256, p: 5, c: 56, f: 0.4, src: 'ai' }] },
+      { id: 'm3', items: [{ id: 'c', name: 'Pão', grams: 50, kcal: 150, p: 4, c: 29, f: 1.5, src: 'mine', ref: 'f9' }] }
+    ]
+    const r = keepEstimatedFoods(meals, [])
+    expect(r.changed).toBe(true)
+    expect(r.foods.map(f => f.name)).toEqual(['Arroz cozido'])
+    expect(r.meals[0].items.map(x => x.ref)).toEqual([r.foods[0].id, undefined])
+    expect(r.meals[1].items[0].ref).toBe(r.foods[0].id)
+    expect(r.meals[2]).toBe(meals[2])
+    expect(keepEstimatedFoods(r.meals, r.foods).changed).toBe(false)
   })
 })

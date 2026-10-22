@@ -221,5 +221,22 @@ export function foodsFromItems(items, foods) {
   return { foods: added, items: linked }
 }
 
+/**
+ * Photo estimates from before foodsFromItems existed: their AI items with no `ref`, kept among
+ * the foods the same way. { meals, foods, changed }; nothing changes once every one is linked,
+ * so it can run every time the screen opens.
+ */
+export function keepEstimatedFoods(meals, foods) {
+  let all = list(foods), changed = false
+  const out = list(meals).map(m => {
+    if (!list(m?.items).some(x => x?.src === 'ai' && !x.ref && x.grams > 0)) return m
+    const kept = foodsFromItems(m.items.map(x => (x?.src === 'ai' && !x.ref ? x : null)), all)
+    all = [...all, ...kept.foods]
+    changed = true
+    return { ...m, items: m.items.map((x, i) => kept.items[i] || x) }
+  })
+  return { meals: out, foods: all, changed }
+}
+
 /** What part of the target has been eaten, 0..1+ (null without a target). */
 export const share = (value, target) => (target > 0 ? value / target : null)

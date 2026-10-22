@@ -138,6 +138,18 @@ describe('the photo of a plate', () => {
   })
 })
 
+describe('photo estimates from before', () => {
+  it('have their foods kept among my foods when the screen opens', () => {
+    const S = clone(DEF)
+    S.meals = [{ id: 'm', d: todayISO(), slot: 'lunch', ai: 1, created: 1, items: [{ id: 'i', name: 'Frango grelhado', grams: 120, kcal: 191, p: 38.4, c: 0, f: 3, src: 'ai' }] }]
+    useStore.setState({ S, user: null, config: null })
+    render(<MemoryRouter><Food /></MemoryRouter>)
+    const after = useStore.getState().S
+    expect(after.foods.map(f => [f.name, f.src, f.per100.kcal])).toEqual([['Frango grelhado', 'ai', 159]])
+    expect(after.meals[0].items[0].ref).toBe(after.foods[0].id)
+  })
+})
+
 describe('the day and the targets', () => {
   it('suggests targets from the last weight and saves them; the day shows what is left', () => {
     const S = clone(DEF)

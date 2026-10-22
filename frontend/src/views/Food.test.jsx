@@ -114,6 +114,15 @@ describe('the photo of a plate', () => {
     expect(meals()[0]).toMatchObject({ title: 'Arroz, feijão e frango' })
     expect(meals()[0].items.map(x => [x.name, x.kcal, x.src])).toEqual([['Arroz, tipo 1, cozido', 192, 'ai'], ['Feijão, carioca, cozido', 76, 'ai']])
     expect(meals()[0].ai).toBeGreaterThan(0)
+    // Kept among my foods, so the next time it is found by searching instead of photographed.
+    const foods = useStore.getState().S.foods
+    expect(foods.map(f => [f.name, f.src, f.serving.g])).toEqual([['Arroz, tipo 1, cozido', 'ai', 150], ['Feijão, carioca, cozido', 'ai', 100]])
+    expect(meals()[0].items.map(x => x.ref)).toEqual(foods.map(f => f.id))
+    addFoodSheet(todayISO(), 'dinner')
+    const sheet = topSheet()
+    await until(() => !sheet.textContent.includes('Loading…'))
+    setInput(sheet.querySelector('input[type=search]'), 'feijao')
+    expect(sheet.querySelector('.lrow').textContent).toContain('Feijão, carioca, cozido')
   })
 
   it('never replaces food added by hand while the estimate was on its way', async () => {
@@ -126,6 +135,18 @@ describe('the photo of a plate', () => {
     await act(async () => { answer(reading) })
     await act(async () => { await new Promise(r => setTimeout(r, 30)) })
     expect(meals()[0].items.map(x => x.name)).toEqual(['Salada'])
+  })
+})
+
+describe('photo estimates from before', () => {
+  it('have their foods kept among my foods when the screen opens', () => {
+    const S = clone(DEF)
+    S.meals = [{ id: 'm', d: todayISO(), slot: 'lunch', ai: 1, created: 1, items: [{ id: 'i', name: 'Frango grelhado', grams: 120, kcal: 191, p: 38.4, c: 0, f: 3, src: 'ai' }] }]
+    useStore.setState({ S, user: null, config: null })
+    render(<MemoryRouter><Food /></MemoryRouter>)
+    const after = useStore.getState().S
+    expect(after.foods.map(f => [f.name, f.src, f.per100.kcal])).toEqual([['Frango grelhado', 'ai', 159]])
+    expect(after.meals[0].items[0].ref).toBe(after.foods[0].id)
   })
 })
 

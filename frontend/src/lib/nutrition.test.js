@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  dailySeries, dayOf, foodFromOff, itemOf, itemsFromReading, normalizeFood, normalizeItem, normalizeMeal, recentFoods, rescale,
+  dailySeries, dayOf, foodFromOff, foodsFromItems, itemOf, keepEstimatedFoods, itemsFromReading, normalizeFood, normalizeItem, normalizeMeal, recentFoods, rescale,
   searchFoods, suggestTargets, tacoFood
 } from './nutrition.js'
 import { TACO } from './taco-data.js'
@@ -128,5 +128,40 @@ describe('the AI\'s estimate, sync and media', () => {
     expect(m.foods.map(x => x.id)).toEqual(['f'])
     const photo = { kind: 'image', hash: '9'.repeat(64), mime: 'image/webp', size: 10, width: 10, height: 10, at: 1 }
     expect([...referencedHashes({ meals: [{ id: 'x', d: '2026-10-21', photo }] })]).toEqual([photo.hash])
+  })
+})
+
+describe('foods estimated from a photo', () => {
+  it('are kept per 100 g among my foods, linked from the items, once per name', () => {
+    const items = [
+      { id: 'a', name: 'Arroz, tipo 1, cozido', grams: 150, kcal: 192, p: 3.8, c: 42.2, f: 0.3, src: 'ai' },
+      { id: 'b', name: 'Feijão carioca', grams: 100, kcal: 76, p: 4.8, c: 13.6, f: 0.5, src: 'ai' },
+      { id: 'c', name: 'Molho', grams: 0, kcal: 30, p: 0, c: 2, f: 2, src: 'ai' }
+    ]
+    const mine = [{ id: 'f1', name: 'feijao CARIOCA', per100: { kcal: 80, p: 5, c: 14, f: 0.5 }, src: 'mine' }]
+    const { foods, items: linked } = foodsFromItems(items, mine)
+    expect(foods).toHaveLength(1)
+    expect(foods[0]).toMatchObject({ name: 'Arroz, tipo 1, cozido', per100: { kcal: 128, p: 2.5, c: 28.1, f: 0.2 }, serving: { g: 150, label: '150 g' }, src: 'ai' })
+    expect(linked.map(x => x.ref)).toEqual([foods[0].id, 'f1', undefined])
+    expect(linked[0]).toMatchObject({ src: 'ai', kcal: 192 })
+    expect(searchFoods('arroz cozido', { mine: [...mine, ...foods] })[0].id).toBe(foods[0].id)
+    expect(foodsFromItems(items, [...mine, ...foods]).foods).toEqual([])
+  })
+})
+
+describe('photo estimates from before', () => {
+  it('have their AI foods kept once, and nothing else is touched', () => {
+    const meals = [
+      { id: 'm1', items: [{ id: 'a', name: 'Arroz cozido', grams: 100, kcal: 128, p: 2.5, c: 28, f: 0.2, src: 'ai' }, { id: 'q', name: 'Café', grams: 0, kcal: 10, p: 0, c: 1, f: 0, src: 'quick' }] },
+      { id: 'm2', items: [{ id: 'b', name: 'arroz COZIDO', grams: 200, kcal: 256, p: 5, c: 56, f: 0.4, src: 'ai' }] },
+      { id: 'm3', items: [{ id: 'c', name: 'Pão', grams: 50, kcal: 150, p: 4, c: 29, f: 1.5, src: 'mine', ref: 'f9' }] }
+    ]
+    const r = keepEstimatedFoods(meals, [])
+    expect(r.changed).toBe(true)
+    expect(r.foods.map(f => f.name)).toEqual(['Arroz cozido'])
+    expect(r.meals[0].items.map(x => x.ref)).toEqual([r.foods[0].id, undefined])
+    expect(r.meals[1].items[0].ref).toBe(r.foods[0].id)
+    expect(r.meals[2]).toBe(meals[2])
+    expect(keepEstimatedFoods(r.meals, r.foods).changed).toBe(false)
   })
 })

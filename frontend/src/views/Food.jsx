@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useStore } from '../store/useStore.js'
 import { useUI } from '../store/useUI.js'
 import {
-  ACTIVITY, OBJECTIVE, SLOTS, dailySeries, dayOf, foodFromOff, itemOf, itemsFromReading, normalizeFood, normalizeItem,
+  ACTIVITY, OBJECTIVE, SLOTS, dailySeries, dayOf, foodFromOff, foodsFromItems, itemOf, keepEstimatedFoods, itemsFromReading, normalizeFood, normalizeItem,
   normalizeMeal, recentFoods, rescale, searchFoods, suggestTargets
 } from '../lib/nutrition.js'
 import { lastBW } from '../lib/history.js'
@@ -95,7 +95,10 @@ export function readMealInBackground(id, blobs) {
     update(s => {
       const m = (s.meals || []).find(x => x.id === id)
       if (!m || (m.items || []).length) return
-      m.items = items
+      // Each food estimated is kept among the person's foods too, to be found by searching next time.
+      const kept = foodsFromItems(items, s.foods)
+      if (kept.foods.length) s.foods = [...(s.foods || []), ...kept.foods]
+      m.items = kept.items
       m.title = String(reading?.title || '').slice(0, 80)
       m.ai = Date.now()
       saved = true
@@ -147,7 +150,7 @@ function SearchTab({ taco, onPick }) {
     {!!q && taco && !found.length && <div className="muted small">{t('Nothing matches.')}</div>}
     {(!q && mine.length > 0) && <h4 className="sec" style={{ margin: '6px 2px' }}>{t('Recent and my foods')}</h4>}
     <Section>{found.map(f => <Row key={f.id} title={f.name} subtitle={[f.brand, t('{0} per 100 g', kcalText(f.per100.kcal)), f.src === 'taco' ? 'TACO' : null].filter(Boolean).join(' · ')}
-      accessory="chevron" onClick={() => onPick(f)} />)}</Section>
+      accessory="chevron" onClick={() => onPick(f)}>{f.src === 'ai' && <span className="exam-ai"><Icon name="sparkles" /></span>}</Row>)}</Section>
   </>
 }
 
@@ -478,6 +481,11 @@ function Trends() {
 
 export default function Food() {
   const nav = useNavigate()
+  // Foods of photo estimates made before they were kept among my foods: kept now, once.
+  useEffect(() => {
+    if (!keepEstimatedFoods(useStore.getState().S.meals, useStore.getState().S.foods).changed) return
+    update(s => { const r = keepEstimatedFoods(s.meals, s.foods); s.meals = r.meals; s.foods = r.foods })
+  }, [])
   const [tab, setTab] = useState('day')
   const [d, setD] = useState(todayISO())
   return <div className="narrow">

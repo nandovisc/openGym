@@ -2530,4 +2530,12 @@ export default {
   'Reading the Apple Health export…': 'Apple 건강 내보내기 파일을 읽는 중…',
   '{0} night imported': '{0}박 가져옴',
   '{0} nights imported': '{0}박 가져옴',
+  // Health → Sleep: the Shortcut to download (views/Sleep.jsx)
+  'Copied. Paste it into the Shortcut.': '복사했습니다. 단축어에 붙여 넣으세요.',
+  'Line for the Shortcut (shown only now)': '단축어용 줄(지금만 표시됨)',
+  'Download the Shortcut': '단축어 다운로드',
+  'Make a token: the app copies a line with your server and the token.': '토큰을 만드세요. 앱이 서버 주소와 토큰이 담긴 줄을 복사합니다.',
+  'Download the Shortcut and add it, on the iPhone or on a Mac with the same iCloud.': '단축어를 다운로드해 추가하세요. iPhone 또는 같은 iCloud를 쓰는 Mac에서 하면 됩니다.',
+  'Open it in Shortcuts and paste the line into the first Text, in place of COLE_AQUI_A_LINHA_DO_OPENGYM.': '단축어 앱에서 열고 첫 번째 텍스트의 COLE_AQUI_A_LINHA_DO_OPENGYM 자리에 줄을 붙여 넣으세요.',
+  'Run it once and allow it to read your sleep and to reach your server.': '한 번 실행하고 수면 데이터 읽기와 서버 접속을 허용하세요.',
 }

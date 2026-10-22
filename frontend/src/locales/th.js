@@ -2541,4 +2541,12 @@ export default {
   'Reading the Apple Health export…': 'กำลังอ่านไฟล์ส่งออกของ Apple Health…',
   '{0} night imported': 'นำเข้า {0} คืน',
   '{0} nights imported': 'นำเข้า {0} คืน',
+  // Health → Sleep: the Shortcut to download (views/Sleep.jsx)
+  'Copied. Paste it into the Shortcut.': 'คัดลอกแล้ว วางในคำสั่งลัด',
+  'Line for the Shortcut (shown only now)': 'บรรทัดสำหรับคำสั่งลัด (แสดงเฉพาะตอนนี้)',
+  'Download the Shortcut': 'ดาวน์โหลดคำสั่งลัด',
+  'Make a token: the app copies a line with your server and the token.': 'สร้างโทเค็น: แอปจะคัดลอกบรรทัดที่มีเซิร์ฟเวอร์และโทเค็นของคุณ',
+  'Download the Shortcut and add it, on the iPhone or on a Mac with the same iCloud.': 'ดาวน์โหลดคำสั่งลัดแล้วเพิ่ม บน iPhone หรือ Mac ที่ใช้ iCloud เดียวกัน',
+  'Open it in Shortcuts and paste the line into the first Text, in place of COLE_AQUI_A_LINHA_DO_OPENGYM.': 'เปิดในแอปคำสั่งลัดแล้ววางบรรทัดในข้อความแรก แทน COLE_AQUI_A_LINHA_DO_OPENGYM',
+  'Run it once and allow it to read your sleep and to reach your server.': 'เรียกใช้หนึ่งครั้ง แล้วอนุญาตให้อ่านข้อมูลการนอนและเชื่อมต่อเซิร์ฟเวอร์',
 }

@@ -2216,3 +2216,4 @@ button.wl-summary{width:100%;padding:0 0 10px;text-align:start;border-radius:var
 .sleep-secret code{font-size:12px;word-break:break-all;flex:1;margin-inline-end:8px}
 .sleep-steps{margin:0;padding-inline-start:20px;color:var(--label-2);line-height:1.45}
 .sleep-steps li{margin-bottom:6px}
+a.btn{text-decoration:none;box-sizing:border-box}

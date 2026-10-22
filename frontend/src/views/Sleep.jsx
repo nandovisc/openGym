@@ -102,34 +102,39 @@ function SyncForm({ close }) {
   }, [user])
   if (!user) return <><h3>{t('Sleep from Apple Health')}</h3><div className="muted small">{t('Sign in to your server to sync sleep from Apple Health.')}</div><Button onClick={close}>{t('Close')}</Button></>
   const url = apiUrl('/api/sleep/ingest')
+  // The one line the shortcut takes: its first Text, split on the space (scripts/sleep-shortcut.mjs).
+  const line = token ? `${url} ${token}` : ''
+  const copy = async v => toast((await copyText(v)) ? t('Copied') : t('Could not copy'))
   const make = async () => {
     setBusy(true)
-    try { const r = await api('/api/sleep/token', { method: 'POST' }); setToken(r.token); setSt(r) }
+    try {
+      const r = await api('/api/sleep/token', { method: 'POST' })
+      setToken(r.token); setSt(r)
+      // Copied straight away, ready to paste into the shortcut; the button below copies it again.
+      if (await copyText(`${url} ${r.token}`)) toast(t('Copied. Paste it into the Shortcut.'))
+    }
     catch (e) { toast(e?.message || t('Something went wrong. Try again.')) }
     finally { setBusy(false) }
   }
   const askMake = () => (st?.on ? confirmSheet({ title: t('Make a new token?'), message: t('The Shortcut stops working until you paste the new one into it.'), confirmText: t('New token'), onConfirm: make }) : make())
   const revoke = () => confirmSheet({ title: t('Turn off the sync?'), message: t('The token stops working. The nights already here stay.'), confirmText: t('Turn off'), danger: true,
     onConfirm: async () => { try { setSt(await api('/api/sleep/token', { method: 'DELETE' })); setToken('') } catch (e) { toast(e?.message || t('Something went wrong. Try again.')) } } })
-  const copy = async v => toast((await copyText(v)) ? t('Copied') : t('Could not copy'))
   return <>
     <h3>{t('Sleep from Apple Health')}</h3>
     <div className="muted small" style={{ marginBottom: 12 }}>{t('An iPhone Shortcut reads last night from the Health app (Apple Watch, Oura, RingConn…) and sends it here every morning.')}</div>
     {st?.on && <div className="small dim" style={{ marginBottom: 10 }}>{st.last ? t('Last sync: {0} · {1} nights', new Date(st.last).toLocaleString(), st.nights ?? 0) : t('Token made, no sync yet.')}</div>}
-    {token ? <>
-      <div className="sleep-secret">
-        <div className="small dim">{t('Address')}</div>
-        <div className="row between"><code>{url}</code><button className="iconbtn" aria-label={t('Copy')} onClick={() => copy(url)}><Icon name="copy" /></button></div>
-        <div className="small dim" style={{ marginTop: 8 }}>{t('Token (shown only now)')}</div>
-        <div className="row between"><code>{token}</code><button className="iconbtn" aria-label={t('Copy')} onClick={() => copy(token)}><Icon name="copy" /></button></div>
-      </div>
-    </> : <Button variant="primary" icon="key" disabled={busy || !st} onClick={askMake}>{st?.on ? t('Make a new token') : t('Make a token')}</Button>}
+    {line ? <div className="sleep-secret">
+      <div className="small dim">{t('Line for the Shortcut (shown only now)')}</div>
+      <div className="row between"><code>{line}</code><button className="iconbtn" aria-label={t('Copy')} onClick={() => copy(line)}><Icon name="copy" /></button></div>
+    </div> : <Button variant="primary" icon="key" disabled={busy || !st} onClick={askMake}>{st?.on ? t('Make a new token') : t('Make a token')}</Button>}
+    <div style={{ height: 8 }} />
+    <a className="btn plain" href={apiUrl('/shortcuts/opengym-sleep.shortcut')} download="openGym Sono.shortcut"><Icon name="download" /><span>{t('Download the Shortcut')}</span></a>
     <h4 className="sec" style={{ margin: '16px 2px 6px' }}>{t('Set up the Shortcut')}</h4>
     <ol className="sleep-steps small">
-      <li>{t('In Shortcuts, make a new shortcut. Add “Find Health Samples”: type Sleep (it keeps that English name), start date in the last 2 days.')}</li>
-      <li>{t('Add “Repeat with Each” over the samples. Inside it, add a Text: Start Date;End Date;Value;Source, each date formatted as ISO 8601.')}</li>
-      <li>{t('After the loop, add “Combine Text” on the Repeat Results, with New Lines.')}</li>
-      <li>{t('Add “Get Contents of URL”: the address above, method POST, header Authorization = Bearer and the token, request body JSON with a field samples = the combined text.')}</li>
+      <li>{t('Make a token: the app copies a line with your server and the token.')}</li>
+      <li>{t('Download the Shortcut and add it, on the iPhone or on a Mac with the same iCloud.')}</li>
+      <li>{t('Open it in Shortcuts and paste the line into the first Text, in place of COLE_AQUI_A_LINHA_DO_OPENGYM.')}</li>
+      <li>{t('Run it once and allow it to read your sleep and to reach your server.')}</li>
       <li>{t('In Automation, run it every day after you wake up (for example at 10:00), without asking.')}</li>
     </ol>
     {st?.on && <><div style={{ height: 8 }} /><Button variant="ghost" className="danger" onClick={revoke}>{t('Turn off the sync')}</Button></>}

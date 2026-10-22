@@ -2497,7 +2497,7 @@ export default {
   'Make a new token': '產生新權杖',
   'Make a token': '產生權杖',
   'Set up the Shortcut': '設定捷徑',
-  'In Shortcuts, make a new shortcut. Add “Find Health Samples”: type Sleep Analysis, start date in the last 2 days.': '在「捷徑」中新增捷徑。加入「尋找健康樣本」：類型為睡眠分析，開始日期在過去 2 天內。',
+  'In Shortcuts, make a new shortcut. Add “Find Health Samples”: type Sleep (it keeps that English name), start date in the last 2 days.': '在「捷徑」中新增捷徑。加入「尋找健康樣本」：類型為Sleep（保留英文名稱），開始日期在過去 2 天內。',
   'Add “Repeat with Each” over the samples. Inside it, add a Text: Start Date;End Date;Value;Source, each date formatted as ISO 8601.': '對樣本加入「對每一項重複」。在其中加入文字：開始日期;結束日期;值;來源，每個日期格式化為 ISO 8601。',
   'After the loop, add “Combine Text” on the Repeat Results, with New Lines.': '迴圈之後，對「重複結果」加入「合併文字」，使用換行。',
   'Add “Get Contents of URL”: the address above, method POST, header Authorization = Bearer and the token, request body JSON with a field samples = the combined text.': '加入「取得 URL 內容」：上方網址，方法 POST，標頭 Authorization = Bearer 加權杖，要求本文為 JSON，欄位 samples = 合併後的文字。',

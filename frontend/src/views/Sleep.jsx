@@ -126,7 +126,7 @@ function SyncForm({ close }) {
     </> : <Button variant="primary" icon="key" disabled={busy || !st} onClick={askMake}>{st?.on ? t('Make a new token') : t('Make a token')}</Button>}
     <h4 className="sec" style={{ margin: '16px 2px 6px' }}>{t('Set up the Shortcut')}</h4>
     <ol className="sleep-steps small">
-      <li>{t('In Shortcuts, make a new shortcut. Add “Find Health Samples”: type Sleep Analysis, start date in the last 2 days.')}</li>
+      <li>{t('In Shortcuts, make a new shortcut. Add “Find Health Samples”: type Sleep (it keeps that English name), start date in the last 2 days.')}</li>
       <li>{t('Add “Repeat with Each” over the samples. Inside it, add a Text: Start Date;End Date;Value;Source, each date formatted as ISO 8601.')}</li>
       <li>{t('After the loop, add “Combine Text” on the Repeat Results, with New Lines.')}</li>
       <li>{t('Add “Get Contents of URL”: the address above, method POST, header Authorization = Bearer and the token, request body JSON with a field samples = the combined text.')}</li>

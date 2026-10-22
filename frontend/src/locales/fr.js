@@ -2504,7 +2504,7 @@ export default {
   'Make a new token': 'Créer un nouveau jeton',
   'Make a token': 'Créer un jeton',
   'Set up the Shortcut': 'Configurer le raccourci',
-  'In Shortcuts, make a new shortcut. Add “Find Health Samples”: type Sleep Analysis, start date in the last 2 days.': 'Dans Raccourcis, crée un raccourci. Ajoute « Rechercher des échantillons Santé » : type Analyse du sommeil, date de début dans les 2 derniers jours.',
+  'In Shortcuts, make a new shortcut. Add “Find Health Samples”: type Sleep (it keeps that English name), start date in the last 2 days.': 'Dans Raccourcis, crée un raccourci. Ajoute « Rechercher des échantillons Santé » : type Sleep (même en français), date de début dans les 2 derniers jours.',
   'Add “Repeat with Each” over the samples. Inside it, add a Text: Start Date;End Date;Value;Source, each date formatted as ISO 8601.': 'Ajoute « Répéter avec chacun » sur les échantillons. Dedans, ajoute un Texte : Date de début;Date de fin;Valeur;Source, chaque date au format ISO 8601.',
   'After the loop, add “Combine Text” on the Repeat Results, with New Lines.': 'Après la boucle, ajoute « Combiner le texte » sur les Résultats de la répétition, avec Retours à la ligne.',
   'Add “Get Contents of URL”: the address above, method POST, header Authorization = Bearer and the token, request body JSON with a field samples = the combined text.': 'Ajoute « Obtenir le contenu de l’URL » : l’adresse ci-dessus, méthode POST, en-tête Authorization = Bearer et le jeton, corps JSON avec un champ samples = le texte combiné.',

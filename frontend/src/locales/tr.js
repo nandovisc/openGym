@@ -2504,7 +2504,7 @@ export default {
   'Make a new token': 'Yeni belirteç oluştur',
   'Make a token': 'Belirteç oluştur',
   'Set up the Shortcut': 'Kestirmeyi kur',
-  'In Shortcuts, make a new shortcut. Add “Find Health Samples”: type Sleep Analysis, start date in the last 2 days.': 'Kestirmeler’de yeni bir kestirme oluştur. “Sağlık Örneklerini Bul” ekle: tür Uyku Analizi, başlangıç tarihi son 2 gün içinde.',
+  'In Shortcuts, make a new shortcut. Add “Find Health Samples”: type Sleep (it keeps that English name), start date in the last 2 days.': 'Kestirmeler’de yeni bir kestirme oluştur. “Sağlık Örneklerini Bul” ekle: tür Sleep (İngilizce adıyla), başlangıç tarihi son 2 gün içinde.',
   'Add “Repeat with Each” over the samples. Inside it, add a Text: Start Date;End Date;Value;Source, each date formatted as ISO 8601.': 'Örnekler üzerinde “Her Biriyle Tekrarla” ekle. İçine bir Metin ekle: Başlangıç Tarihi;Bitiş Tarihi;Değer;Kaynak, her tarih ISO 8601 biçiminde.',
   'After the loop, add “Combine Text” on the Repeat Results, with New Lines.': 'Döngüden sonra Tekrar Sonuçları üzerinde Yeni Satırlar ile “Metni Birleştir” ekle.',
   'Add “Get Contents of URL”: the address above, method POST, header Authorization = Bearer and the token, request body JSON with a field samples = the combined text.': '“URL’nin İçeriğini Al” ekle: yukarıdaki adres, yöntem POST, başlık Authorization = Bearer ve belirteç, istek gövdesi JSON ve samples alanı = birleştirilmiş metin.',

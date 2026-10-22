@@ -2504,7 +2504,7 @@ export default {
   'Make a new token': 'Crea un nuovo token',
   'Make a token': 'Crea un token',
   'Set up the Shortcut': 'Configura la scorciatoia',
-  'In Shortcuts, make a new shortcut. Add “Find Health Samples”: type Sleep Analysis, start date in the last 2 days.': 'In Comandi rapidi, crea una nuova scorciatoia. Aggiungi «Trova campioni Salute»: tipo Analisi del sonno, data di inizio negli ultimi 2 giorni.',
+  'In Shortcuts, make a new shortcut. Add “Find Health Samples”: type Sleep (it keeps that English name), start date in the last 2 days.': 'In Comandi rapidi, crea una nuova scorciatoia. Aggiungi «Trova campioni Salute»: tipo Sleep (si chiama così anche in italiano), data di inizio negli ultimi 2 giorni.',
   'Add “Repeat with Each” over the samples. Inside it, add a Text: Start Date;End Date;Value;Source, each date formatted as ISO 8601.': 'Aggiungi «Ripeti con ognuno» sui campioni. Al suo interno aggiungi un Testo: Data inizio;Data fine;Valore;Origine, ogni data in formato ISO 8601.',
   'After the loop, add “Combine Text” on the Repeat Results, with New Lines.': 'Dopo il ciclo, aggiungi «Combina testo» sui Risultati di ripetizione, con A capo.',
   'Add “Get Contents of URL”: the address above, method POST, header Authorization = Bearer and the token, request body JSON with a field samples = the combined text.': 'Aggiungi «Ottieni contenuti dell’URL»: l’indirizzo sopra, metodo POST, intestazione Authorization = Bearer e il token, corpo JSON con un campo samples = il testo combinato.',

@@ -2504,7 +2504,7 @@ export default {
   'Make a new token': 'Crear un token nuevo',
   'Make a token': 'Crear un token',
   'Set up the Shortcut': 'Configurar el atajo',
-  'In Shortcuts, make a new shortcut. Add “Find Health Samples”: type Sleep Analysis, start date in the last 2 days.': 'En Atajos, crea un atajo nuevo. Añade «Buscar muestras de Salud»: tipo Análisis del sueño, fecha de inicio en los últimos 2 días.',
+  'In Shortcuts, make a new shortcut. Add “Find Health Samples”: type Sleep (it keeps that English name), start date in the last 2 days.': 'En Atajos, crea un atajo nuevo. Añade «Buscar muestras de Salud»: tipo Sleep (se llama así también en español), fecha de inicio en los últimos 2 días.',
   'Add “Repeat with Each” over the samples. Inside it, add a Text: Start Date;End Date;Value;Source, each date formatted as ISO 8601.': 'Añade «Repetir con cada» sobre las muestras. Dentro, añade un Texto: Fecha de inicio;Fecha de fin;Valor;Fuente, cada fecha en formato ISO 8601.',
   'After the loop, add “Combine Text” on the Repeat Results, with New Lines.': 'Tras el bucle, añade «Combinar texto» sobre los Resultados de repetición, con Saltos de línea.',
   'Add “Get Contents of URL”: the address above, method POST, header Authorization = Bearer and the token, request body JSON with a field samples = the combined text.': 'Añade «Obtener contenido de URL»: la dirección de arriba, método POST, cabecera Authorization = Bearer y el token, cuerpo JSON con un campo samples = el texto combinado.',

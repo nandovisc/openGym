@@ -1665,7 +1665,7 @@ export const PT_BR_OVERRIDES = {
   'Make a new token': 'Criar um novo token',
   'Make a token': 'Criar um token',
   'Set up the Shortcut': 'Configurar o atalho',
-  'In Shortcuts, make a new shortcut. Add “Find Health Samples”: type Sleep Analysis, start date in the last 2 days.': 'No app Atalhos, crie um atalho novo. Adicione “Encontrar Amostras de Saúde”: tipo Análise do Sono, data de início nos últimos 2 dias.',
+  'In Shortcuts, make a new shortcut. Add “Find Health Samples”: type Sleep (it keeps that English name), start date in the last 2 days.': 'No app Atalhos, crie um atalho novo. Adicione “Encontrar Amostras de Saúde”: tipo Sleep (o nome fica em inglês mesmo), data de início nos últimos 2 dias.',
   'Add “Repeat with Each” over the samples. Inside it, add a Text: Start Date;End Date;Value;Source, each date formatted as ISO 8601.': 'Adicione “Repetir com Cada” sobre as amostras. Dentro dele, adicione um Texto: Data de Início;Data de Término;Valor;Fonte, cada data formatada em ISO 8601.',
   'After the loop, add “Combine Text” on the Repeat Results, with New Lines.': 'Depois do loop, adicione “Combinar Texto” sobre os Resultados da Repetição, com Novas Linhas.',
   'Add “Get Contents of URL”: the address above, method POST, header Authorization = Bearer and the token, request body JSON with a field samples = the combined text.': 'Adicione “Obter Conteúdo de URL”: o endereço acima, método POST, cabeçalho Authorization = Bearer e o token, corpo da solicitação JSON com um campo samples = o texto combinado.',

@@ -2504,7 +2504,7 @@ export default {
   'Make a new token': '새 토큰 만들기',
   'Make a token': '토큰 만들기',
   'Set up the Shortcut': '단축어 설정',
-  'In Shortcuts, make a new shortcut. Add “Find Health Samples”: type Sleep Analysis, start date in the last 2 days.': '단축어 앱에서 새 단축어를 만드세요. “건강 샘플 찾기”를 추가하고 유형은 수면 분석, 시작일은 최근 2일로 설정하세요.',
+  'In Shortcuts, make a new shortcut. Add “Find Health Samples”: type Sleep (it keeps that English name), start date in the last 2 days.': '단축어 앱에서 새 단축어를 만드세요. “건강 샘플 찾기”를 추가하고 유형은 Sleep(영어 이름 그대로), 시작일은 최근 2일로 설정하세요.',
   'Add “Repeat with Each” over the samples. Inside it, add a Text: Start Date;End Date;Value;Source, each date formatted as ISO 8601.': '샘플에 대해 “각각 반복”을 추가하세요. 그 안에 텍스트를 추가하세요: 시작일;종료일;값;출처, 각 날짜는 ISO 8601 형식.',
   'After the loop, add “Combine Text” on the Repeat Results, with New Lines.': '반복 후 반복 결과에 “텍스트 결합”을 새로운 줄 옵션으로 추가하세요.',
   'Add “Get Contents of URL”: the address above, method POST, header Authorization = Bearer and the token, request body JSON with a field samples = the combined text.': '“URL의 콘텐츠 가져오기”를 추가하세요: 위 주소, 메서드 POST, 헤더 Authorization = Bearer와 토큰, 요청 본문 JSON에 samples 필드 = 결합된 텍스트.',

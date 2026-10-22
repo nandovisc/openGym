@@ -2504,7 +2504,7 @@ export default {
   'Make a new token': 'नया टोकन बनाएँ',
   'Make a token': 'टोकन बनाएँ',
   'Set up the Shortcut': 'शॉर्टकट सेट करें',
-  'In Shortcuts, make a new shortcut. Add “Find Health Samples”: type Sleep Analysis, start date in the last 2 days.': 'Shortcuts में नया शॉर्टकट बनाएँ। “Find Health Samples” जोड़ें: टाइप Sleep Analysis, शुरू की तारीख पिछले 2 दिनों में।',
+  'In Shortcuts, make a new shortcut. Add “Find Health Samples”: type Sleep (it keeps that English name), start date in the last 2 days.': 'Shortcuts में नया शॉर्टकट बनाएँ। “Find Health Samples” जोड़ें: टाइप Sleep, शुरू की तारीख पिछले 2 दिनों में।',
   'Add “Repeat with Each” over the samples. Inside it, add a Text: Start Date;End Date;Value;Source, each date formatted as ISO 8601.': 'सैंपल पर “Repeat with Each” जोड़ें। उसके अंदर एक Text जोड़ें: Start Date;End Date;Value;Source, हर तारीख ISO 8601 फ़ॉर्मैट में।',
   'After the loop, add “Combine Text” on the Repeat Results, with New Lines.': 'लूप के बाद Repeat Results पर “Combine Text” जोड़ें, New Lines के साथ।',
   'Add “Get Contents of URL”: the address above, method POST, header Authorization = Bearer and the token, request body JSON with a field samples = the combined text.': '“Get Contents of URL” जोड़ें: ऊपर का पता, मेथड POST, हेडर Authorization = Bearer और टोकन, रिक्वेस्ट बॉडी JSON जिसमें samples फ़ील्ड = जोड़ा हुआ टेक्स्ट।',

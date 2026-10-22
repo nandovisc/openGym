@@ -2583,7 +2583,7 @@ export default {
   'Make a new token': 'নতুন টোকেন বানান',
   'Make a token': 'টোকেন বানান',
   'Set up the Shortcut': 'শর্টকাট সেট আপ করুন',
-  'In Shortcuts, make a new shortcut. Add “Find Health Samples”: type Sleep Analysis, start date in the last 2 days.': 'Shortcuts-এ নতুন শর্টকাট বানান। “Find Health Samples” যোগ করুন: টাইপ Sleep Analysis, শুরুর তারিখ গত ২ দিনের মধ্যে।',
+  'In Shortcuts, make a new shortcut. Add “Find Health Samples”: type Sleep (it keeps that English name), start date in the last 2 days.': 'Shortcuts-এ নতুন শর্টকাট বানান। “Find Health Samples” যোগ করুন: টাইপ Sleep, শুরুর তারিখ গত ২ দিনের মধ্যে।',
   'Add “Repeat with Each” over the samples. Inside it, add a Text: Start Date;End Date;Value;Source, each date formatted as ISO 8601.': 'স্যাম্পলগুলোর উপর “Repeat with Each” যোগ করুন। এর ভেতরে একটি Text দিন: Start Date;End Date;Value;Source, প্রতিটি তারিখ ISO 8601 ফরম্যাটে।',
   'After the loop, add “Combine Text” on the Repeat Results, with New Lines.': 'লুপের পরে Repeat Results-এর উপর “Combine Text” যোগ করুন, New Lines দিয়ে।',
   'Add “Get Contents of URL”: the address above, method POST, header Authorization = Bearer and the token, request body JSON with a field samples = the combined text.': '“Get Contents of URL” যোগ করুন: উপরের ঠিকানা, মেথড POST, হেডার Authorization = Bearer ও টোকেন, রিকোয়েস্ট বডি JSON-এ samples ফিল্ড = মিলিত টেক্সট।',

@@ -2524,7 +2524,7 @@ export default {
   'Make a new token': 'Neuen Token erstellen',
   'Make a token': 'Token erstellen',
   'Set up the Shortcut': 'Kurzbefehl einrichten',
-  'In Shortcuts, make a new shortcut. Add “Find Health Samples”: type Sleep Analysis, start date in the last 2 days.': 'Erstelle in Kurzbefehle einen neuen Kurzbefehl. Füge „Health-Beispiele suchen“ hinzu: Typ Schlafanalyse, Startdatum in den letzten 2 Tagen.',
+  'In Shortcuts, make a new shortcut. Add “Find Health Samples”: type Sleep (it keeps that English name), start date in the last 2 days.': 'Erstelle in Kurzbefehle einen neuen Kurzbefehl. Füge „Health-Beispiele suchen“ hinzu: Typ Sleep (heißt auch auf Deutsch so), Startdatum in den letzten 2 Tagen.',
   'Add “Repeat with Each” over the samples. Inside it, add a Text: Start Date;End Date;Value;Source, each date formatted as ISO 8601.': 'Füge „Mit jedem wiederholen“ für die Beispiele hinzu. Darin einen Text: Startdatum;Enddatum;Wert;Quelle, jedes Datum im Format ISO 8601.',
   'After the loop, add “Combine Text” on the Repeat Results, with New Lines.': 'Füge nach der Schleife „Text kombinieren“ für die Wiederholungsergebnisse hinzu, mit Zeilenumbrüchen.',
   'Add “Get Contents of URL”: the address above, method POST, header Authorization = Bearer and the token, request body JSON with a field samples = the combined text.': 'Füge „Inhalte von URL abrufen“ hinzu: die Adresse oben, Methode POST, Header Authorization = Bearer und der Token, Anfragetext JSON mit dem Feld samples = der kombinierte Text.',

@@ -2258,3 +2258,14 @@ a.btn{text-decoration:none;box-sizing:border-box}
 .hab-year .hm-c.skip{background:var(--surface-3);opacity:.5}
 .hab-won{border-color:var(--orange)!important;color:var(--orange)!important;background:color-mix(in srgb,var(--orange) 16%,transparent)!important}
 .hab-chips .exam-chip.on{background:color-mix(in srgb,var(--acc) 18%,transparent);border-color:var(--acc);color:var(--acc);font-weight:600}
+.hab-handle{display:grid;place-items:center;width:28px;height:40px;color:var(--label-3);touch-action:none;cursor:grab;flex:none}
+.hab-row.dragging{outline:2px solid var(--acc);opacity:.9}
+.hab-mini{flex:none;width:60px;height:22px}
+.hab-mini.bars{display:flex;align-items:flex-end;gap:3px}
+.hab-mini.bars i{flex:1;border-radius:2px}
+.hab-mini.grid{display:flex;align-items:center;gap:3px}
+.hab-mini.grid i{width:6px;height:16px;border-radius:2px;background:var(--surface-3)}
+.hab-mini.grid i.s-missed,.hab-mini.grid i.s-failed{background:color-mix(in srgb,var(--red) 60%,transparent)}
+.hab-mini.grid i.s-partial{background:color-mix(in srgb,var(--acc) 45%,transparent)}
+.hab-mini.grid i.s-skipped,.hab-mini.grid i.s-off{opacity:.4}
+.hab-recap{margin-bottom:12px}

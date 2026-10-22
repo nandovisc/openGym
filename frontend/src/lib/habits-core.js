@@ -11,7 +11,10 @@
 //     weekdays (days 0..6, 0 = Sunday) | monthdays (days 1..31) | perWeek (times a week).
 //   S.habitLog [{ id: habitId + '|' + d, habitId, d, value, slips, state: 'skipped' | 'failed',
 //               done, timer: { since }, at }]  — one entry a habit and day.
-//   S.habitPrefs { on, tz, dayStartsAt: 'HH:MM', vacations: [{ from, to, habitIds | null }], … }
+//   S.habitPrefs { on, tz, dayStartsAt: 'HH:MM', vacations: [{ from, to, habitIds | null }], recap, … }
+//   S.habitGroups [{ id, name, reminders: ['HH:MM'], muted, … }]  muted: its habits remind only as
+//               the group, at the group's times. A habit's smartReminder: remind at the time it is
+//               usually done (typicalTime) when it has no time of its own.
 
 const DAY_RE = /^\d{4}-\d{2}-\d{2}$/
 const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/
@@ -138,6 +141,34 @@ export function dayStatus(habit, d, S, today, { extra = 0 } = {}) {
 }
 
 /**
+ * The time of day `habit` is usually marked, 'HH:MM' in zone `tz`: the median of its last marks
+ * (at most 14), null with fewer than three. Read off the log's `at`, so automatic habits, which
+ * keep no log, have none.
+ */
+export function typicalTime(habit, S, tz) {
+  const ats = list(S.habitLog).filter(e => e?.habitId === habit.id && Number(e.at) > 0 && (e.done || Number(e.value) > 0))
+    .map(e => Number(e.at)).sort((a, b) => b - a).slice(0, 14)
+  if (ats.length < 3) return null
+  let fmt
+  try { fmt = new Intl.DateTimeFormat('en-GB', { timeZone: tz || 'UTC', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }); } catch { return null; }
+  const mins = ats.map(t => minutesOf(fmt.format(new Date(t)))).sort((a, b) => a - b)
+  const m = mins[Math.floor(mins.length / 2)]
+  return String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0')
+}
+
+// Whether `habit` still owes something today: scheduled, and pending or partial (a perWeek day
+// not done counts; a day with no dose does not).
+function owed(habit, S, date) {
+  if (!scheduledOn(habit, date)) return null
+  const st = dayStatus(habit, date, S, date)
+  if (st.state === 'pending' || st.state === 'partial') return st
+  if (st.state === 'off' && scheduleFor(habit, date).type === 'perWeek') return st
+  return null
+}
+const muted = (habit, S) => list(habit.groups).some(g => list(S.habitGroups).some(x => x?.id === g && x.muted))
+const within = (time, at, windowMin) => { const late = at - minutesOf(time); return late >= 0 && late <= windowMin; }
+
+/**
  * The reminders owed at `now` ({ date, hhmm }): habits active today with a reminder time within
  * the last `windowMin` minutes and not yet done, skipped or failed. A medication habit is left to
  * the medication reminder when that is on. [{ habit, time, status }].
@@ -146,19 +177,62 @@ export function habitsDue(S, now, windowMin) {
   const out = []
   const at = minutesOf(now.hhmm)
   for (const h of list(S?.habits)) {
-    if (!h?.id || h.archived || h.kind === 'avoid' || !list(h.reminders).length) continue
+    if (!h?.id || h.archived || h.kind === 'avoid' || muted(h, S)) continue
     if (h.kind === 'auto' && h.auto?.source === 'meds' && S.medReminder?.on) continue
     if (h.kind === 'task' && h.due && h.due !== now.date) continue
-    if (!scheduledOn(h, now.date)) continue
-    // Off on a scheduled day is a perWeek day not done yet (owed a reminder) or a day with no dose.
-    const st = dayStatus(h, now.date, S, now.date)
-    if (!['pending', 'partial', 'off'].includes(st.state)) continue
-    if (st.state === 'off' && scheduleFor(h, now.date).type !== 'perWeek') continue
-    for (const time of list(h.reminders)) {
-      if (!TIME_RE.test(time || '')) continue
-      const late = at - minutesOf(time)
-      if (late >= 0 && late <= windowMin) out.push({ habit: h, time, status: st })
-    }
+    const times = list(h.reminders).filter(t => TIME_RE.test(t || ''))
+    if (!times.length && h.smartReminder) { const t = typicalTime(h, S, S.habitPrefs?.tz); if (t) times.push(t); }
+    if (!times.length) continue
+    const st = owed(h, S, now.date)
+    if (!st) continue
+    for (const time of times) if (within(time, at, windowMin)) out.push({ habit: h, time, status: st })
   }
   return out
+}
+
+/**
+ * The group reminders owed at `now`: a group with a reminder time within the window and habits
+ * still owed today. [{ group, time, habits }].
+ */
+export function groupsDue(S, now, windowMin) {
+  const at = minutesOf(now.hhmm)
+  const out = []
+  for (const g of list(S?.habitGroups)) {
+    if (!g?.id) continue
+    const times = list(g.reminders).filter(t => TIME_RE.test(t || '') && within(t, at, windowMin))
+    if (!times.length) continue
+    const habits = list(S.habits).filter(h => h?.id && !h.archived && h.kind !== 'avoid' && list(h.groups).includes(g.id) && owed(h, S, now.date))
+    if (habits.length) for (const time of times) out.push({ group: g, time, habits })
+  }
+  return out
+}
+
+/**
+ * The week from `from` to `to` (the last day counted as over): { done, total, rate, habits:
+ * [{ habit, done, total }] } — a perWeek habit counts once, done when its number was reached.
+ * For the recap pushed on the first morning of the week.
+ */
+export function weekSummary(S, from, to) {
+  const rows = []
+  const after = d => new Date(Date.parse(d + 'T12:00:00Z') + 86400000).toISOString().slice(0, 10)
+  const next = after(to)
+  for (const h of list(S?.habits)) {
+    if (!h?.id || h.archived || h.kind === 'task' || h.excludeFromDaily) continue
+    let done = 0, total = 0
+    if (scheduleFor(h, to).type === 'perWeek') {
+      if (!scheduledOn(h, to) && !scheduledOn(h, from)) continue
+      let n = 0
+      for (let d = from; d <= to; d = after(d)) if (dayStatus(h, d, S, next).state === 'done') n++
+      total = 1; done = n >= (scheduleFor(h, to).times || 1) ? 1 : 0
+    } else {
+      for (let d = from; d <= to; d = after(d)) {
+        const st = dayStatus(h, d, S, next).state
+        if (st === 'off' || st === 'skipped') continue
+        total++; if (st === 'done') done++
+      }
+    }
+    if (total) rows.push({ habit: h, done, total })
+  }
+  const done = rows.reduce((s, r) => s + r.done, 0), total = rows.reduce((s, r) => s + r.total, 0)
+  return { done, total, rate: total ? done / total : null, habits: rows }
 }

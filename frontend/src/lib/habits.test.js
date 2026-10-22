@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
-  addSlip, addValue, dailyProgress, dayStatus, duplicateHabit, habitsDue, logicalDay, milestones, normalizeHabit, scheduledOn,
-  setState, startTimer, stats, stopTimer, streak, timerReached, toggleDone, weekdayMisses
+  addSlip, addValue, dailyProgress, dayStatus, duplicateHabit, habitsDue, icsFor, logicalDay, milestones, normalizeHabit, reorder, scheduledOn,
+  setState, startTimer, stats, stopTimer, streak, timerReached, toggleDone, weekdayMisses, weeklyRecap
 } from './habits.js'
 
 const T = '2026-10-22'   // a Thursday
@@ -126,5 +126,34 @@ describe('streaks, statistics, milestones', () => {
     expect(weekdayMisses(S, back(6), T, T).reduce((x, y) => x + y)).toBeGreaterThan(0)
     expect(habitsDue(S, { date: T, hhmm: '12:10' }, 15).map(x => x.habit.name)).toEqual(['Água'])
     expect(habitsDue(S, { date: T, hhmm: '12:20' }, 15)).toEqual([])
+  })
+})
+
+describe('part B: the recap, the calendar, the order', () => {
+  it('sums up the week just over against the one before', () => {
+    const h = make({ name: 'Ler' }, '2026-09-28')
+    let log = []
+    for (const d of ['2026-10-12', '2026-10-13', '2026-10-14', '2026-10-15', '2026-10-16', '2026-10-17', '2026-10-18']) log = toggleDone(log, h, d)   // all of the week of 12/10
+    for (const d of ['2026-10-05', '2026-10-06']) log = toggleDone(log, h, d)
+    const r = weeklyRecap(base({ habits: [h], habitLog: log, weekStart: 1 }), '2026-10-20')
+    expect(r).toMatchObject({ from: '2026-10-12', to: '2026-10-18', week: { done: 7, total: 7, rate: 1 }, previous: { done: 2, total: 7 }, change: 71 })
+  })
+  it('writes a calendar file repeating as the habit does', () => {
+    const h = make({ name: 'Ler, à noite', schedule: { type: 'weekdays', days: [1, 3] }, reminders: ['21:30'], end: '2026-12-31' })
+    const ics = icsFor([h, make({ kind: 'avoid' })], { today: T, now: new Date('2026-10-22T12:00:00Z') })
+    expect(ics).toContain('BEGIN:VCALENDAR\r\n')
+    expect(ics).toContain('DTSTART:20261022T213000')
+    expect(ics).toContain('DTEND:20261022T214500')
+    expect(ics).toContain('RRULE:FREQ=WEEKLY;BYDAY=MO,WE;UNTIL=20261231T235959')
+    expect(ics).toContain('SUMMARY:Ler\\, à noite')
+    expect(ics.match(/BEGIN:VEVENT/g)).toHaveLength(1)
+  })
+  it('keeps the order a drag leaves', () => {
+    const hs = [{ id: 'a', order: 1 }, { id: 'b', order: 2 }, { id: 'c', order: 3 }]
+    expect(reorder(hs, ['c', 'a', 'b']).sort((x, y) => x.order - y.order).map(h => h.id)).toEqual(['c', 'a', 'b'])
+  })
+  it('keeps the list chart and the usual-time reminder', () => {
+    expect(make({ listChart: 'bars', smartReminder: true })).toMatchObject({ listChart: 'bars', smartReminder: true })
+    expect(make({ listChart: 'pie' }).listChart).toBeNull()
   })
 })

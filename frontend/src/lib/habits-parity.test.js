@@ -42,4 +42,19 @@ describe('the server and the app read habits alike', () => {
     expect(api.habitsDue(S, { date: T, hhmm: '12:40' }, 15)).toEqual([])                    // lunch logged
     expect(api.habitsDue(S, { date: T, hhmm: '10:05' }, 15).map(r => r.habit.id)).toEqual(['q'])
   })
+  it('group reminders, the usual time and the week summary', () => {
+    const G = { ...S, habitGroups: [{ id: 'g', name: 'Manhã', reminders: ['07:30'], muted: true }],
+      habits: S.habits.map(h => (h.id === 'q' || h.id === 'c' ? { ...h, groups: ['g'] } : h)),
+      habitLog: [...S.habitLog, ...[1, 2, 3, 4].map(i => ({ id: `c|2026-10-0${i}`, habitId: 'c', d: `2026-10-0${i}`, done: true, at: Date.parse(`2026-10-0${i}T10:${10 + i}:00Z`) }))] }
+    const ids = x => x.map(r => (r.group || r.habit).id + '@' + r.time)
+    for (const hhmm of ['07:30', '07:40', '10:05', '21:00']) {
+      expect(ids(app.groupsDue(G, { date: T, hhmm }, 15))).toEqual(ids(api.groupsDue(G, { date: T, hhmm }, 15)))
+      expect(ids(app.habitsDue(G, { date: T, hhmm }, 15))).toEqual(ids(api.habitsDue(G, { date: T, hhmm }, 15)))
+    }
+    expect(api.groupsDue(G, { date: T, hhmm: '07:35' }, 15).map(r => r.habits.map(h => h.id))).toEqual([['c', 'q']])
+    expect(api.habitsDue(G, { date: T, hhmm: '10:05' }, 15).map(r => r.habit.id)).toEqual([])          // muted: the group reminds
+    expect(app.typicalTime(G.habits.find(h => h.id === 'c'), G, 'America/Sao_Paulo')).toBe(api.typicalTime(G.habits.find(h => h.id === 'c'), G, 'America/Sao_Paulo'))
+    expect(api.typicalTime(G.habits.find(h => h.id === 'c'), G, 'UTC')).toBe('10:13')
+    expect(app.weekSummary(G, '2026-10-15', '2026-10-21')).toEqual(api.weekSummary(G, '2026-10-15', '2026-10-21'))
+  })
 })

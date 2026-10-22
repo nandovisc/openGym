@@ -2609,4 +2609,12 @@ export default {
   'Reading the Apple Health export…': 'Apple Health এক্সপোর্ট পড়া হচ্ছে…',
   '{0} night imported': '{0}টি রাত ইমপোর্ট হয়েছে',
   '{0} nights imported': '{0}টি রাত ইমপোর্ট হয়েছে',
+  // Health → Sleep: the Shortcut to download (views/Sleep.jsx)
+  'Copied. Paste it into the Shortcut.': 'কপি হয়েছে। শর্টকাটে পেস্ট করুন।',
+  'Line for the Shortcut (shown only now)': 'শর্টকাটের লাইন (শুধু এখনই দেখানো হবে)',
+  'Download the Shortcut': 'শর্টকাট ডাউনলোড করুন',
+  'Make a token: the app copies a line with your server and the token.': 'টোকেন বানান: অ্যাপ আপনার সার্ভার ও টোকেনসহ একটি লাইন কপি করে।',
+  'Download the Shortcut and add it, on the iPhone or on a Mac with the same iCloud.': 'শর্টকাট ডাউনলোড করে যোগ করুন, iPhone-এ অথবা একই iCloud-এর Mac-এ।',
+  'Open it in Shortcuts and paste the line into the first Text, in place of COLE_AQUI_A_LINHA_DO_OPENGYM.': 'Shortcuts-এ খুলে প্রথম Text-এ COLE_AQUI_A_LINHA_DO_OPENGYM-এর জায়গায় লাইনটি পেস্ট করুন।',
+  'Run it once and allow it to read your sleep and to reach your server.': 'একবার চালান এবং ঘুমের তথ্য পড়তে ও আপনার সার্ভারে যেতে অনুমতি দিন।',
 }

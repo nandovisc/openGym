@@ -2523,4 +2523,12 @@ export default {
   'Reading the Apple Health export…': '正在讀取 Apple 健康匯出檔…',
   '{0} night imported': '已匯入 {0} 晚',
   '{0} nights imported': '已匯入 {0} 晚',
+  // Health → Sleep: the Shortcut to download (views/Sleep.jsx)
+  'Copied. Paste it into the Shortcut.': '已複製，請貼到捷徑中。',
+  'Line for the Shortcut (shown only now)': '捷徑用的一行（只顯示這一次）',
+  'Download the Shortcut': '下載捷徑',
+  'Make a token: the app copies a line with your server and the token.': '產生權杖：App 會複製一行包含你的伺服器和權杖的內容。',
+  'Download the Shortcut and add it, on the iPhone or on a Mac with the same iCloud.': '下載捷徑並加入，可在 iPhone 上，或在登入同一 iCloud 的 Mac 上。',
+  'Open it in Shortcuts and paste the line into the first Text, in place of COLE_AQUI_A_LINHA_DO_OPENGYM.': '在「捷徑」中打開，把這一行貼到第一個文字中，取代 COLE_AQUI_A_LINHA_DO_OPENGYM。',
+  'Run it once and allow it to read your sleep and to reach your server.': '執行一次，並允許它讀取睡眠資料和連線到你的伺服器。',
 }

@@ -71,7 +71,7 @@ describe('nights', () => {
 })
 
 describe('the sync with Apple Health', () => {
-  it('makes a token and shows it once with the address to paste into the Shortcut', async () => {
+  it('makes a token and shows the line to paste into the Shortcut, next to the Shortcut to download', async () => {
     useStore.setState({ S: clone(DEF), user: { id: 'u1' }, config: {} })
     api.mockImplementation(async (path, opts) => (opts?.method === 'POST' ? { token: 'ogs_abc', on: true, at: 1, last: null, nights: null } : { on: false }))
     sleepSyncSheet()
@@ -79,7 +79,9 @@ describe('the sync with Apple Health', () => {
     await until(() => button(sheet, 'Make a token') && !button(sheet, 'Make a token').disabled)
     await act(async () => { button(sheet, 'Make a token').click() })
     await until(() => sheet.textContent.includes('ogs_abc'))
-    expect(sheet.textContent).toContain('https://gym.example/api/sleep/ingest')
+    // One line for the Shortcut's first Text: the address and the token, split on the space.
+    expect(sheet.querySelector('.sleep-secret code').textContent).toBe('https://gym.example/api/sleep/ingest ogs_abc')
     expect(api.mock.calls.at(-1)).toEqual(['/api/sleep/token', { method: 'POST' }])
+    expect(sheet.querySelector('a[download]').getAttribute('href')).toBe('https://gym.example/shortcuts/opengym-sleep.shortcut')
   })
 })

@@ -2550,4 +2550,12 @@ export default {
   'Reading the Apple Health export…': 'Apple-Health-Export wird gelesen…',
   '{0} night imported': '{0} Nacht importiert',
   '{0} nights imported': '{0} Nächte importiert',
+  // Health → Sleep: the Shortcut to download (views/Sleep.jsx)
+  'Copied. Paste it into the Shortcut.': 'Kopiert. Füge es in den Kurzbefehl ein.',
+  'Line for the Shortcut (shown only now)': 'Zeile für den Kurzbefehl (nur jetzt sichtbar)',
+  'Download the Shortcut': 'Kurzbefehl laden',
+  'Make a token: the app copies a line with your server and the token.': 'Erstelle einen Token: Die App kopiert eine Zeile mit deinem Server und dem Token.',
+  'Download the Shortcut and add it, on the iPhone or on a Mac with the same iCloud.': 'Lade den Kurzbefehl und füge ihn hinzu, auf dem iPhone oder einem Mac mit derselben iCloud.',
+  'Open it in Shortcuts and paste the line into the first Text, in place of COLE_AQUI_A_LINHA_DO_OPENGYM.': 'Öffne ihn in Kurzbefehle und füge die Zeile in den ersten Text ein, anstelle von COLE_AQUI_A_LINHA_DO_OPENGYM.',
+  'Run it once and allow it to read your sleep and to reach your server.': 'Führe ihn einmal aus und erlaube ihm, deinen Schlaf zu lesen und deinen Server zu erreichen.',
 }

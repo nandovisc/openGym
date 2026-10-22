@@ -2533,4 +2533,12 @@ export default {
   'Reading the Apple Health export…': 'Az Apple Egészség export beolvasása…',
   '{0} night imported': '{0} éjszaka importálva',
   '{0} nights imported': '{0} éjszaka importálva',
+  // Health → Sleep: the Shortcut to download (views/Sleep.jsx)
+  'Copied. Paste it into the Shortcut.': 'Másolva. Illeszd be a parancsba.',
+  'Line for the Shortcut (shown only now)': 'Sor a parancshoz (csak most látszik)',
+  'Download the Shortcut': 'Parancs letöltése',
+  'Make a token: the app copies a line with your server and the token.': 'Készíts tokent: az app kimásol egy sort a szervereddel és a tokennel.',
+  'Download the Shortcut and add it, on the iPhone or on a Mac with the same iCloud.': 'Töltsd le és add hozzá a parancsot az iPhone-on vagy egy ugyanazzal az iClouddal használt Macen.',
+  'Open it in Shortcuts and paste the line into the first Text, in place of COLE_AQUI_A_LINHA_DO_OPENGYM.': 'Nyisd meg a Parancsokban, és az első Szövegbe illeszd be a sort a COLE_AQUI_A_LINHA_DO_OPENGYM helyére.',
+  'Run it once and allow it to read your sleep and to reach your server.': 'Futtasd egyszer, és engedélyezd, hogy olvassa az alvásodat és elérje a szerveredet.',
 }

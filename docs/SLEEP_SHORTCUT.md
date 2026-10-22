@@ -8,6 +8,23 @@ Ultrahuman ring, AutoSleep.
 You can also log a night by hand (**Health → Sleep → +**), and bring in your past nights from
 the Health export (below).
 
+## The quick way
+
+1. **Health → Sleep → 🔗 → Make a token.** The app copies one line: your server's address and
+   the token, separated by a space.
+2. **Download the Shortcut** from the same screen and add it (on the iPhone, or on a Mac signed
+   in to the same iCloud).
+3. Open it in Shortcuts and paste the line into the first **Text**, in place of
+   `COLE_AQUI_A_LINHA_DO_OPENGYM`.
+4. Run it once on the iPhone and allow it to read sleep data and to reach your server. Then set
+   up the daily automation (step 3 below).
+
+The file is `frontend/public/shortcuts/opengym-sleep.shortcut`. An iPhone imports only signed
+shortcuts and only a Mac can sign one, so it is signed once and committed, the same for every
+server: `node scripts/sleep-shortcut.mjs` in `frontend/` rebuilds and re-signs it.
+
+The steps below build the same shortcut by hand.
+
 ## 1. Make a token
 
 In the app, **Health → Sleep → 🔗** (or **Settings → Data → Sleep from Apple Health**), tap

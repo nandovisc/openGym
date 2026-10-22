@@ -2534,4 +2534,12 @@ export default {
   'Reading the Apple Health export…': 'Читаю экспорт Apple Здоровье…',
   '{0} night imported': 'Импортирована {0} ночь',
   '{0} nights imported': { one: 'Импортирована {0} ночь', few: 'Импортировано {0} ночи', many: 'Импортировано {0} ночей', other: 'Импортировано {0} ночи' },
+  // Health → Sleep: the Shortcut to download (views/Sleep.jsx)
+  'Copied. Paste it into the Shortcut.': 'Скопировано. Вставьте в быструю команду.',
+  'Line for the Shortcut (shown only now)': 'Строка для быстрой команды (показывается только сейчас)',
+  'Download the Shortcut': 'Скачать быструю команду',
+  'Make a token: the app copies a line with your server and the token.': 'Создайте токен: приложение скопирует строку с вашим сервером и токеном.',
+  'Download the Shortcut and add it, on the iPhone or on a Mac with the same iCloud.': 'Скачайте быструю команду и добавьте её на iPhone или на Mac с тем же iCloud.',
+  'Open it in Shortcuts and paste the line into the first Text, in place of COLE_AQUI_A_LINHA_DO_OPENGYM.': 'Откройте её в «Быстрых командах» и вставьте строку в первый «Текст» вместо COLE_AQUI_A_LINHA_DO_OPENGYM.',
+  'Run it once and allow it to read your sleep and to reach your server.': 'Запустите её один раз и разрешите читать сон и обращаться к вашему серверу.',
 }

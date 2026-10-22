@@ -1691,6 +1691,14 @@ export const PT_BR_OVERRIDES = {
   'Reading the Apple Health export…': 'Lendo a exportação do Apple Saúde…',
   '{0} night imported': '{0} noite importada',
   '{0} nights imported': '{0} noites importadas',
+  // Health → Sleep: the Shortcut to download (views/Sleep.jsx)
+  'Copied. Paste it into the Shortcut.': 'Copiado. Cole no Atalho.',
+  'Line for the Shortcut (shown only now)': 'Linha para o Atalho (aparece só agora)',
+  'Download the Shortcut': 'Baixar o Atalho',
+  'Make a token: the app copies a line with your server and the token.': 'Crie um token: o app copia uma linha com o seu servidor e o token.',
+  'Download the Shortcut and add it, on the iPhone or on a Mac with the same iCloud.': 'Baixe o Atalho e adicione, no iPhone ou num Mac com o mesmo iCloud.',
+  'Open it in Shortcuts and paste the line into the first Text, in place of COLE_AQUI_A_LINHA_DO_OPENGYM.': 'Abra no app Atalhos e cole a linha no primeiro Texto, no lugar de COLE_AQUI_A_LINHA_DO_OPENGYM.',
+  'Run it once and allow it to read your sleep and to reach your server.': 'Rode uma vez e permita que ele leia o seu sono e acesse o seu servidor.',
 }
 
 export default { ...pt, ...PT_BR_OVERRIDES }

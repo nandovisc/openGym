@@ -2530,4 +2530,12 @@ export default {
   'Reading the Apple Health export…': 'Apple Sağlık dışa aktarımı okunuyor…',
   '{0} night imported': '{0} gece içe aktarıldı',
   '{0} nights imported': '{0} gece içe aktarıldı',
+  // Health → Sleep: the Shortcut to download (views/Sleep.jsx)
+  'Copied. Paste it into the Shortcut.': 'Kopyalandı. Kestirmeye yapıştır.',
+  'Line for the Shortcut (shown only now)': 'Kestirme için satır (yalnızca şimdi gösterilir)',
+  'Download the Shortcut': 'Kestirmeyi indir',
+  'Make a token: the app copies a line with your server and the token.': 'Bir belirteç oluştur: uygulama sunucunu ve belirteci içeren bir satırı kopyalar.',
+  'Download the Shortcut and add it, on the iPhone or on a Mac with the same iCloud.': 'Kestirmeyi indirip ekle; iPhone’da veya aynı iCloud’lu bir Mac’te.',
+  'Open it in Shortcuts and paste the line into the first Text, in place of COLE_AQUI_A_LINHA_DO_OPENGYM.': 'Kestirmeler’de aç ve satırı ilk Metne, COLE_AQUI_A_LINHA_DO_OPENGYM yerine yapıştır.',
+  'Run it once and allow it to read your sleep and to reach your server.': 'Bir kez çalıştır; uykunu okumasına ve sunucuna ulaşmasına izin ver.',
 }

@@ -110,3 +110,22 @@ describe('one habit', () => {
     expect(S().habitLog.some(e => e.habitId === 'h' && e.d === day(1))).toBe(true)
   })
 })
+
+describe('habits from the other modules', () => {
+  it('are made on the first visit, already marked by what was logged', () => {
+    withState({ meds: [{ id: 'm', name: 'Losartana', times: ['08:00'], active: true, start: day(10) }], medLog: [{ id: `m|${today}|08:00`, medId: 'm', d: today, time: '08:00', status: 'taken' }] })
+    const p = page()
+    expect(S().habits.map(h => [h.id, h.name])).toEqual([['auto-meds', 'Medications']])
+    expect(S().habitPrefs.seeded).toBe(true)
+    expect(p.textContent).toContain('1 of 1 doses')
+    expect(p.textContent).toContain('1 of 1 done')
+  })
+  it('are offered later when a module gets data, and can be dismissed', () => {
+    withState({ habits: [habit({})], habitPrefs: { ...DEF.habitPrefs, seeded: true }, bodyweight: [{ d: today, w: 90 }] })
+    const p = page()
+    expect(p.textContent).toContain('From what you already log')
+    act(() => button(p, 'Add').click())
+    expect(S().habits.map(h => h.id)).toEqual(['h', 'auto-weight'])
+    expect(p.textContent).not.toContain('From what you already log')
+  })
+})

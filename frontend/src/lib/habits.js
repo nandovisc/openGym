@@ -301,3 +301,47 @@ export function reorder(habits, ordered) {
   const pos = new Map(ordered.map((id, i) => [id, i]))
   return list(habits).map(h => (pos.has(h.id) ? { ...h, order: pos.get(h.id) + 1 } : h))
 }
+
+/* ---------- habits the app already has the data for ---------- */
+
+// How far back a habit made from existing data starts: its history shows at once, and the days
+// read for its streak stay few.
+export const SEED_DAYS = 90
+
+/**
+ * The automatic habits the profile's own data asks for and does not have yet (an archived one
+ * counts as had): medications taken daily, the workouts at the person's usual weekly rate, the
+ * weigh-ins (daily when they are near daily, else weekly), the meals and the sleep logged lately.
+ * Each starts at the first day of its data within SEED_DAYS, so its streak and rates show at
+ * once. `names` gives each its name in the person's language.
+ */
+export function suggestedHabits(S, today, names = {}) {
+  const have = new Set(list(S.habits).filter(h => h?.kind === 'auto').map(h => h.auto?.source))
+  const floor = addDays(today, -(SEED_DAYS - 1))
+  const since = ds => { const xs = ds.filter(d => DAY_RE.test(d || '') && d >= floor && d <= today).sort(); return xs[0] || null }
+  const last = (ds, n) => ds.filter(d => DAY_RE.test(d || '') && d > addDays(today, -n) && d <= today)
+  const out = []
+  const add = (source, extra, start) => out.push({ name: names[source] || source, kind: 'auto', auto: { source, ...extra.auto }, schedule: extra.schedule || { type: 'daily' }, start: start || today, groups: [] })
+
+  const meds = list(S.meds).filter(m => m?.id && m.active !== false && list(m.times).length)
+  if (meds.length && !have.has('meds')) {
+    const starts = meds.map(m => m.start || (m.created ? isoOf(new Date(m.created)) : today))
+    add('meds', {}, starts.sort()[0] < floor ? floor : starts.sort()[0])
+  }
+  const wDays = [...new Set(list(S.workouts).map(w => w?.d))]
+  if (last(wDays, 28).length && !have.has('workout')) {
+    const perWeek = Math.min(7, Math.max(1, Math.round(last(wDays, 28).length / 4)))
+    add('workout', { schedule: { type: 'perWeek', times: perWeek } }, since(wDays))
+  }
+  const bDays = list(S.bodyweight).map(e => e?.d)
+  if (last(bDays, 28).length && !have.has('weight')) {
+    const daily = last(bDays, 14).length >= 10
+    add('weight', { schedule: daily ? { type: 'daily' } : { type: 'perWeek', times: Math.min(7, Math.max(1, Math.round(last(bDays, 28).length / 4))) } }, since(bDays))
+  }
+  const mDays = [...new Set(list(S.meals).filter(m => list(m?.items).length).map(m => m.d))]
+  if (last(mDays, 14).length >= 3 && !have.has('meals')) add('meals', { auto: { mode: 'slots', slots: ['breakfast', 'lunch', 'dinner'] } }, since(mDays))
+  const sDays = list(S.sleep).map(n => n?.d)
+  if (last(sDays, 14).length >= 3 && !have.has('sleep')) add('sleep', { auto: { mode: 'goal' } }, since(sDays))
+  // One id per source: two phones making them before they sync make the same habit, not two.
+  return out.map((x, i) => normalizeHabit(x, { today, now: Date.now() + i })).filter(h => !h.error).map(h => ({ ...h, id: 'auto-' + h.auto.source }))
+}

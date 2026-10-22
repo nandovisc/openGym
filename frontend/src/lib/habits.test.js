@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   addSlip, addValue, dailyProgress, dayStatus, duplicateHabit, habitsDue, icsFor, logicalDay, milestones, normalizeHabit, reorder, scheduledOn,
-  setState, startTimer, stats, stopTimer, streak, timerReached, toggleDone, weekdayMisses, weeklyRecap
+  setState, startTimer, stats, stopTimer, streak, timerReached, toggleDone, weekdayMisses, weeklyRecap, suggestedHabits
 } from './habits.js'
 
 const T = '2026-10-22'   // a Thursday
@@ -155,5 +155,26 @@ describe('part B: the recap, the calendar, the order', () => {
   it('keeps the list chart and the usual-time reminder', () => {
     expect(make({ listChart: 'bars', smartReminder: true })).toMatchObject({ listChart: 'bars', smartReminder: true })
     expect(make({ listChart: 'pie' }).listChart).toBeNull()
+  })
+})
+
+describe('habits from what the app already logs', () => {
+  it('suggests one per module with recent data, starting from that data', () => {
+    const S = base({
+      meds: [{ id: 'm', name: 'Losartana', times: ['08:00'], active: true, start: back(200) }],
+      workouts: [back(1), back(3), back(5), back(8), back(10), back(12), back(15), back(17), back(19), back(22), back(24), back(26)].map((d, i) => ({ id: 'w' + i, d })),
+      bodyweight: Array.from({ length: 14 }, (_, i) => ({ d: back(i), w: 90 })),
+      meals: [0, 1, 2].map(i => ({ d: back(i), slot: 'lunch', items: [{ kcal: 500 }] })),
+      sleep: [{ d: back(1) }]
+    })
+    const hs = suggestedHabits(S, T, { meds: 'Remédios', workout: 'Treino', weight: 'Pesagem', meals: 'Refeições', sleep: 'Sono' })
+    expect(hs.map(h => [h.name, h.auto.source, h.schedules[0].type, h.schedules[0].times ?? null, h.start])).toEqual([
+      ['Remédios', 'meds', 'daily', null, back(89)],
+      ['Treino', 'workout', 'perWeek', 3, back(26)],
+      ['Pesagem', 'weight', 'daily', null, back(13)],
+      ['Refeições', 'meals', 'daily', null, back(2)]
+    ])
+    expect(suggestedHabits({ ...S, habits: hs }, T)).toEqual([])
+    expect(suggestedHabits(base({}), T)).toEqual([])
   })
 })

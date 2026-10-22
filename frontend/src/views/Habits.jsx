@@ -5,7 +5,7 @@ import { useUI } from '../store/useUI.js'
 import {
   KINDS, MEAL_SLOTS, MILESTONES, SCHEDULE_TYPES, SOURCES, UNITS, activeHabits, addDays, addSlip, addValue, dailyProgress, duplicateHabit,
   exportHabits, icsFor, logId, milestones, normalizeHabit, reorder, scheduleFor, series, setState, setValue, startTimer, stats, statusOn, stopTimer,
-  streak, timerExtra, timerReached, todayOf, toggleDone, typicalTime, undoSlip, weekdayMisses, weeklyRecap
+  streak, timerExtra, timerReached, todayOf, toggleDone, typicalTime, undoSlip, weekdayMisses, weeklyRecap, suggestedHabits
 } from '../lib/habits.js'
 import { adherence } from '../lib/meds.js'
 import { pushPermission } from '../lib/push.js'
@@ -193,6 +193,29 @@ function useDragOrder(ids, onDone) {
   return { state, start }
 }
 
+const SOURCE_NAME = () => ({ meds: t('Medications'), workout: t('Workout'), weight: t('Weigh-in'), meals: t('Meals'), sleep: t('Sleep') })
+const addHabits = hs => update(s => { s.habits = [...list(s.habits).filter(x => !hs.some(h => h.id === x.id)), ...hs] })
+
+// The habits the app's own data asks for (lib/habits.js suggestedHabits): made on the first visit,
+// offered here afterwards when a module gets data of its own (a first medication, say).
+function Suggestions({ S, today }) {
+  const dismissed = list(S.habitPrefs?.dismissed)
+  const hs = suggestedHabits(S, today, SOURCE_NAME()).filter(h => !dismissed.includes(h.auto.source))
+  if (!hs.length) return null
+  const dismiss = src => update(s => { s.habitPrefs = { ...(s.habitPrefs || {}), dismissed: [...list(s.habitPrefs?.dismissed), src] } })
+  return <div className="card hab-suggest">
+    <div className="muted small" style={{ marginBottom: 6 }}>{t('From what you already log')}</div>
+    {hs.map(h => <div key={h.id} className="row between" style={{ gap: 8, padding: '6px 0' }}>
+      <span>{iconOf(h)} <b>{h.name}</b> <span className="small dim">· {t(SCHED_LABEL[h.schedules[0].type])}{h.schedules[0].times ? ` (${h.schedules[0].times}×)` : ''}</span></span>
+      <span className="row" style={{ gap: 4 }}>
+        <Button size="xs" onClick={() => { addHabits([h]); toast(t('Habit created')) }}>{t('Add')}</Button>
+        <button className="iconbtn" aria-label={t('Not now')} onClick={() => dismiss(h.auto.source)}><Icon name="xmark" /></button>
+      </span>
+    </div>)}
+    {hs.length > 1 && <Button size="sm" variant="primary" onClick={() => { addHabits(hs); toast(t('{0} habits created', hs.length)) }}>{t('Add all')}</Button>}
+  </div>
+}
+
 function Today({ S, today }) {
   const [d, setD] = useState(today)
   const [ordering, setOrdering] = useState(false)
@@ -234,6 +257,7 @@ function Today({ S, today }) {
       <button className={'exam-chip' + (!group ? ' on' : '')} onClick={() => setGroup(null)}>{t('All')}</button>
       {groups.map(g => <button key={g.id} className={'exam-chip' + (group === g.id ? ' on' : '')} onClick={() => setGroup(group === g.id ? null : g.id)}>{g.name}</button>)}
     </div>}
+    <Suggestions S={S} today={today} />
     {!activeHabits(S).length && <div className="card">
       <div className="muted small">{t('Create your first habit. Workouts, weigh-ins, medications, meals and sleep can mark themselves from what you log in the app.')}</div>
       <div style={{ height: 10 }} /><Button variant="primary" icon="plus" onClick={() => habitFormSheet()}>{t('New habit')}</Button>
@@ -311,6 +335,14 @@ export default function Habits() {
   const loc = useLocation()
   const [tab, setTab] = useState(() => (/recap=1/.test(loc.search) ? 'stats' : 'today'))
   const today = todayOf(S)
+  // The first visit: the habits the app's data asks for are made at once, already marked by it.
+  useEffect(() => {
+    const st = useStore.getState().S
+    if (st.habitPrefs?.seeded) return
+    const hs = suggestedHabits(st, todayOf(st), SOURCE_NAME())
+    update(s => { if (hs.length) s.habits = [...list(s.habits).filter(x => !hs.some(h => h.id === x.id)), ...hs]; s.habitPrefs = { ...(s.habitPrefs || {}), seeded: true } })
+    if (hs.length) toast(t('{0} habits made from what you already log: {1}', hs.length, hs.map(h => h.name).join(', ')))
+  }, [])
   return <div className="narrow wide-ok">
     <div className="hdr">
       <button className="iconbtn" onClick={() => nav('/health')} aria-label={t('Health')}><Icon name="chevronLeft" /></button>

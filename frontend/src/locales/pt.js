@@ -2752,4 +2752,8 @@ export default {
   'Silence the reminders of each habit: only the group reminds': 'Silenciar os lembretes de cada hábito: só o grupo lembra',
   'No habit in this group yet.': 'Nenhum hábito neste grupo ainda.',
   'Add the group to my calendar (.ics)': 'Adicionar o grupo à minha agenda (.ics)',
+  'From what you already log': 'A partir do que você já registra',
+  '{0} habits created': '{0} hábitos criados',
+  'Add all': 'Adicionar todos',
+  '{0} habits made from what you already log: {1}': '{0} hábitos criados a partir do que você já registra: {1}',
 }

@@ -2358,4 +2358,10 @@ export default {
   'Nothing matches.': '沒有符合項目。',
   'Search': '搜尋',
   'Out of range': '超出範圍',
+  'Read again with AI?': '用 AI 重新讀取？',
+  'Read {0} exams again with AI?': '用 AI 重新讀取 {0} 項檢查？',
+  'The values read now replace the current results. Each reading is charged by the AI service.': '本次讀取的數值將取代目前結果。每次讀取都會由 AI 服務計費。',
+  'Read again': '重新讀取',
+  'Read again with AI': '用 AI 重新讀取',
+  'Read all again with AI': '用 AI 全部重新讀取',
 }

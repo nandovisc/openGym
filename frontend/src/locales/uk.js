@@ -2362,4 +2362,10 @@ export default {
   'Nothing matches.': 'Нічого не знайдено.',
   'Search': 'Пошук',
   'Out of range': 'Поза нормою',
+  'Read again with AI?': 'Прочитати знову з ШІ?',
+  'Read {0} exams again with AI?': 'Прочитати знову аналізи ({0}) з ШІ?',
+  'The values read now replace the current results. Each reading is charged by the AI service.': 'Прочитані зараз значення замінять поточні результати. Кожне читання оплачується в сервісі ШІ.',
+  'Read again': 'Прочитати знову',
+  'Read again with AI': 'Прочитати знову з ШІ',
+  'Read all again with AI': 'Прочитати всі знову з ШІ',
 }

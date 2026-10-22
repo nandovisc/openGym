@@ -2365,4 +2365,10 @@ export default {
   'Nothing matches.': '일치하는 항목이 없습니다.',
   'Search': '검색',
   'Out of range': '범위 밖',
+  'Read again with AI?': 'AI로 다시 읽을까요?',
+  'Read {0} exams again with AI?': '검사 {0}건을 AI로 다시 읽을까요?',
+  'The values read now replace the current results. Each reading is charged by the AI service.': '지금 읽은 값이 현재 결과를 대체합니다. 읽을 때마다 AI 서비스 요금이 부과됩니다.',
+  'Read again': '다시 읽기',
+  'Read again with AI': 'AI로 다시 읽기',
+  'Read all again with AI': '모두 AI로 다시 읽기',
 }

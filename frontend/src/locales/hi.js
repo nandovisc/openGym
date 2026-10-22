@@ -2365,4 +2365,10 @@ export default {
   'Nothing matches.': 'कुछ नहीं मिला।',
   'Search': 'खोजें',
   'Out of range': 'सीमा से बाहर',
+  'Read again with AI?': 'AI से फिर पढ़ें?',
+  'Read {0} exams again with AI?': '{0} जाँचें AI से फिर पढ़ें?',
+  'The values read now replace the current results. Each reading is charged by the AI service.': 'अभी पढ़े गए मान मौजूदा परिणामों की जगह लेंगे। हर बार पढ़ने का शुल्क AI सेवा लेती है।',
+  'Read again': 'फिर पढ़ें',
+  'Read again with AI': 'AI से फिर पढ़ें',
+  'Read all again with AI': 'सभी AI से फिर पढ़ें',
 }

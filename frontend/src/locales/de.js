@@ -2385,4 +2385,10 @@ export default {
   'Nothing matches.': 'Keine Treffer.',
   'Search': 'Suchen',
   'Out of range': 'Außerhalb',
+  'Read again with AI?': 'Erneut mit KI lesen?',
+  'Read {0} exams again with AI?': '{0} Untersuchungen erneut mit KI lesen?',
+  'The values read now replace the current results. Each reading is charged by the AI service.': 'Die jetzt gelesenen Werte ersetzen die aktuellen Ergebnisse. Jede Auswertung wird vom KI-Dienst berechnet.',
+  'Read again': 'Erneut lesen',
+  'Read again with AI': 'Erneut mit KI lesen',
+  'Read all again with AI': 'Alle erneut mit KI lesen',
 }

@@ -2369,4 +2369,10 @@ export default {
   'Nothing matches.': 'Ничего не найдено.',
   'Search': 'Поиск',
   'Out of range': 'Вне нормы',
+  'Read again with AI?': 'Прочитать заново с ИИ?',
+  'Read {0} exams again with AI?': 'Прочитать заново анализы ({0}) с ИИ?',
+  'The values read now replace the current results. Each reading is charged by the AI service.': 'Прочитанные сейчас значения заменят текущие результаты. Каждое чтение оплачивается в сервисе ИИ.',
+  'Read again': 'Прочитать заново',
+  'Read again with AI': 'Прочитать заново с ИИ',
+  'Read all again with AI': 'Прочитать все заново с ИИ',
 }

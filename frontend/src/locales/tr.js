@@ -2365,4 +2365,10 @@ export default {
   'Nothing matches.': 'Eşleşen yok.',
   'Search': 'Ara',
   'Out of range': 'Aralık dışı',
+  'Read again with AI?': 'Yapay zekâ ile yeniden okunsun mu?',
+  'Read {0} exams again with AI?': '{0} tahlil yapay zekâ ile yeniden okunsun mu?',
+  'The values read now replace the current results. Each reading is charged by the AI service.': 'Şimdi okunan değerler mevcut sonuçların yerini alır. Her okuma yapay zekâ hizmetince ücretlendirilir.',
+  'Read again': 'Yeniden oku',
+  'Read again with AI': 'Yapay zekâ ile yeniden oku',
+  'Read all again with AI': 'Tümünü yapay zekâ ile yeniden oku',
 }

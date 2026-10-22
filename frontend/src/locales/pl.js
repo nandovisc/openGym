@@ -2365,4 +2365,10 @@ export default {
   'Nothing matches.': 'Brak wyników.',
   'Search': 'Szukaj',
   'Out of range': 'Poza normą',
+  'Read again with AI?': 'Odczytać ponownie z AI?',
+  'Read {0} exams again with AI?': 'Odczytać ponownie badania ({0}) z AI?',
+  'The values read now replace the current results. Each reading is charged by the AI service.': 'Odczytane teraz wartości zastąpią obecne wyniki. Każdy odczyt jest płatny w usłudze AI.',
+  'Read again': 'Odczytaj ponownie',
+  'Read again with AI': 'Odczytaj ponownie z AI',
+  'Read all again with AI': 'Odczytaj wszystkie ponownie z AI',
 }

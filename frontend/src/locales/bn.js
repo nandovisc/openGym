@@ -2444,4 +2444,10 @@ export default {
   'Nothing matches.': 'কিছুই মেলেনি।',
   'Search': 'খুঁজুন',
   'Out of range': 'সীমার বাইরে',
+  'Read again with AI?': 'AI দিয়ে আবার পড়বেন?',
+  'Read {0} exams again with AI?': '{0}টি পরীক্ষা AI দিয়ে আবার পড়বেন?',
+  'The values read now replace the current results. Each reading is charged by the AI service.': 'এখন পড়া মান বর্তমান ফলাফলের জায়গা নেবে। প্রতিটি পড়ার জন্য AI সেবা চার্জ করে।',
+  'Read again': 'আবার পড়ুন',
+  'Read again with AI': 'AI দিয়ে আবার পড়ুন',
+  'Read all again with AI': 'সব AI দিয়ে আবার পড়ুন',
 }

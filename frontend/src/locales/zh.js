@@ -2365,4 +2365,10 @@ export default {
   'Nothing matches.': '没有匹配项。',
   'Search': '搜索',
   'Out of range': '超出范围',
+  'Read again with AI?': '用 AI 重新读取？',
+  'Read {0} exams again with AI?': '用 AI 重新读取 {0} 项检查？',
+  'The values read now replace the current results. Each reading is charged by the AI service.': '本次读取的数值将替换当前结果。每次读取都会由 AI 服务计费。',
+  'Read again': '重新读取',
+  'Read again with AI': '用 AI 重新读取',
+  'Read all again with AI': '用 AI 全部重新读取',
 }

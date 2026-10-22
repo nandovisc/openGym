@@ -2217,3 +2217,7 @@ button.wl-summary{width:100%;padding:0 0 10px;text-align:start;border-radius:var
 .sleep-steps{margin:0;padding-inline-start:20px;color:var(--label-2);line-height:1.45}
 .sleep-steps li{margin-bottom:6px}
 a.btn{text-decoration:none;box-sizing:border-box}
+.food-pick{display:flex;align-items:center;gap:12px;padding:11px 14px;cursor:pointer}
+.food-pick input{width:20px;height:20px;accent-color:var(--acc);flex:none}
+.food-pick-name{display:flex;flex-direction:column;gap:2px;font-size:15px}
+.food-save-meal .lrow-title,.food-save-meal{color:var(--label-2)}

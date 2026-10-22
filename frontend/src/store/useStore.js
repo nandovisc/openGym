@@ -106,6 +106,8 @@ export const DEF = {
   meals: [], foods: [], nutrition: { birthYear: null, heightCm: null, activity: 'moderate', objective: 'maintain', targets: null, custom: false },
   // Sleep (lib/sleep.js): the nights, logged by hand or sent from Apple Health, and the nightly goal.
   sleep: [], sleepPrefs: { goalMin: 480 },
+  // Saved meals (lib/nutrition.js savedMealFrom): plates to eat again, whole or in part.
+  savedMeals: [],
   queue: null,   // a planner's floating week (lib/queue.js) — via the API, or by this rotation feature (below)
   // The in-app rotation's reusable definition — { id, sequence, label } (lib/rotation.js). Never
   // a live queue: it only ever feeds `queue`, and `queue.rotationId` says the pass is managed here.

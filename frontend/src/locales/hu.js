@@ -2364,4 +2364,8 @@ export default {
   'The file is sent to the AI only to read the values. Check them against the report.': 'A fájl csak az értékek beolvasásához jut el az MI-hez. Vesd össze őket a lelettel.',
   'You can close this screen; the results are saved when ready.': 'Bezárhatod ezt a képernyőt; az eredmények elkészültükkor mentődnek.',
   'Read by AI. Check the values against the report.': 'MI által beolvasva. Vesd össze az értékeket a lelettel.',
+  'Doctor': 'Orvos',
+  'Nothing matches.': 'Nincs találat.',
+  'Search': 'Keresés',
+  'Out of range': 'Tartományon kívül',
 }

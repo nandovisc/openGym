@@ -2416,4 +2416,8 @@ export default {
   'The file is sent to the AI only to read the values. Check them against the report.': 'يُرسل الملف إلى الذكاء الاصطناعي لقراءة القيم فقط. قارنها بالتقرير.',
   'You can close this screen; the results are saved when ready.': 'يمكنك إغلاق هذه الشاشة؛ تُحفظ النتائج عند جاهزيتها.',
   'Read by AI. Check the values against the report.': 'قرأه الذكاء الاصطناعي. قارن القيم بالتقرير.',
+  'Doctor': 'الطبيب',
+  'Nothing matches.': 'لا توجد نتائج مطابقة.',
+  'Search': 'بحث',
+  'Out of range': 'خارج المعدل',
 }

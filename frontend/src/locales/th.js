@@ -2372,4 +2372,8 @@ export default {
   'The file is sent to the AI only to read the values. Check them against the report.': 'ไฟล์ถูกส่งให้ AI เพื่ออ่านค่าเท่านั้น ตรวจสอบกับผลตรวจ',
   'You can close this screen; the results are saved when ready.': 'ปิดหน้านี้ได้ ผลจะถูกบันทึกเมื่อพร้อม',
   'Read by AI. Check the values against the report.': 'อ่านโดย AI ตรวจสอบค่ากับผลตรวจ',
+  'Doctor': 'แพทย์',
+  'Nothing matches.': 'ไม่พบรายการที่ตรงกัน',
+  'Search': 'ค้นหา',
+  'Out of range': 'นอกเกณฑ์',
 }

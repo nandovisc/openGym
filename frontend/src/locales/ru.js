@@ -2365,4 +2365,8 @@ export default {
   'The file is sent to the AI only to read the values. Check them against the report.': 'Файл отправляется ИИ только для чтения значений. Сверьте их с бланком.',
   'You can close this screen; the results are saved when ready.': 'Можно закрыть этот экран; результаты сохранятся, когда будут готовы.',
   'Read by AI. Check the values against the report.': 'Прочитано ИИ. Сверьте значения с бланком.',
+  'Doctor': 'Врач',
+  'Nothing matches.': 'Ничего не найдено.',
+  'Search': 'Поиск',
+  'Out of range': 'Вне нормы',
 }

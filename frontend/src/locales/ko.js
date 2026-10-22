@@ -2361,4 +2361,8 @@ export default {
   'The file is sent to the AI only to read the values. Check them against the report.': '값을 읽기 위해서만 파일이 AI로 전송됩니다. 검사지와 비교해 확인하세요.',
   'You can close this screen; the results are saved when ready.': '이 화면을 닫아도 됩니다. 결과는 준비되면 저장됩니다.',
   'Read by AI. Check the values against the report.': 'AI가 읽었습니다. 값을 검사지와 비교해 확인하세요.',
+  'Doctor': '의사',
+  'Nothing matches.': '일치하는 항목이 없습니다.',
+  'Search': '검색',
+  'Out of range': '범위 밖',
 }

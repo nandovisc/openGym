@@ -2361,4 +2361,8 @@ export default {
   'The file is sent to the AI only to read the values. Check them against the report.': 'Il file viene inviato all’IA solo per leggere i valori. Confrontali con il referto.',
   'You can close this screen; the results are saved when ready.': 'Puoi chiudere questa schermata; i risultati vengono salvati appena pronti.',
   'Read by AI. Check the values against the report.': 'Letto dall’IA. Confronta i valori con il referto.',
+  'Doctor': 'Medico',
+  'Nothing matches.': 'Nessun risultato.',
+  'Search': 'Cerca',
+  'Out of range': 'Fuori range',
 }

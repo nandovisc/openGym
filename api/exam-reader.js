@@ -36,11 +36,12 @@ const nullable = t => ({ anyOf: [{ type: t }, { type: 'null' }] });
 export const READING_SCHEMA = {
   type: 'object',
   additionalProperties: false,
-  required: ['date', 'lab', 'title', 'results'],
+  required: ['date', 'lab', 'doctor', 'title', 'results'],
   properties: {
     date: { ...nullable('string'), description: 'Date the sample was collected (or, if absent, the report date), as YYYY-MM-DD. null if the report shows none.' },
-    lab: { ...nullable('string'), description: 'Laboratory or clinic name, as printed.' },
-    title: { ...nullable('string'), description: 'Short title for the whole report in its own language, e.g. "Hemograma completo", "Perfil lipídico", or "Exames de rotina" for a mix.' },
+    lab: { ...nullable('string'), description: 'Laboratory or clinic that performed the exam, as printed (not the doctor).' },
+    doctor: { ...nullable('string'), description: 'Name of the requesting physician ("Médico solicitante", "Solicitante", "Dr./Dra. …"), as printed; null if the report does not show one. Never put the doctor in lab or title.' },
+    title: { ...nullable('string'), description: 'Short title for the whole report in its own language, describing the tests, never a person\'s name: e.g. "Hemograma completo", "Perfil lipídico", or "Exames de rotina" for a mix.' },
     results: {
       type: 'array',
       items: {
@@ -125,6 +126,7 @@ export async function readExam(files, cfg, fetchImpl = globalThis.fetch) {
   return {
     date: typeof reading.date === 'string' ? reading.date : null,
     lab: typeof reading.lab === 'string' ? reading.lab : null,
+    doctor: typeof reading.doctor === 'string' ? reading.doctor : null,
     title: typeof reading.title === 'string' ? reading.title : null,
     results: reading.results.filter(x => x && typeof x === 'object').slice(0, 300)
   };

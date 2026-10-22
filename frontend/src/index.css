@@ -2178,3 +2178,9 @@ button.wl-summary{width:100%;padding:0 0 10px;text-align:start;border-radius:var
 .exam-ai.busy{animation:exam-ai-pulse 1.2s ease-in-out infinite}
 @keyframes exam-ai-pulse{50%{opacity:.25}}
 .exam-ai-note{display:flex;align-items:center;gap:6px;margin-bottom:10px;color:var(--acc)}
+.exam-filters{display:flex;gap:8px;align-items:center;margin-bottom:12px}
+.exam-search{flex:1;display:flex;align-items:center;gap:8px;background:var(--surface-2);border-radius:var(--r);padding:0 10px;color:var(--label-3)}
+.exam-search input{flex:1;min-width:0;background:none;border:0;outline:0;color:var(--label);font:inherit;padding:10px 0}
+.exam-search .iconbtn{width:28px;height:28px;font-size:13px}
+.exam-chip{white-space:nowrap;padding:9px 12px;border-radius:999px;border:1px solid var(--sep);background:var(--surface-2);color:var(--label-2);font:inherit;font-size:13px}
+.exam-chip.on{background:color-mix(in srgb,var(--red) 18%,transparent);border-color:var(--red);color:var(--red);font-weight:600}

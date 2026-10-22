@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useStore } from '../store/useStore.js'
 import { useUI } from '../store/useUI.js'
-import { FILES_MAX, analytes, examsByDate, fromReading, normalizeExam, outOfRange, seriesOf } from '../lib/exams.js'
+import { FILES_MAX, analytes, byName, examsByDate, filterAnalytes, filterExams, fold, fromReading, normalizeExam, outOfRange, seriesOf } from '../lib/exams.js'
 import { mediaStore } from '../lib/media-store.js'
 import { limitsFrom } from '../lib/media-limits.js'
 import { api } from '../lib/api.js'
@@ -96,7 +96,17 @@ const readingToast = reading => toast(reading.results.length
   : t('No results were found in this file.'))
 const readFailText = e => (e?.code === 'missing' ? t('This file is not on this device yet.') : readError(e))
 // A reading laid over the form: its date, and its title and lab where the form has none.
-const withReading = (x, reading) => ({ ...x, d: reading.d || x.d, title: x.title || reading.title, lab: x.lab || reading.lab, results: reading.results, ai: Date.now() })
+// A reading laid over an exam: the date, lab and doctor it finds win; its title only replaces an
+// empty one, or one that is the doctor's name (what an older reading put there).
+const withReading = (x, reading) => ({
+  ...x,
+  d: reading.d || x.d,
+  lab: reading.lab || x.lab,
+  doctor: reading.doctor || x.doctor || '',
+  title: !x.title || (reading.doctor && fold(x.title) === fold(reading.doctor)) ? reading.title || x.title : x.title,
+  results: reading.results,
+  ai: Date.now()
+})
 
 /** The exams being read right now, by id (useUI: it lasts as long as the page is open). */
 export const useReadingExam = id => useUI(s => !!s.examReads?.[id])
@@ -139,7 +149,7 @@ function ExamForm({ id, reading = null, close }) {
   const prev = id ? (S.exams || []).find(e => e.id === id) : null
   const [f, setF] = useState(() => {
     const start = {
-      d: prev?.d || todayISO(), title: prev?.title || '', lab: prev?.lab || '', notes: prev?.notes || '',
+      d: prev?.d || todayISO(), title: prev?.title || '', lab: prev?.lab || '', doctor: prev?.doctor || '', notes: prev?.notes || '',
       files: prev?.files ? [...prev.files] : [], results: prev?.results ? prev.results.map(r => ({ ...r })) : [], ai: prev?.ai || 0
     }
     // Opened from an exam's detail right after its reading: the values wait here to be checked.
@@ -237,6 +247,7 @@ function ExamForm({ id, reading = null, close }) {
       <label><span>{t('Date')}</span><input className="field" type="date" value={f.d} max={todayISO()} onChange={e => set('d', e.target.value)} /></label>
       <label><span>{t('Title')}</span><TextField value={f.title} maxLength={80} placeholder={t('e.g. Routine blood test')} onChange={e => set('title', e.target.value)} /></label>
       <label><span>{t('Laboratory')}</span><TextField value={f.lab} maxLength={80} onChange={e => set('lab', e.target.value)} /></label>
+      <label><span>{t('Doctor')}</span><TextField value={f.doctor} maxLength={80} onChange={e => set('doctor', e.target.value)} /></label>
       <div>
         <span className="med-label">{t('Results')}</span>
         {f.results.map((r, i) => <ResultRow key={r.id || i} r={r}
@@ -260,11 +271,18 @@ function ExamDetail({ id, close }) {
   const exam = useStore(s => (s.S.exams || []).find(e => e.id === id))
   const canRead = useStore(s => !!s.user && !!s.config?.exams_ai)
   const reading = useReadingExam(id)
+  const [query, setQuery] = useState('')
+  const [onlyOut, setOnlyOut] = useState(false)
   if (!exam) return <><h3>{t('Exam')}</h3><div className="muted small">{t('This exam was deleted.')}</div><Button onClick={close}>{t('Close')}</Button></>
-  const sections = [...new Set(exam.results.map(r => r.section || ''))]
+  // In alphabetical order within each section of the report, narrowed by the search and filter.
+  const words = fold(query).split(/\s+/).filter(Boolean)
+  const shown = exam.results
+    .filter(r => (!onlyOut || ['low', 'high', 'abnormal'].includes(r.flag)) && words.every(w => fold(r.name).includes(w)))
+    .sort((a, b) => byName(a.name, b.name))
+  const sections = [...new Set(exam.results.map(r => r.section || ''))].filter(sec => shown.some(r => (r.section || '') === sec))
   return <>
     <h3>{exam.title || t('Exam')}</h3>
-    <div className="muted small" style={{ marginBottom: 12 }}>{[fmtDate(exam.d, true), exam.lab].filter(Boolean).join(' · ')}</div>
+    <div className="muted small" style={{ marginBottom: 12 }}>{[fmtDate(exam.d, true), exam.lab, exam.doctor].filter(Boolean).join(' · ')}</div>
     {exam.files?.length > 0 && <div className="exam-files" style={{ marginBottom: 14 }}>{exam.files.map(file => <ExamFile key={file.hash} file={file} />)}</div>}
     {/* A report on file and nothing read off it yet: reading it is the next thing to do, and it
         goes on in the background — the results are saved into the exam when they arrive. */}
@@ -276,9 +294,11 @@ function ExamDetail({ id, close }) {
       {reading && <div className="small dim" style={{ marginTop: 6 }}>{t('You can close this screen; the results are saved when ready.')}</div>}
     </div>}
     {exam.ai > 0 && exam.results.length > 0 && <div className="small dim exam-ai-note"><Icon name="sparkles" /> {t('Read by AI. Check the values against the report.')}</div>}
+    {exam.results.length > 5 && <ExamFilters query={query} setQuery={setQuery} onlyOut={onlyOut} setOnlyOut={setOnlyOut} />}
+    {exam.results.length > 0 && !shown.length && <div className="muted small">{t('Nothing matches.')}</div>}
     {sections.map(sec => <div key={sec} style={{ marginBottom: 12 }}>
       {sec && <h4 className="sec" style={{ margin: '6px 2px' }}>{sec}</h4>}
-      {exam.results.filter(r => (r.section || '') === sec).map(r => {
+      {shown.filter(r => (r.section || '') === sec).map(r => {
         const look = FLAG[r.flag]
         return <div className="exam-result" key={r.id}>
           <div className="exam-what"><b>{r.name}</b>{r.refText && <span className="small dim">{t('Reference: {0}', r.refText)}</span>}</div>
@@ -323,6 +343,18 @@ function Trend({ k, close }) {
   </>
 }
 
+// The search box that narrows as it is typed into, and the out-of-range switch.
+function ExamFilters({ query, setQuery, onlyOut, setOnlyOut }) {
+  return <div className="exam-filters">
+    <div className="exam-search">
+      <Icon name="magnifier" />
+      <input type="search" value={query} placeholder={t('Search')} aria-label={t('Search')} onChange={e => setQuery(e.target.value)} />
+      {query && <button className="iconbtn" onClick={() => setQuery('')} aria-label={t('Clear')}><Icon name="xmark" /></button>}
+    </div>
+    <button className={'exam-chip' + (onlyOut ? ' on' : '')} aria-pressed={onlyOut} onClick={() => setOnlyOut(!onlyOut)}>{t('Out of range')}</button>
+  </div>
+}
+
 // In the list: the exam waits to be read with AI, or (pulsing) is being read now.
 function ReadMark({ id }) {
   const busy = useReadingExam(id)
@@ -335,9 +367,13 @@ export default function Exams() {
   const config = useStore(s => s.config)
   const user = useStore(s => s.user)
   const [tab, setTab] = useState('exams')
+  const [query, setQuery] = useState('')
+  const [onlyOut, setOnlyOut] = useState(false)
   const aiOn = !!user && !!config?.exams_ai
   const list = examsByDate(exams)
   const all = analytes(exams)
+  const shownExams = filterExams(list, { query, out: onlyOut })
+  const shownAll = filterAnalytes(all, { query, out: onlyOut })
 
   return <div className="narrow">
     <div className="hdr">
@@ -355,18 +391,20 @@ export default function Exams() {
 
     {list.length > 0 && <Segmented value={tab} onChange={setTab} options={[{ value: 'exams', label: t('Exams') }, { value: 'trends', label: t('Over time') }]} />}
     <div style={{ height: 12 }} />
+    {list.length > 0 && <ExamFilters query={query} setQuery={setQuery} onlyOut={onlyOut} setOnlyOut={setOnlyOut} />}
+    {list.length > 0 && (tab === 'exams' ? !shownExams.length : all.length > 0 && !shownAll.length) && <div className="empty small">{t('Nothing matches.')}</div>}
 
-    {tab === 'exams' && list.length > 0 && <Section>{list.map(e => {
+    {tab === 'exams' && shownExams.length > 0 && <Section>{shownExams.map(e => {
       const out = outOfRange(e)
       return <Row key={e.id} icon={e.files?.some(f => f.kind === 'doc') ? 'doc' : 'note'} iconTint={out ? 'var(--red)' : 'var(--indigo)'}
         // Waiting to be read with AI: its report is on file, nothing has been read off it.
         children={aiOn && awaitsReading(e) ? <ReadMark id={e.id} /> : null}
         title={e.title || t('Exam')}
-        subtitle={[fmtDate(e.d, true), e.lab, t('{0} results', e.results.length), out ? t('{0} out of range', out) : null].filter(Boolean).join(' · ')}
+        subtitle={[fmtDate(e.d, true), e.lab, e.doctor, t('{0} results', e.results.length), out ? t('{0} out of range', out) : null].filter(Boolean).join(' · ')}
         accessory="chevron" onClick={() => examDetailSheet(e.id)} />
     })}</Section>}
 
-    {tab === 'trends' && (all.length ? <Section>{all.map(a => {
+    {tab === 'trends' && (all.length ? shownAll.length > 0 && <Section>{shownAll.map(a => {
       const look = FLAG[a.last.flag]
       return <Row key={a.key} title={a.name}
         subtitle={[fmtDate(a.last.d, true), t('{0} results', a.count)].join(' · ')}

@@ -4,7 +4,7 @@
 // S.habits, S.habitLog and S.habitPrefs are described there.
 //
 //   S.habitGroups [{ id, name, collapsed, order }]
-import { dayStatus, logId, scheduleFor, SOURCES, MEAL_SLOTS } from './habits-core.js'
+import { dayStatus, logId, scheduleFor, weekSummary, SOURCES, MEAL_SLOTS } from './habits-core.js'
 import { isoOf, uid } from './format.js'
 
 export * from './habits-core.js'
@@ -79,6 +79,8 @@ export function normalizeHabit(input, { prev = null, today = isoOf(new Date()), 
     timer: kind === 'timer' ? { stopAtGoal: input.timer?.stopAtGoal !== false, intervalMin: Math.max(0, Math.round(Number(input.timer?.intervalMin) || 0)), tapStarts: input.timer?.tapStarts !== false } : null,
     rule: { cue: text(input.rule?.cue, 120), routine: text(input.rule?.routine, 120), reward: text(input.rule?.reward, 120) },
     excludeFromDaily: !!input.excludeFromDaily,
+    smartReminder: !!input.smartReminder,
+    listChart: ['bars', 'grid', 'line'].includes(input.listChart) ? input.listChart : null,
     showStreak: input.showStreak !== false,
     archived: !!prev?.archived,
     order: Number.isFinite(prev?.order) ? prev.order : now,
@@ -247,3 +249,55 @@ export function series(habit, S, from, to, today) {
 /** The habits as a file of their own: what the app keeps of them, for another tool. */
 export const exportHabits = S => ({ exported: new Date().toISOString(), habits: list(S.habits), groups: list(S.habitGroups), log: list(S.habitLog), prefs: { ...(S.habitPrefs || {}), tz: undefined } })
 
+/**
+ * The week just over and the one before it, for the recap: { from, to, week, previous, change }
+ * — change: the rate's difference in points, null without both weeks.
+ */
+export function weeklyRecap(S, today) {
+  const ws = weekStartOf(S)
+  const start = weekOf(today, ws)
+  const from = addDays(start, -7), to = addDays(start, -1)
+  const week = weekSummary(S, from, to), previous = weekSummary(S, addDays(from, -7), addDays(from, -1))
+  const change = week.rate != null && previous.rate != null ? Math.round((week.rate - previous.rate) * 100) : null
+  return { from, to, week, previous, change }
+}
+
+/* ---------- the calendar (.ics) ---------- */
+
+const ICS_DAY = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA']
+const icsText = s => String(s || '').replace(/\\/g, '\\\\').replace(/[,;]/g, m => '\\' + m).replace(/\n/g, '\\n')
+const icsDate = d => d.replace(/-/g, '')
+/**
+ * A calendar file (iCalendar) with an event repeating at each reminder time of `habits`, as their
+ * schedule repeats: every day, on its weekdays or days of the month (N times a week: every day).
+ * Floating local times, fifteen minutes long, until its end.
+ */
+export function icsFor(habits, { today = isoOf(new Date()), now = new Date() } = {}) {
+  const stamp = now.toISOString().replace(/[-:]/g, '').replace(/\.\d+/, '')
+  const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//openGym//Habits//EN', 'CALSCALE:GREGORIAN']
+  for (const h of list(habits)) {
+    if (!h?.id || h.archived || h.kind === 'avoid') continue
+    const times = list(h.reminders).length ? list(h.reminders) : ['09:00']
+    const s = scheduleFor(h, today)
+    const start = h.kind === 'task' ? h.due || today : (h.start && h.start > today ? h.start : today)
+    let rule = 'FREQ=DAILY'
+    if (s.type === 'weekdays') rule = 'FREQ=WEEKLY;BYDAY=' + list(s.days).map(i => ICS_DAY[i]).join(',')
+    if (s.type === 'monthdays') rule = 'FREQ=MONTHLY;BYMONTHDAY=' + list(s.days).join(',')
+    if (h.end) rule += ';UNTIL=' + icsDate(h.end) + 'T235959'
+    for (const t of times) {
+      const hm = t.replace(':', '')
+      const endMin = (+t.slice(0, 2) * 60 + +t.slice(3) + 15) % 1440
+      const endHm = String(Math.floor(endMin / 60)).padStart(2, '0') + String(endMin % 60).padStart(2, '0')
+      lines.push('BEGIN:VEVENT', `UID:${h.id}-${hm}@opengym`, `DTSTAMP:${stamp}`, `DTSTART:${icsDate(start)}T${hm}00`, `DTEND:${icsDate(start)}T${endHm}00`,
+        ...(h.kind === 'task' ? [] : [`RRULE:${rule}`]), `SUMMARY:${icsText(h.name)}`, ...(h.rule?.routine ? [`DESCRIPTION:${icsText(h.rule.routine)}`] : []), 'END:VEVENT')
+    }
+  }
+  lines.push('END:VCALENDAR')
+  return lines.join('\r\n') + '\r\n'
+}
+
+/** `habits` with the ids of `ordered` moved to that order (each `order` set from its place). */
+export function reorder(habits, ordered) {
+  const pos = new Map(ordered.map((id, i) => [id, i]))
+  return list(habits).map(h => (pos.has(h.id) ? { ...h, order: pos.get(h.id) + 1 } : h))
+}

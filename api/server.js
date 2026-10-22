@@ -18,8 +18,8 @@ import * as coachJobs from './coach/jobs.js';
 import { coachRoutes } from './coach/routes.js';
 import { startCadence } from './coach/cadence.js';
 import { startWarmup } from './coach/warmup.js';
-import { dayReminderPush, habitReminderPush, medReminderPush, nudgePush, restTimerPush, testPush } from './push-messages.js';
-import { habitsDue } from './habits.js';
+import { dayReminderPush, groupReminderPush, habitReminderPush, medReminderPush, nudgePush, restTimerPush, testPush, weeklyRecapPush } from './push-messages.js';
+import { groupsDue, habitsDue, weekSummary } from './habits.js';
 import { doseId, medsDue } from './meds.js';
 import { ExamReadError, examReaderConfig, readExam } from './exam-reader.js';
 import { mealReaderConfig, readMeal } from './meal-reader.js';
@@ -594,6 +594,25 @@ function habitTick(user, S, now) {
     console.log('habit reminder firing', user.id, habit.id, time);
     saveDb();
     pushLater(user.id, habitReminderPush(S.lang, habit, status, time));
+  }
+  for (const { group, time, habits } of groupsDue(S, now, REMINDER_WINDOW_MIN)) {
+    const key = `group:${group.id}@${time}`;
+    if (sent.includes(key)) continue;
+    sent.push(key);
+    user.habitSent = { date: now.date, ids: sent };
+    console.log('habit group reminder firing', user.id, group.id, time);
+    saveDb();
+    pushLater(user.id, groupReminderPush(S.lang, group, habits, time));
+  }
+  // The recap of the week just over: the first day of the week, at 09:00 (or the time set), once.
+  const ws = S.weekStart === 0 ? 0 : 1;
+  const recapAt = /^([01]\d|2[0-3]):[0-5]\d$/.test(S.habitPrefs?.recapAt || '') ? S.habitPrefs.recapAt : '09:00';
+  if (S.habitPrefs?.recap !== false && now.weekday === ws && minutesLate(recapAt, now) >= 0 && minutesLate(recapAt, now) <= REMINDER_WINDOW_MIN && user.habitRecap !== now.date) {
+    const day = n => new Date(Date.parse(now.date + 'T12:00:00Z') - n * 86400000).toISOString().slice(0, 10);
+    const summary = weekSummary(S, day(7), day(1));
+    user.habitRecap = now.date;
+    saveDb();
+    if (summary.total) { console.log('habit recap firing', user.id); pushLater(user.id, weeklyRecapPush(S.lang, summary)); }
   }
 }
 // A push decided inside a request. The single process sends it at once. The serverless one sends

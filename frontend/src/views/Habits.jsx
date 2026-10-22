@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { useStore } from '../store/useStore.js'
 import { useUI } from '../store/useUI.js'
 import {
   KINDS, MEAL_SLOTS, MILESTONES, SCHEDULE_TYPES, SOURCES, UNITS, activeHabits, addDays, addSlip, addValue, dailyProgress, duplicateHabit,
-  exportHabits, logId, milestones, normalizeHabit, scheduleFor, series, setState, setValue, startTimer, stats, statusOn, stopTimer,
-  streak, timerExtra, timerReached, todayOf, toggleDone, undoSlip, weekdayMisses
+  exportHabits, icsFor, logId, milestones, normalizeHabit, reorder, scheduleFor, series, setState, setValue, startTimer, stats, statusOn, stopTimer,
+  streak, timerExtra, timerReached, todayOf, toggleDone, typicalTime, undoSlip, weekdayMisses, weeklyRecap
 } from '../lib/habits.js'
 import { adherence } from '../lib/meds.js'
 import { pushPermission } from '../lib/push.js'
@@ -34,6 +34,25 @@ const iconOf = h => h.icon || { check: '✅', quantity: '💧', timer: '⏱️',
 const unitText = u => (u ? t(u) : '')
 const valueText = (v, h) => (h.kind === 'timer' ? `${fmtNum(Math.floor(v))} min` : `${fmtNum(Math.round(v * 10) / 10)} ${unitText(h.goal?.unit)}`.trim())
 const stepOf = h => (h.goal?.unit === 'ml' ? 250 : h.goal?.unit === 'g' ? 50 : h.goal?.unit === 'steps' ? 1000 : h.goal?.value >= 20 ? Math.round(h.goal.value / 8) : 1)
+
+const download = (text, name, type) => {
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], { type })); a.download = name; a.click()
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000)
+}
+const downloadIcs = (habits, name) => download(icsFor(habits), name.replace(/[^\p{L}\p{N} _-]/gu, '').trim().replace(/\s+/g, '-').toLowerCase() + '.ics', 'text/calendar')
+
+// The last seven days in the list: bars of the amount, a grid of the days, or a line.
+function MiniChart({ h, S, today }) {
+  const days = series(h, S, addDays(today, -6), today, today)
+  const max = Math.max(1, ...days.map(x => (h.kind === 'check' || h.kind === 'task' ? 1 : x.goal || x.value)), ...days.map(x => x.value))
+  const color = h.color || 'var(--acc)'
+  if (h.listChart === 'grid') return <div className="hab-mini grid">{days.map(x => <i key={x.d} className={'s-' + x.state} style={x.state === 'done' ? { background: color } : undefined} />)}</div>
+  if (h.listChart === 'line') {
+    const pts = days.map((x, i) => `${i * 10},${20 - (Math.min(x.value, max) / max) * 18}`).join(' ')
+    return <svg className="hab-mini" viewBox="0 0 60 22" width="60" height="22" aria-hidden="true"><polyline points={pts} fill="none" stroke={color} strokeWidth="2" strokeLinejoin="round" /></svg>
+  }
+  return <div className="hab-mini bars">{days.map(x => <i key={x.d} style={{ height: 3 + (Math.min(x.value, max) / max) * 17, background: x.state === 'done' ? color : 'var(--surface-3)' }} />)}</div>
+}
 
 /* ---------- the day's actions ---------- */
 
@@ -88,7 +107,7 @@ function TimerButton({ h, d, entry, now }) {
   </button>
 }
 
-function HabitRow({ h, d, S, today, now }) {
+function HabitRow({ h, d, S, today, now, drag }) {
   const entry = logOf(S, h, d)
   const st = statusOn(h, d, S, today, now)
   const sk = h.showStreak !== false && !S.habitPrefs?.hideStreaks && h.kind !== 'task' ? streak(h, S, today) : null
@@ -101,7 +120,8 @@ function HabitRow({ h, d, S, today, now }) {
     return t(STATE_LABEL[st.state])
   })()
   const done = st.state === 'done'
-  return <div className={'hab-row' + (done ? ' done' : '') + (st.state === 'failed' || st.state === 'missed' ? ' miss' : '')}>
+  return <div className={'hab-row' + (done ? ' done' : '') + (st.state === 'failed' || st.state === 'missed' ? ' miss' : '') + (drag?.active ? ' dragging' : '')} data-habit={h.id}>
+    {drag && <span className="hab-handle" onPointerDown={drag.start} aria-label={t('Drag to reorder')} role="button"><Icon name="list" /></span>}
     <button className="hab-main" onClick={() => habitSheet(h.id)}>
       <span className="hab-icon" style={{ background: h.color ? h.color + '33' : undefined }}>{iconOf(h)}</span>
       <span className="hab-text">
@@ -110,6 +130,8 @@ function HabitRow({ h, d, S, today, now }) {
         {h.kind === 'quantity' && st.state !== 'skipped' && <QuantityBar h={h} d={d} st={st} />}
       </span>
     </button>
+    {h.listChart && !drag && <MiniChart h={h} S={S} today={today} />}
+    {drag ? null : <>
     {(h.kind === 'check' || h.kind === 'task') && st.state !== 'skipped' && <button className={'hab-act' + (done ? ' on' : '')} aria-label={done ? t('Mark as not done') : t('Mark as done')}
       onClick={() => act(h, d, log => toggleDone(log, h, d))}><Icon name="check" /></button>}
     {h.kind === 'quantity' && st.state !== 'skipped' && <button className="hab-act" aria-label={t('Add {0}', valueText(stepOf(h), h))}
@@ -117,6 +139,7 @@ function HabitRow({ h, d, S, today, now }) {
     {h.kind === 'timer' && st.state !== 'skipped' && <TimerButton h={h} d={d} entry={entry} now={now} />}
     {h.kind === 'avoid' && <button className="hab-act slip" aria-label={t('Log a slip')} onClick={() => act(h, d, log => addSlip(log, h, d))}><Icon name="xmark" /></button>}
     {h.kind === 'auto' && <span className={'hab-auto ' + st.state}>{done ? <Icon name="check" /> : st.state === 'partial' ? `${fmtNum(st.value)}/${fmtNum(st.goal)}` : '–'}</span>}
+    </>}
   </div>
 }
 
@@ -145,8 +168,34 @@ function WeekStrip({ S, d, setD, today }) {
   })}</div>
 }
 
+// Dragging a habit by its handle along its list: the rows below or above make room, the new
+// order is saved on release. Pointer events, so it works with a finger as with a mouse.
+function useDragOrder(ids, onDone) {
+  const [state, setState] = useState(null)   // { id, order }
+  const start = id => e => {
+    e.preventDefault()
+    const list0 = [...ids]
+    let order = list0
+    setState({ id, order })
+    const move = ev => {
+      const rows = [...document.querySelectorAll('[data-habit]')].filter(el => list0.includes(el.dataset.habit))
+      const over = rows.find(el => { const r = el.getBoundingClientRect(); return ev.clientY >= r.top && ev.clientY <= r.bottom })
+      if (!over || over.dataset.habit === id) return
+      const without = order.filter(x => x !== id)
+      without.splice(without.indexOf(over.dataset.habit) + (order.indexOf(over.dataset.habit) > order.indexOf(id) ? 1 : 0), 0, id)
+      order = without
+      setState({ id, order })
+    }
+    const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); setState(null); onDone(order) }
+    window.addEventListener('pointermove', move)
+    window.addEventListener('pointerup', up)
+  }
+  return { state, start }
+}
+
 function Today({ S, today }) {
   const [d, setD] = useState(today)
+  const [ordering, setOrdering] = useState(false)
   const [q, setQ] = useState('')
   const [group, setGroup] = useState(null)
   const prefs = S.habitPrefs || {}
@@ -167,12 +216,15 @@ function Today({ S, today }) {
     if (prefs.hideSkipped && st === 'skipped') return false
     return true
   }).sort((a, b) => (a.order || 0) - (b.order || 0))
-  const byGroup = [...groups.map(g => [g, shown.filter(h => list(h.groups)[0] === g.id)]), [null, shown.filter(h => !groups.some(g => g.id === list(h.groups)[0]))]].filter(([, xs]) => xs.length)
+  const byGroup = list0 => [...groups.map(g => [g, list0.filter(h => list(h.groups)[0] === g.id)]), [null, list0.filter(h => !groups.some(g => g.id === list(h.groups)[0]))]].filter(([, xs]) => xs.length)
   const p = dailyProgress(S, d, today)
+  const drag = useDragOrder(shown.map(h => h.id), order => update(s => { s.habits = reorder(s.habits, order) }))
+  const ordered = drag.state ? drag.state.order.map(id => shown.find(h => h.id === id)).filter(Boolean) : shown
   return <>
     <WeekStrip S={S} d={d} setD={setD} today={today} />
     <div className="row between" style={{ margin: '4px 2px 10px' }}>
       <div><b>{d === today ? t('Today') : fmtDate(d, true)}</b> <span className="small dim">· {t('{0} of {1} done', p.done, p.total)}</span></div>
+      {shown.length > 1 && <Button size="xs" variant="ghost" icon={ordering ? 'check' : 'list'} onClick={() => setOrdering(!ordering)}>{ordering ? t('Done') : t('Reorder')}</Button>}
     </div>
     <div className="exam-search" style={{ marginBottom: 8 }}>
       <Icon name="magnifier" />
@@ -187,13 +239,14 @@ function Today({ S, today }) {
       <div style={{ height: 10 }} /><Button variant="primary" icon="plus" onClick={() => habitFormSheet()}>{t('New habit')}</Button>
     </div>}
     <div className="hab-groups">
-      {byGroup.map(([g, xs]) => {
+      {byGroup(ordered).map(([g, xs]) => {
         const collapsed = g?.collapsed
         return <div key={g?.id || 'none'} className="hab-group">
           {g && <button className="hab-ghead" onClick={() => update(s => { const x = s.habitGroups.find(y => y.id === g.id); if (x) x.collapsed = !x.collapsed })}>
             <Icon name={collapsed ? 'chevronRight' : 'chevronDown'} /> {g.name} <span className="small dim">{xs.filter(h => statusOn(h, d, S, today, now).state === 'done').length}/{xs.length}</span>
           </button>}
-          {!collapsed && <div className="hab-list">{xs.map(h => <HabitRow key={h.id} h={h} d={d} S={S} today={today} now={now} />)}</div>}
+          {(!collapsed || ordering) && <div className="hab-list">{xs.map(h => <HabitRow key={h.id} h={h} d={d} S={S} today={today} now={now}
+            drag={ordering ? { start: drag.start(h.id), active: drag.state?.id === h.id } : null} />)}</div>}
         </div>
       })}
     </div>
@@ -209,6 +262,20 @@ function Bars({ values, labels, color = 'var(--red)' }) {
   </div>)}</div>
 }
 
+function Recap({ S, today }) {
+  const r = weeklyRecap(S, today)
+  if (!r.week.total) return null
+  const best = r.week.habits.filter(x => x.done === x.total).map(x => x.habit)
+  const weak = r.week.habits.filter(x => x.done / x.total < 0.5).map(x => x.habit)
+  return <div className="card hab-recap">
+    <div className="muted small">{t('Your week')} · {fmtDate(r.from, true)} – {fmtDate(r.to, true)}</div>
+    <div className="big">{Math.round(r.week.rate * 100)}% <span className="muted" style={{ fontSize: '1rem' }}>{t('{0} of {1} done', r.week.done, r.week.total)}</span></div>
+    {r.change != null && <div className="small" style={{ color: r.change >= 0 ? 'var(--acc)' : 'var(--orange)' }}>{r.change >= 0 ? t('{0} points better than the week before', r.change) : t('{0} points below the week before', -r.change)}</div>}
+    {best.length > 0 && <div className="small" style={{ marginTop: 6 }}>✅ {t('Every day: {0}', best.map(h => h.name).join(', '))}</div>}
+    {weak.length > 0 && <div className="small dim" style={{ marginTop: 2 }}>⚠️ {t('Fell behind: {0}', weak.map(h => h.name).join(', '))}</div>}
+  </div>
+}
+
 function Stats({ S, today }) {
   const [range, setRange] = useState(30)
   const from = addDays(today, -(range - 1))
@@ -219,6 +286,7 @@ function Stats({ S, today }) {
   const order = WEEK.map(i => (i + ws) % 7)
   const worst = rows.filter(r => r.st.missed + r.st.failed > 0).sort((a, b) => (b.st.missed + b.st.failed) - (a.st.missed + a.st.failed)).slice(0, 5)
   return <>
+    <Recap S={S} today={today} />
     <Segmented className="seg-range" value={range} onChange={setRange} options={[{ value: 7, label: '7D' }, { value: 30, label: '30D' }, { value: 90, label: '90D' }]} />
     <div className="card" style={{ marginTop: 12 }}>
       <div className="muted small">{t('Habits done per day')}</div>
@@ -240,7 +308,8 @@ function Stats({ S, today }) {
 export default function Habits() {
   const nav = useNavigate()
   const S = useStore(s => s.S)
-  const [tab, setTab] = useState('today')
+  const loc = useLocation()
+  const [tab, setTab] = useState(() => (/recap=1/.test(loc.search) ? 'stats' : 'today'))
   const today = todayOf(S)
   return <div className="narrow wide-ok">
     <div className="hdr">
@@ -325,6 +394,7 @@ function HabitDetail({ id, close }) {
     <div style={{ height: 12 }} />
     <Section>
       <Row icon="pencil" title={t('Edit')} onClick={() => habitFormSheet(h.id)} accessory="chevron" />
+      {h.kind !== 'avoid' && <Row icon="calendar" title={t('Add to my calendar (.ics)')} subtitle={t('Events at its reminder times, repeating as it does')} onClick={() => downloadIcs([h], h.name)} />}
       <Row icon="copy" title={t('Duplicate')} onClick={() => { const c = duplicateHabit(h, t('{0} (copy)', h.name), { today }); update(s => { s.habits = [...list(s.habits), c] }); toast(t('Habit duplicated')) }} />
       <Row icon="history" title={skipToday ? t('Undo skip today') : t('Skip today')} onClick={() => act(h, today, log => setState(log, h, today, skipToday ? null : 'skipped'))} />
       {h.kind !== 'auto' && <Row icon="xmark" title={st0.state === 'failed' ? t('Undo failed today') : t('Mark today as failed')} onClick={() => act(h, today, log => setState(log, h, today, st0.state === 'failed' ? null : 'failed'))} />}
@@ -357,7 +427,8 @@ function HabitForm({ id, close }) {
       auto: { source: prev?.auto?.source || 'workout', mode: prev?.auto?.mode || '', slots: prev?.auto?.slots || ['breakfast', 'lunch', 'dinner'], bedBy: prev?.auto?.bedBy || '23:30' },
       schedule: { type: s.type, days: s.days || [], times: s.times || 3 }, start: prev?.start || today, end: prev?.end || '', due: prev?.due || '',
       groups: prev?.groups || [], reminders: prev?.reminders || [], timer: prev?.timer || { stopAtGoal: true, intervalMin: 0, tapStarts: true },
-      rule: prev?.rule || { cue: '', routine: '', reward: '' }, excludeFromDaily: !!prev?.excludeFromDaily, showStreak: prev?.showStreak !== false
+      rule: prev?.rule || { cue: '', routine: '', reward: '' }, excludeFromDaily: !!prev?.excludeFromDaily, showStreak: prev?.showStreak !== false,
+      smartReminder: !!prev?.smartReminder, listChart: prev?.listChart || ''
     }
   })
   const set = (k, v) => setF(x => ({ ...x, [k]: v }))
@@ -428,6 +499,10 @@ function HabitForm({ id, close }) {
           <button type="button" className="iconbtn" aria-label={t('Remove')} onClick={() => set('reminders', f.reminders.filter((_, j) => j !== i))}><Icon name="xmark" /></button>
         </div>)}
         {f.reminders.length < 6 && <Button size="sm" icon="bell" onClick={() => set('reminders', [...f.reminders, '09:00'])}>{t('Add reminder')}</Button>}
+        {!f.reminders.length && (k === 'check' || k === 'quantity' || k === 'timer') && <label className="row" style={{ gap: 8, marginTop: 8 }}>
+          <input type="checkbox" checked={f.smartReminder} onChange={e => set('smartReminder', e.target.checked)} />
+          <span className="small">{(() => { const tt = prev && typicalTime(prev, S, S.habitPrefs?.tz || localTZ()); return tt ? t('Remind me at the time I usually do it ({0})', tt) : t('Remind me at the time I usually do it (after three marks)') })()}</span>
+        </label>}
       </div>}
       <div>
         <div className="small" style={{ color: 'var(--label-2)', marginBottom: 5 }}>{t('Icon and colour')}</div>
@@ -440,6 +515,8 @@ function HabitForm({ id, close }) {
         <label><span>{t('Reward')}</span><TextField value={f.rule.reward} maxLength={120} onChange={e => set('rule', { ...f.rule, reward: e.target.value })} /></label>
         <label className="row" style={{ gap: 8 }}><input type="checkbox" checked={f.excludeFromDaily} onChange={e => set('excludeFromDaily', e.target.checked)} /><span className="small">{t('Leave out of the daily progress')}</span></label>
         <label className="row" style={{ gap: 8 }}><input type="checkbox" checked={f.showStreak} onChange={e => set('showStreak', e.target.checked)} /><span className="small">{t('Show the streak')}</span></label>
+        <label><span>{t('Chart in the list')}</span><select className="field" value={f.listChart} onChange={e => set('listChart', e.target.value)}>
+          {[['', 'None'], ['bars', 'Bars'], ['grid', 'Grid'], ['line', 'Line']].map(([v, l]) => <option key={v} value={v}>{t(l)}</option>)}</select></label>
       </details>
     </div>
     <div style={{ height: 12 }} />
@@ -486,6 +563,9 @@ function HabitSettings({ close }) {
       <Row title={t('Hide failed and missed')}><Switch checked={!!prefs.hideFailed} onChange={() => setPref({ hideFailed: !prefs.hideFailed })} /></Row>
       <Row title={t('Hide skipped')}><Switch checked={!!prefs.hideSkipped} onChange={() => setPref({ hideSkipped: !prefs.hideSkipped })} /></Row>
       <Row title={t('Hide streaks')}><Switch checked={!!prefs.hideStreaks} onChange={() => setPref({ hideStreaks: !prefs.hideStreaks })} /></Row>
+      <Row icon="calendar" title={t('Weekly recap')} subtitle={t('A notification on the first morning of the week, with how the week went.')}>
+        <Switch checked={prefs.recap !== false} onChange={() => setPref({ recap: prefs.recap === false })} />
+      </Row>
     </Section>
     <h4 className="sec" style={{ margin: '14px 2px 6px' }}>{t('Vacation')}</h4>
     <div className="small dim" style={{ marginBottom: 6 }}>{t('Every habit pauses in this period: the days count as skipped.')}</div>
@@ -498,7 +578,8 @@ function HabitSettings({ close }) {
     <div style={{ height: 6 }} />
     <Button size="sm" disabled={!vac.from || !vac.to || vac.to < vac.from} onClick={() => { setPref({ vacations: [...list(prefs.vacations), { from: vac.from, to: vac.to, habitIds: null }] }); setVac({ from: '', to: '' }) }}>{t('Add vacation')}</Button>
     {groups.length > 0 && <><h4 className="sec" style={{ margin: '14px 2px 6px' }}>{t('Groups')}</h4>
-      <Section>{groups.map(g => <Row key={g.id} title={g.name}>
+      <Section>{groups.map(g => <Row key={g.id} title={g.name} subtitle={[list(g.reminders).length ? '🔔 ' + g.reminders.join(', ') : null, g.muted ? t('Only the group reminds') : null].filter(Boolean).join(' · ')}>
+        <button className="iconbtn" aria-label={t('Edit group')} onClick={() => groupFormSheet(g.id)}><Icon name="pencil" /></button>
         <button className="iconbtn" aria-label={t('Move up')} onClick={() => moveGroup(g, -1)}><Icon name="chevronUp" /></button>
         <button className="iconbtn" aria-label={t('Move down')} onClick={() => moveGroup(g, 1)}><Icon name="chevronDown" /></button>
         <button className="iconbtn" aria-label={t('Delete')} onClick={() => confirmSheet({ title: t('Delete the group {0}?', g.name), message: t('Its habits stay, without this group.'), confirmText: t('Delete'), danger: true,
@@ -517,3 +598,39 @@ function HabitSettings({ close }) {
   </>
 }
 export const habitSettingsSheet = () => ui().openSheet(close => <HabitSettings close={close} />)
+
+function GroupForm({ id, close }) {
+  const S = useStore(s => s.S)
+  const g = list(S.habitGroups).find(x => x.id === id)
+  const [f, setF] = useState(() => ({ name: g?.name || '', reminders: list(g?.reminders), muted: !!g?.muted }))
+  if (!g) return <><h3>{t('Group')}</h3><Button onClick={close}>{t('Close')}</Button></>
+  const habits = list(S.habits).filter(h => !h.archived && list(h.groups).includes(g.id))
+  const save = () => {
+    const name = f.name.trim()
+    if (!name) return
+    update(s => { const x = s.habitGroups.find(y => y.id === id); if (x) Object.assign(x, { name: name.slice(0, 40), reminders: [...new Set(f.reminders.filter(r => /^([01]\d|2[0-3]):[0-5]\d$/.test(r)))].sort(), muted: f.muted }) })
+    close(); toast(t('Group saved'))
+  }
+  return <>
+    <h3>{t('Edit group')}</h3>
+    <div className="med-form">
+      <label><span>{t('Name')}</span><TextField value={f.name} maxLength={40} onChange={e => setF({ ...f, name: e.target.value })} /></label>
+      <div>
+        <div className="small" style={{ color: 'var(--label-2)', marginBottom: 5 }}>{t('Group reminders (if any of its habits is still to do)')}</div>
+        {f.reminders.map((r, i) => <div key={i} className="row" style={{ gap: 8, marginBottom: 6 }}>
+          <input className="field" type="time" value={r} onChange={e => setF({ ...f, reminders: f.reminders.map((x, j) => (j === i ? e.target.value : x)) })} />
+          <button type="button" className="iconbtn" aria-label={t('Remove')} onClick={() => setF({ ...f, reminders: f.reminders.filter((_, j) => j !== i) })}><Icon name="xmark" /></button>
+        </div>)}
+        <Button size="sm" icon="bell" onClick={() => setF({ ...f, reminders: [...f.reminders, '07:00'] })}>{t('Add reminder')}</Button>
+      </div>
+      <label className="row" style={{ gap: 8 }}><input type="checkbox" checked={f.muted} onChange={e => setF({ ...f, muted: e.target.checked })} /><span className="small">{t('Silence the reminders of each habit: only the group reminds')}</span></label>
+    </div>
+    <div className="small dim" style={{ margin: '10px 2px' }}>{habits.map(h => h.name).join(', ') || t('No habit in this group yet.')}</div>
+    {habits.length > 0 && <Button icon="calendar" onClick={() => downloadIcs(habits, g.name)}>{t('Add the group to my calendar (.ics)')}</Button>}
+    <div style={{ height: 12 }} />
+    <Button variant="primary" onClick={save}>{t('Save')}</Button>
+    <div style={{ height: 8 }} />
+    <Button variant="ghost" className="dim" onClick={close}>{t('Cancel')}</Button>
+  </>
+}
+export const groupFormSheet = id => ui().openSheet(close => <GroupForm id={id} close={close} />)

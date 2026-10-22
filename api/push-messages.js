@@ -16,6 +16,11 @@ const COPY = {
     habitProgress: '{0} of {1} {2} so far.',
     habitMeals: 'Not logged yet: {0}.',
     habitTask: 'On your list for today.',
+    groupTitle: '{0}',
+    groupBody: 'Still to do: {0}.',
+    recapTitle: 'Your week of habits',
+    recapBody: '{0} of {1} done ({2}%). Best: {3}.',
+    recapBodyNone: '{0} of {1} done ({2}%).',
     meals: { breakfast: 'breakfast', lunch: 'lunch', dinner: 'dinner', snack: 'snacks' },
   },
   'pt-BR': {
@@ -32,6 +37,11 @@ const COPY = {
     habitProgress: '{0} de {1} {2} até agora.',
     habitMeals: 'Ainda sem registro: {0}.',
     habitTask: 'Na sua lista de hoje.',
+    groupTitle: '{0}',
+    groupBody: 'Ainda por fazer: {0}.',
+    recapTitle: 'Sua semana de hábitos',
+    recapBody: '{0} de {1} feitos ({2}%). Destaque: {3}.',
+    recapBodyNone: '{0} de {1} feitos ({2}%).',
     meals: { breakfast: 'café da manhã', lunch: 'almoço', dinner: 'jantar', snack: 'lanches' },
   },
 };
@@ -87,6 +97,19 @@ export function habitReminderPush(lang, habit, status, time) {
     if (missing.length) body = fill(copy.habitMeals, missing.join(', '));
   }
   return { title: fill(copy.habitTitle, habit.name), body, tag: `habit-${habit.id}-${time}`, url: '#/health/habits' };
+}
+
+// A group's reminder (habits.js groupsDue): the habits of the group still to do.
+export function groupReminderPush(lang, group, habits, time) {
+  const copy = copyFor(lang);
+  return { title: fill(copy.groupTitle, group.name), body: fill(copy.groupBody, habits.map(h => h.name).join(', ')), tag: `habits-group-${group.id}-${time}`, url: '#/health/habits' };
+}
+// The week's recap (habits.js weekSummary), the first morning of the week.
+export function weeklyRecapPush(lang, summary) {
+  const copy = copyFor(lang);
+  const pct = String(Math.round((summary.rate || 0) * 100));
+  const best = summary.habits.filter(r => r.total && r.done === r.total).map(r => r.habit.name)[0];
+  return { title: copy.recapTitle, body: best ? fill(copy.recapBody, String(summary.done), String(summary.total), pct, best) : fill(copy.recapBodyNone, String(summary.done), String(summary.total), pct), tag: 'habits-recap', url: '#/health/habits?recap=1' };
 }
 
 // The missed-workout nudge (nudge.js). Its copy is translated in the frontend packs and generated

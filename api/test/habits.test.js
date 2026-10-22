@@ -9,8 +9,8 @@ import path from 'node:path';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { boundPort } from './helpers.mjs';
-import { habitsDue } from '../habits.js';
-import { habitReminderPush } from '../push-messages.js';
+import { groupsDue, habitsDue, weekSummary } from '../habits.js';
+import { groupReminderPush, habitReminderPush, weeklyRecapPush } from '../push-messages.js';
 
 const D = '2026-10-22';
 const habit = (extra = {}) => ({ id: 'h1', kind: 'check', name: 'Ler', schedules: [{ from: '2026-10-01', type: 'daily' }], start: '2026-10-01', reminders: ['21:00'], ...extra });
@@ -33,6 +33,18 @@ test('the copy says what is missing', () => {
   const meals = habit({ kind: 'auto', name: 'Refeições', auto: { source: 'meals', slots: ['breakfast', 'lunch'] } });
   assert.equal(habitReminderPush('pt-BR', meals, { detail: 'breakfast' }, '12:30').body, 'Ainda sem registro: almoço.');
   assert.equal(habitReminderPush('en', habit(), { value: 0 }, '21:00').body, 'Not done yet today.');
+});
+
+test('a group reminds for the habits still to do; the recap says how the week went', () => {
+  const S = { habits: [habit({ groups: ['g'] }), habit({ id: 'h2', name: 'Meditar', groups: ['g'] })], habitGroups: [{ id: 'g', name: 'Manhã', reminders: ['07:00'], muted: true }],
+    habitLog: [{ id: `h2|${D}`, habitId: 'h2', d: D, done: true }] };
+  const due = groupsDue(S, { date: D, hhmm: '07:05' }, 15);
+  assert.deepEqual(due.map(x => x.habits.map(h => h.name)), [['Ler']]);
+  assert.equal(habitsDue(S, { date: D, hhmm: '21:05' }, 15).length, 0, 'muted: only the group reminds');
+  assert.deepEqual(groupReminderPush('pt-BR', due[0].group, due[0].habits, '07:00'), { title: 'Manhã', body: 'Ainda por fazer: Ler.', tag: 'habits-group-g-07:00', url: '#/health/habits' });
+  const week = weekSummary({ habits: [habit()], habitLog: ['2026-10-12', '2026-10-13'].map(d => ({ id: `h1|${d}`, habitId: 'h1', d, done: true })) }, '2026-10-12', '2026-10-18');
+  assert.deepEqual([week.done, week.total], [2, 7]);
+  assert.equal(weeklyRecapPush('pt-BR', week).body, '2 de 7 feitos (29%).');
 });
 
 // ---- the tick, in a real server ----

@@ -2844,4 +2844,11 @@ export default {
   // A habit per medication (views/Habits.jsx) and past days in Medications (views/Meds.jsx)
   'Mark as taken': 'Mark as taken',
   'Nothing scheduled that day.': 'Nothing scheduled that day.',
+  // The sign-in screen: an account you have, a new one, a code from another device (views/Login.jsx)
+  'Create your account': 'Create your account',
+  'Already have an account?': 'Already have an account?',
+  'A passkey is how you sign in here: your phone or computer confirms it is you with {0}. No password to create or remember.': 'A passkey is how you sign in here: your phone or computer confirms it is you with {0}. No password to create or remember.',
+  'First time here?': 'First time here?',
+  'Create an account': 'Create an account',
+  'Already use openGym on another device? Sign in with a code': 'Already use openGym on another device? Sign in with a code',
 }

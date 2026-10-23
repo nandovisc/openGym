@@ -814,8 +814,8 @@ export default function Settings({ page = null, find = null, via = null }) {
         <Row icon="key" iconTint="var(--teal)" title={t('Import from Hevy')}
           subtitle={t('Pull your history with a Hevy Pro API key')}
           accessory="chevron" onClick={importFromHevy} />
-        <Row icon="moon" iconTint="var(--indigo)" title={t('Sleep from Apple Health')}
-          subtitle={t('An iPhone Shortcut sends last night every morning')}
+        <Row icon="moon" iconTint="var(--indigo)" title={t('Apple Health')}
+          subtitle={t('iPhone Shortcuts send last night and each Apple Watch workout')}
           accessory="chevron" onClick={sleepSyncSheet} />
       </Section>
       {hasMedia && <Section><MediaRow /></Section>}

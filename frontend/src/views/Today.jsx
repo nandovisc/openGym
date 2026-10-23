@@ -9,6 +9,7 @@ import { dayOf } from '../lib/nutrition.js'
 import { dosesOn, doseState, hhmmOf, markDose } from '../lib/meds.js'
 import { goalOf, lastNight, stageShares } from '../lib/sleep.js'
 import { examsByDate, outOfRange } from '../lib/exams.js'
+import { kcalOn } from '../lib/workout-health.js'
 import { DAYN, fmtDate, fmtDur, fmtNum, todayISO } from '../lib/format.js'
 import { t, dateLocale } from '../lib/i18n.js'
 import { bwSheet, startFlow } from '../sheets.jsx'
@@ -66,7 +67,7 @@ function TrainingCard({ S, nav }) {
   </Card>
   if (done.length) return <Card title={t('Today’s workout')} onClick={() => nav('/training')}>
     <div className="today-big"><Icon name="checkCircle" style={{ color: 'var(--acc)' }} /> {done.map(w => w.name).filter(Boolean).join(' + ') || t('Workout')}</div>
-    <div className="small dim">{t('Trained today')}</div>
+    <div className="small dim">{kcalOn(done, today) > 0 ? t('Trained today · {0} kcal burned', fmtNum(kcalOn(done, today))) : t('Trained today')}</div>
   </Card>
   if (routines.length) return <Card title={t('Today’s workout')}>
     <div className="today-big">{routines.map(r => r.name).join(' + ')}</div>

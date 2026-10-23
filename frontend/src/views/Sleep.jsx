@@ -137,6 +137,17 @@ function SyncForm({ close }) {
       <li>{t('Run it once and allow it to read your sleep and to reach your server.')}</li>
       <li>{t('In Automation, run it every day after you wake up (for example at 10:00), without asking.')}</li>
     </ol>
+    {/* The same token and line send the workout that just ended on the watch
+        (POST /api/workouts/ingest, scripts/workout-shortcut.mjs). */}
+    <h4 className="sec" style={{ margin: '16px 2px 6px' }}>{t('Workouts from the Apple Watch')}</h4>
+    <div className="muted small" style={{ marginBottom: 10 }}>{t('A second Shortcut sends the calories and heart rate of each workout when it ends on the watch. It joins the workout you logged here, or adds one of its own, and marks the workout habit.')}</div>
+    {st?.on && st.lastWorkout && <div className="small dim" style={{ marginBottom: 10 }}>{t('Last workout received: {0}', new Date(st.lastWorkout).toLocaleString())}</div>}
+    <a className="btn plain" href={apiUrl('/shortcuts/opengym-workout.shortcut')} download="openGym Treino.shortcut"><Icon name="download" /><span>{t('Download the workout Shortcut')}</span></a>
+    <ol className="sleep-steps small">
+      <li>{t('Paste the same line into its first Text.')}</li>
+      <li>{t('In Automation, choose Apple Watch Workout, then Ends and any workout, run it immediately, without asking.')}</li>
+      <li>{t('Optional: one automation per kind of workout, each with its name in the second Text (Run, Strength…).')}</li>
+    </ol>
     {st?.on && <><div style={{ height: 8 }} /><Button variant="ghost" className="danger" onClick={revoke}>{t('Turn off the sync')}</Button></>}
   </>
 }

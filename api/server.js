@@ -24,6 +24,7 @@ import { doseId, medsDue } from './meds.js';
 import { ExamReadError, examReaderConfig, readExam } from './exam-reader.js';
 import { mealReaderConfig, readMeal } from './meal-reader.js';
 import { mergeNights, nightsFrom, parseSamples } from './sleep.js';
+import { foldWatchWorkouts, lastSession, measure, parseWorkoutSamples, putWatchWorkout } from './workouts-ingest.js';
 import { OFF_SEARCH_URL, searchProducts } from './food-search.js';
 import { verifyError } from './verify-error.js';
 import {
@@ -2136,7 +2137,7 @@ function sleepTokenUser(req) {
 }
 const sleepTokenView = user => {
   const t = user.sleepToken;
-  return t?.h ? { on: true, at: t.at || null, last: t.last || null, nights: t.nights ?? null } : { on: false };
+  return t?.h ? { on: true, at: t.at || null, last: t.last || null, nights: t.nights ?? null, lastWorkout: t.lastWorkout || null } : { on: false };
 };
 const sleepRoutes = {
   'GET /api/sleep/token': async (req, res) => {
@@ -2186,6 +2187,37 @@ const sleepRoutes = {
     saveDb();
     audit(req, 'sleep.ingest', { user, msg: `${nights.length} night(s), ${put.length} written` });
     json(res, 200, { ok: true, nights: nights.map(n => ({ d: n.d, asleepMin: n.asleepMin, source: n.source })), written: put });
+  },
+  // The workout that just ended on the watch, from the same Shortcut token (workouts-ingest.js):
+  // its calories and heart rate onto the workout logged in openGym then, or a workout of its own.
+  'POST /api/workouts/ingest': async (req, res) => {
+    const user = sleepTokenUser(req);
+    if (!user) return json(res, 401, { error: 'invalid sleep token', code: 'sleep-token' });
+    const wait = SLEEP_INGESTS.take(user.id);
+    if (wait) return json(res, 429, { error: 'too many uploads, try again later', code: 'locked', retryAfter: wait }, { 'Retry-After': String(wait) });
+    const body = await readBody(req);
+    const samples = parseWorkoutSamples(body);
+    const span = lastSession(samples);
+    if (!span) {
+      audit(req, 'workout.ingest', { user, msg: `${samples.length} sample(s), no workout` });
+      return json(res, 200, { ok: true, workout: null, samples: samples.length });
+    }
+    const m = measure(samples, span);
+    const cur = await loadStateStrict(user.id);
+    if (cur === UNREADABLE) { console.error('state file unreadable for', user.id); return json(res, 503, { error: 'state unreadable' }); }
+    const name = body && typeof body === 'object' && typeof body.name === 'string' ? body.name : '';
+    const put = putWatchWorkout(cur?.workouts, span, m, { name });
+    if (put.action !== 'unchanged') {
+      const before = new Map((Array.isArray(cur?.workouts) ? cur.workouts : []).filter(x => x?.id != null).map(x => [x.id, x]));
+      const w = put.list.find(x => x?.id === put.id);
+      stampEntry(before.get(put.id), w, Date.now());
+      const done = await commitState(user, cur, { ...(cur || {}), workouts: put.list }, { overRead: true, stamped: true });
+      if (!done) return json(res, 400, { error: 'invalid state' });
+    }
+    user.sleepToken = { ...user.sleepToken, lastWorkout: Date.now() };
+    saveDb();
+    audit(req, 'workout.ingest', { user, msg: `${put.action} ${put.id}` });
+    json(res, 200, { ok: true, action: put.action, workout: { id: put.id, start: span.s, end: span.e, min: Math.round((span.e - span.s) / 60000), ...m } });
   }
 };
 
@@ -2283,6 +2315,10 @@ async function commitState(user, cur, state, { overRead = false, stamped = false
   const report = {};
   try { stampPut(cur, state, { overRead, stamped, report }); }
   catch (e) { if (e instanceof RangeError) return null; throw e; }
+  // A workout the watch sent before the same one was logged in openGym (the phone's push came after
+  // the Shortcut's) is folded into the logged one here, whoever writes: the write that brings the
+  // logged workout is the one that finds them both (workouts-ingest.js).
+  if (foldWatchWorkouts(state, Date.now(), stampEntry).length) report.changed = true;
   state._rev = curRev + 1;          // server-owned; whatever the client sent is ignored
   // A writer that does not stamp (an older app) takes the revision it is told for the document it
   // sent, and only reads the profile again once the revision moves. When the server put back

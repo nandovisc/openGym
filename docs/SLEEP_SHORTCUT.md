@@ -88,8 +88,7 @@ Shortcut are brought up to date, never doubled.
 ## Workouts from the Apple Watch
 
 A second shortcut, `opengym-workout.shortcut` (the **Download the workout Shortcut** button in the
-same sheet), sends each workout when it ends on the watch: its active calories and its average
-and peak heart rate. It uses the same token and the same pasted line; you do not need a new one.
+same sheet), sends each workout when it ends on the watch: its active calories and its duration. It uses the same token and the same pasted line; you do not need a new one.
 
 1. Add the shortcut and paste the line from openGym into its first **Texto** / *Text*. The second
    Text is optional: the workout's name (Corrida, Musculação…). Left empty, a workout that only
@@ -98,22 +97,21 @@ and peak heart rate. It uses the same token and the same pasted line; you do not
    **Termina** / *Ends* → any workout (or one kind) → **Executar Imediatamente** / *Run
    Immediately* → pick the shortcut. For names per kind, make one automation per kind with its own
    copy of the shortcut and name.
-3. Run it once by hand and allow it to read Active Energy, Heart Rate and Exercise Minutes.
+3. Run it once by hand and allow it to read Active Energy and Exercise Minutes.
 
 If the automation never fires (it needs the iPhone nearby when the workout ends), use a *Time of
 Day* automation an hour after you usually train instead, or the end of a *Fitness* focus: the
-shortcut looks four hours back, and a workout sent twice is stored once.
+shortcut looks a day back, and a workout sent twice is stored once.
 
 ### How the workout is found
 
-The Health action of Shortcuts has no *Workouts* type, so the shortcut sends the samples of the
-last four hours of **Exercise Minutes**, **Active Energy** and **Heart Rate**. The watch writes an
+The Health action of Shortcuts has no *Workouts* type (nor *Heart Rate*), so the shortcut sends
+the samples of the last day of **Exercise Minutes** and **Active Energy**. The watch writes an
 exercise minute every minute a workout runs; the server takes the last unbroken run of them (gaps
-of up to two minutes, at least five minutes long) as the workout, and adds up the calories and the
-heart rate inside it.
+of up to two minutes, at least five minutes long) as the workout, and adds up the calories inside it.
 
 - If you logged a workout in openGym at the same time (up to fifteen minutes apart), the
-  calories and heart rate are added to it.
+  calories are added to it.
 - Otherwise a workout of its own is added to your history, marked *Apple Watch*, with no
   exercises: it counts for the day, for streaks and for the automatic *Workout* habit.
 - If the watch's workout arrives first and you finish the one in openGym after, the two are folded

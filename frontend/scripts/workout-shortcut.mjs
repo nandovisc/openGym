@@ -5,11 +5,11 @@
 //   node scripts/workout-shortcut.mjs      (on a Mac: signing needs Apple's `shortcuts sign`)
 //
 // The Health action of Shortcuts has no Workouts type, so this sends what it can read over the
-// last hours — Exercise Minutes, Active Energy, Heart Rate — and the server finds the workout in
-// them (api/workouts-ingest.js). Each list goes as three lines-of-text fields (start, end, value),
-// a property of the whole list at once: no Repeat over a thousand heart-rate samples.
+// last day — Exercise Minutes and Active Energy (heart rate is not a type it offers) — and the
+// server finds the workout in them (api/workouts-ingest.js). Each list goes as lines-of-text
+// fields (start, end, value, unit), a property of the whole list at once: no Repeat.
 // It takes the same pasted line as the sleep Shortcut ("<sleep ingest address> <token>") and
-// points it at /api/workouts/ingest. The person runs it from the automation "Apple Watch Workout
+// points it at /api/workouts/ingest before splitting it, as the sleep one splits it. The person runs it from the automation "Apple Watch Workout
 // → Ends"; a shortcut file cannot carry an automation, docs/SLEEP_SHORTCUT.md shows the taps.
 import { execFileSync } from 'node:child_process'
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
@@ -33,31 +33,31 @@ const prop = (p, date) => [
 const act = (WFWorkflowActionIdentifier, WFWorkflowActionParameters) => ({ WFWorkflowActionIdentifier, WFWorkflowActionParameters })
 const dict = items => ({ Value: { WFDictionaryFieldValueItems: items.map(([k, v]) => ({ WFItemType: 0, WFKey: plain(k), WFValue: v })) }, WFSerializationType: 'WFDictionaryFieldValue' })
 
-// The names the types have in the Health action ("Sleep" kept its English name on a phone set to
-// Portuguese, so these are the English ones too).
-const KINDS = [['exercise', 'Exercise Minutes'], ['energy', 'Active Energy'], ['hr', 'Heart Rate']]
-const [setup, name, split, first, token, url] = Array.from({ length: 6 }, id)
+// The names the types have inside the Health action, read from one a phone saved: not the ones
+// the Health app shows ("Minutos de Exercício", "Energia Ativa").
+const KINDS = [['exercise', 'Exercise Time'], ['energy', 'Active Calories']]
+const [setup, name, line, split, url, token] = Array.from({ length: 6 }, id)
 const finds = KINDS.map(() => id())
 
 const actions = [
-  act('is.workflow.actions.comment', { WFCommentActionText: 'openGym: ao terminar um treino no Apple Watch, envia as calorias ativas, a frequência cardíaca e os minutos de exercício das últimas horas para o seu servidor. Cole no primeiro texto a mesma linha do Atalho do sono (Saúde → Sono → 🔗). No segundo texto, opcional, o nome do treino.' }),
+  act('is.workflow.actions.comment', { WFCommentActionText: 'openGym: ao terminar um treino no Apple Watch, envia as calorias ativas e os minutos de exercício do último dia para o seu servidor. Cole no primeiro texto a mesma linha do Atalho do sono (Saúde → Sono → 🔗). No segundo texto, opcional, o nome do treino.' }),
   act('is.workflow.actions.gettext', { UUID: setup, WFTextActionText: plain('COLE_AQUI_A_LINHA_DO_OPENGYM') }),
   act('is.workflow.actions.gettext', { UUID: name, WFTextActionText: plain('') }),
-  act('is.workflow.actions.text.split', { UUID: split, text: attach(out(setup, 'Text')), WFTextSeparator: 'Spaces' }),
-  act('is.workflow.actions.getitemfromlist', { UUID: first, WFInput: attach(out(split, 'Split Text')), WFItemSpecifier: 'First Item' }),
+  act('is.workflow.actions.text.replace', { UUID: line, WFInput: tokens(OBJ, { '{0, 1}': out(setup, 'Text') }), WFReplaceTextFind: '/api/sleep/ingest', WFReplaceTextReplace: '/api/workouts/ingest' }),
+  act('is.workflow.actions.text.split', { UUID: split, text: attach(out(line, 'Updated Text')), WFTextSeparator: 'Spaces' }),
+  act('is.workflow.actions.getitemfromlist', { UUID: url, WFInput: attach(out(split, 'Split Text')), WFItemSpecifier: 'First Item' }),
   act('is.workflow.actions.getitemfromlist', { UUID: token, WFInput: attach(out(split, 'Split Text')), WFItemSpecifier: 'Last Item' }),
-  act('is.workflow.actions.text.replace', { UUID: url, WFInput: tokens(OBJ, { '{0, 1}': out(first, 'Item from List') }), WFReplaceTextFind: '/api/sleep/ingest', WFReplaceTextReplace: '/api/workouts/ingest' }),
   ...KINDS.map(([, type], i) => act('is.workflow.actions.filter.health.quantity', {
     UUID: finds[i],
     WFContentItemFilter: { Value: { WFActionParameterFilterPrefix: 1, WFContentPredicateBoundedDate: false, WFActionParameterFilterTemplates: [
-      { Operator: 4, Property: 'Type', Removable: false, Values: { Enumeration: type } },
-      // In the last 4 hours (unit 32: hours).
-      { Operator: 1001, Property: 'Start Date', Removable: true, Values: { Number: 4, Unit: 32 } }
+      { Operator: 4, Property: 'Type', Removable: false, Values: { Enumeration: { Value: type, WFSerializationType: 'WFStringSubstitutableState' } } },
+      // In the last day (unit 16), as the phone saved it.
+      { Operator: 1001, Property: 'Start Date', Removable: true, Values: { Number: '1', Unit: 16 } }
     ] }, WFSerializationType: 'WFContentPredicateTableTemplate' },
     WFContentItemSortProperty: 'Start Date', WFContentItemSortOrder: 'Oldest First'
   })),
   act('is.workflow.actions.downloadurl', {
-    WFURL: tokens(OBJ, { '{0, 1}': out(url, 'Updated Text') }), WFHTTPMethod: 'POST', WFHTTPBodyType: 'JSON', ShowHeaders: true,
+    WFURL: tokens(OBJ, { '{0, 1}': out(url, 'Item from List') }), WFHTTPMethod: 'POST', WFHTTPBodyType: 'JSON', ShowHeaders: true,
     WFHTTPHeaders: dict([['Authorization', tokens(`Bearer ${OBJ}`, { '{7, 1}': out(token, 'Item from List') })]]),
     WFJSONValues: dict([
       ['name', tokens(OBJ, { '{0, 1}': out(name, 'Text') })],

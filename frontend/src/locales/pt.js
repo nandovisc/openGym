@@ -2815,7 +2815,7 @@ export default {
   'Apple Watch': 'Apple Watch',
   'Trained today · {0} kcal burned': 'Treinou hoje · {0} kcal gastas',
   'Workouts from the Apple Watch': 'Treinos do Apple Watch',
-  'A second Shortcut sends the calories and heart rate of each workout when it ends on the watch. It joins the workout you logged here, or adds one of its own, and marks the workout habit.': 'Um segundo Atalho envia as calorias e a frequência cardíaca de cada treino quando ele termina no relógio. Ele se junta ao treino que você registrou aqui, ou cria um próprio, e marca o hábito de treino.',
+  'A second Shortcut sends the calories and duration of each workout when it ends on the watch. It joins the workout you logged here, or adds one of its own, and marks the workout habit.': 'Um segundo Atalho envia as calorias e a duração de cada treino quando ele termina no relógio. Ele se junta ao treino que você registrou aqui, ou cria um próprio, e marca o hábito de treino.',
   'Last workout received: {0}': 'Último treino recebido: {0}',
   'Download the workout Shortcut': 'Baixar o Atalho de treino',
   'Paste the same line into its first Text.': 'Cole a mesma linha no primeiro Texto dele.',

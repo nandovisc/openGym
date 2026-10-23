@@ -413,7 +413,7 @@ paths:
       description: |
         Posted by an iPhone Shortcut the automation "Apple Watch Workout → Ends" runs
         (docs/SLEEP_SHORTCUT.md), with the same `Authorization: Bearer <sleep token>`. The body
-        holds the Health samples of the last hours — Exercise Minutes, Active Energy, Heart Rate —
+        holds the Health samples of the last day — Exercise Minutes, Active Energy (Heart Rate optional) —
         as lists side by side (`{ exercise|energy|hr: { start, end, value, unit } }`, one sample a
         line in each), as text (`start;end;value;kind;unit`) or as an array; `name` is optional.
         The last run of exercise minutes is the workout; its calories and average and peak heart

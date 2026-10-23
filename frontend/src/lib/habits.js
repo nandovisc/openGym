@@ -45,7 +45,8 @@ export function normalizeHabit(input, { prev = null, today = isoOf(new Date()), 
   const auto = kind === 'auto' ? {
     source: SOURCES.includes(input?.auto?.source) ? input.auto.source : null,
     ...(input.auto?.source === 'meals' ? { mode: input.auto.mode === 'target' ? 'target' : 'slots', slots: list(input.auto.slots).filter(x => MEAL_SLOTS.includes(x)) } : {}),
-    ...(input.auto?.source === 'sleep' ? { mode: input.auto.mode === 'bedBy' ? 'bedBy' : 'goal', ...(TIME_RE.test(input.auto.bedBy || '') ? { bedBy: input.auto.bedBy } : {}) } : {})
+    ...(input.auto?.source === 'sleep' ? { mode: input.auto.mode === 'bedBy' ? 'bedBy' : 'goal', ...(TIME_RE.test(input.auto.bedBy || '') ? { bedBy: input.auto.bedBy } : {}) } : {}),
+    ...(input.auto?.source === 'meds' && input.auto.medId ? { medId: text(input.auto.medId, 64) } : {})
   } : null
   if (kind === 'auto' && !auto.source) return { error: 'source' }
   const sIn = input?.schedule || { type: 'daily' }
@@ -317,16 +318,18 @@ export const SEED_DAYS = 90
  */
 export function suggestedHabits(S, today, names = {}) {
   const have = new Set(list(S.habits).filter(h => h?.kind === 'auto').map(h => h.auto?.source))
+  const haveMed = new Set(list(S.habits).filter(h => h?.kind === 'auto' && h.auto?.source === 'meds' && h.auto.medId).map(h => h.auto.medId))
   const floor = addDays(today, -(SEED_DAYS - 1))
   const since = ds => { const xs = ds.filter(d => DAY_RE.test(d || '') && d >= floor && d <= today).sort(); return xs[0] || null }
   const last = (ds, n) => ds.filter(d => DAY_RE.test(d || '') && d > addDays(today, -n) && d <= today)
   const out = []
   const add = (source, extra, start) => out.push({ name: names[source] || source, kind: 'auto', auto: { source, ...extra.auto }, schedule: extra.schedule || { type: 'daily' }, start: start || today, groups: [] })
 
-  const meds = list(S.meds).filter(m => m?.id && m.active !== false && list(m.times).length)
-  if (meds.length && !have.has('meds')) {
-    const starts = meds.map(m => m.start || (m.created ? isoOf(new Date(m.created)) : today))
-    add('meds', {}, starts.sort()[0] < floor ? floor : starts.sort()[0])
+  // A habit per medication, each marked one by one (and named after it).
+  for (const m of medsWithDoses(S)) {
+    if (haveMed.has(m.id)) continue
+    const start = m.start || (m.created ? isoOf(new Date(m.created)) : today)
+    out.push({ name: String(m.name || names.meds || 'meds'), kind: 'auto', auto: { source: 'meds', medId: m.id }, schedule: { type: 'daily' }, start: start < floor ? floor : start, groups: [] })
   }
   const wDays = [...new Set(list(S.workouts).map(w => w?.d))]
   if (last(wDays, 28).length && !have.has('workout')) {
@@ -346,5 +349,33 @@ export function suggestedHabits(S, today, names = {}) {
   const sDays = list(S.sleep).map(n => n?.d)
   if (last(sDays, 14).length >= 3 && !have.has('sleep')) add('sleep', { auto: { mode: 'goal' } }, since(sDays))
   // One id per source: two phones making them before they sync make the same habit, not two.
-  return out.map((x, i) => normalizeHabit(x, { today, now: Date.now() + i })).filter(h => !h.error).map(h => ({ ...h, id: 'auto-' + h.auto.source }))
+  return out.map((x, i) => normalizeHabit(x, { today, now: Date.now() + i })).filter(h => !h.error).map(h => ({ ...h, id: 'auto-' + suggestKey(h).replace(':', '-') }))
+}
+
+const medsWithDoses = S => list(S.meds).filter(m => m?.id && m.active !== false && list(m.times).length)
+/** What a suggested habit is known by when dismissed: its source, or 'meds:<id>' for a medication. */
+export const suggestKey = h => (h?.auto?.source === 'meds' && h.auto.medId ? 'meds:' + h.auto.medId : h?.auto?.source)
+
+/**
+ * The habits with one per medication: the single "Medications" habit of every dose together (from
+ * before habits were per medication) archived, its groups and order carried by the new ones; a
+ * habit for each medication added since; the habit of a medication deleted archived. `names` as
+ * suggestedHabits takes. The new list, or null when nothing changes.
+ */
+export function syncMedHabits(S, today, names = {}) {
+  const habits = list(S.habits)
+  const combined = habits.filter(h => h && !h.archived && h.kind === 'auto' && h.auto?.source === 'meds' && !h.auto.medId)
+  const perMed = habits.some(h => h?.kind === 'auto' && h.auto?.source === 'meds' && h.auto.medId)
+  if (!combined.length && !perMed) return null
+  const ids = new Set(list(S.meds).map(m => m?.id))
+  const base = combined[0]
+  const add = suggestedHabits(S, today, names).filter(h => h.auto.source === 'meds' && h.auto.medId)
+    .map((h, i) => (base ? { ...h, groups: list(base.groups), order: (Number(base.order) || 0) + i / 100 } : h))
+  let changed = add.length > 0
+  const kept = habits.map(h => {
+    if (!h || h.archived || h.kind !== 'auto' || h.auto?.source !== 'meds') return h
+    if (!h.auto.medId || !ids.has(h.auto.medId)) { changed = true; return { ...h, archived: true } }
+    return h
+  })
+  return changed ? [...kept, ...add] : null
 }

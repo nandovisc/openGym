@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import Habits, { habitFormSheet, habitSheet, habitSettingsSheet, habitsToday } from './Habits.jsx'
 import { DEF, useStore } from '../store/useStore.js'
 import { useUI } from '../store/useUI.js'
-import { todayISO } from '../lib/format.js'
+import { fmtDate, todayISO } from '../lib/format.js'
 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true
 const clone = v => JSON.parse(JSON.stringify(v))
@@ -115,10 +115,23 @@ describe('habits from the other modules', () => {
   it('are made on the first visit, already marked by what was logged', () => {
     withState({ meds: [{ id: 'm', name: 'Losartana', times: ['08:00'], active: true, start: day(10) }], medLog: [{ id: `m|${today}|08:00`, medId: 'm', d: today, time: '08:00', status: 'taken' }] })
     const p = page()
-    expect(S().habits.map(h => [h.id, h.name])).toEqual([['auto-meds', 'Medications']])
+    expect(S().habits.map(h => [h.id, h.name])).toEqual([['auto-meds-m', 'Losartana']])
     expect(S().habitPrefs.seeded).toBe(true)
     expect(p.textContent).toContain('1 of 1 doses')
     expect(p.textContent).toContain('1 of 1 done')
+  })
+  it('one per medication: the single habit is split, and a dose of yesterday is marked from it', () => {
+    const meds = [{ id: 'm', name: 'Losartana', times: ['08:00'], active: true, start: day(10) }, { id: 'j', name: 'Mounjaro', times: ['09:00'], active: true, start: day(10) }]
+    const old = { id: 'auto-meds', kind: 'auto', name: 'Medications', auto: { source: 'meds' }, schedules: [{ from: day(10), type: 'daily' }], start: day(10), groups: [], reminders: [], order: 1 }
+    withState({ meds, habits: [old], habitPrefs: { ...DEF.habitPrefs, seeded: true } })
+    const p = page()
+    expect(S().habits.filter(h => !h.archived).map(h => h.name)).toEqual(['Losartana', 'Mounjaro'])
+    act(() => byLabel(p, fmtDate(day(1), true)).click())
+    const row = p.querySelector('[data-habit="auto-meds-j"]')
+    act(() => byLabel(row, 'Mark as taken').click())
+    expect(S().medLog).toEqual([expect.objectContaining({ id: `j|${day(1)}|09:00`, d: day(1), status: 'taken' })])
+    act(() => byLabel(p.querySelector('[data-habit="auto-meds-j"]'), 'Mark as not done').click())
+    expect(S().medLog).toEqual([])
   })
   it('are offered later when a module gets data, and can be dismissed', () => {
     withState({ habits: [habit({})], habitPrefs: { ...DEF.habitPrefs, seeded: true }, bodyweight: [{ d: today, w: 90 }] })

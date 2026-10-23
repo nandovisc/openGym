@@ -2844,4 +2844,7 @@ export default {
   'Side view': 'Lado',
   'Back view': 'Costas',
   'Done on a day with a progress photo, kept with the weigh-in or a workout. Set it to once a week for a weekly reminder.': 'Feito no dia com foto de progresso, junto da pesagem ou de um treino. Use uma vez por semana para um lembrete semanal.',
+  // A habit per medication (views/Habits.jsx) and past days in Medications (views/Meds.jsx)
+  'Mark as taken': 'Marcar como tomado',
+  'Nothing scheduled that day.': 'Nada programado nesse dia.',
 }

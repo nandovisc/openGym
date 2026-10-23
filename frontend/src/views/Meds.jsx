@@ -148,10 +148,13 @@ export default function Meds() {
   const S = useStore(s => s.S)
   const now = useNow()
   const [range, setRange] = useState(30)
+  // The day whose doses show: today, or an earlier one to mark a dose not marked on its day.
+  const [day, setDay] = useState(null)
+  const d = day && day < now.d ? day : now.d
   const meds = S.meds || []
   const log = S.medLog || []
-  const today = dosesOn(meds, log, now.d)
-  const extras = extraDosesOn(log, now.d)
+  const today = dosesOn(meds, log, d)
+  const extras = extraDosesOn(log, d)
   const stats = adherence(meds, log, daysBefore(now.d, range - 1), now.d, now)
   const recent = history(meds, log, 30)
   const reminderOff = meds.length > 0 && !S.medReminder?.on
@@ -174,11 +177,16 @@ export default function Meds() {
 
     {meds.length > 0 && <div className="card">
       <div className="row between" style={{ marginBottom: 8 }}>
-        <h2 style={{ margin: 0 }}>{t('Today')}</h2>
-        <Button size="sm" icon="plus" onClick={() => ui().openSheet(close => <ExtraDose close={close} />)}>{t('Extra dose')}</Button>
+        <div className="row med-daynav" style={{ gap: 4 }}>
+          <button className="iconbtn" onClick={() => setDay(daysBefore(d, 1))} aria-label={t('Previous day')}><Icon name="chevronLeft" /></button>
+          <h2 style={{ margin: 0 }}>{d === now.d ? t('Today') : fmtDate(d, true)}</h2>
+          {d < now.d && <button className="iconbtn" onClick={() => setDay(daysBefore(d, -1))} aria-label={t('Next day')}><Icon name="chevronRight" /></button>}
+        </div>
+        {d === now.d ? <Button size="sm" icon="plus" onClick={() => ui().openSheet(close => <ExtraDose close={close} />)}>{t('Extra dose')}</Button>
+          : <Button size="sm" variant="plain" onClick={() => setDay(null)}>{t('Today')}</Button>}
       </div>
       {today.length ? today.map(dose => <DoseRow key={dose.id} dose={dose} now={now} />)
-        : <div className="muted small">{t('Nothing scheduled today.')}</div>}
+        : <div className="muted small">{d === now.d ? t('Nothing scheduled today.') : t('Nothing scheduled that day.')}</div>}
       {extras.map(e => {
         const med = meds.find(m => m.id === e.medId)
         return med && <div className="med-dose taken" key={e.id}>

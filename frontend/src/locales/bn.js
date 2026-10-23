@@ -2894,7 +2894,7 @@ export default {
   'Apple Watch': 'Apple Watch',
   'Trained today · {0} kcal burned': 'Trained today · {0} kcal burned',
   'Workouts from the Apple Watch': 'Workouts from the Apple Watch',
-  'A second Shortcut sends the calories and heart rate of each workout when it ends on the watch. It joins the workout you logged here, or adds one of its own, and marks the workout habit.': 'A second Shortcut sends the calories and heart rate of each workout when it ends on the watch. It joins the workout you logged here, or adds one of its own, and marks the workout habit.',
+  'A second Shortcut sends the calories and duration of each workout when it ends on the watch. It joins the workout you logged here, or adds one of its own, and marks the workout habit.': 'A second Shortcut sends the calories and duration of each workout when it ends on the watch. It joins the workout you logged here, or adds one of its own, and marks the workout habit.',
   'Last workout received: {0}': 'Last workout received: {0}',
   'Download the workout Shortcut': 'Download the workout Shortcut',
   'Paste the same line into its first Text.': 'Paste the same line into its first Text.',

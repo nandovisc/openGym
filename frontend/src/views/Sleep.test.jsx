@@ -6,10 +6,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import Sleep, { nightSheet, sleepLast, sleepSyncSheet } from './Sleep.jsx'
 import { DEF, useStore } from '../store/useStore.js'
 import { useUI } from '../store/useUI.js'
-import { api } from '../lib/api.js'
+import { api, apiUrl } from '../lib/api.js'
 import { todayISO } from '../lib/format.js'
 
-vi.mock('../lib/api.js', () => ({ api: vi.fn(), apiUrl: p => 'https://gym.example' + p }))
+vi.mock('../lib/api.js', () => ({ api: vi.fn(), apiUrl: vi.fn(p => 'https://gym.example' + p) }))
 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true
 const clone = v => JSON.parse(JSON.stringify(v))
@@ -83,5 +83,20 @@ describe('the sync with Apple Health', () => {
     expect(sheet.querySelector('.sleep-secret code').textContent).toBe('https://gym.example/api/sleep/ingest ogs_abc')
     expect(api.mock.calls.at(-1)).toEqual(['/api/sleep/token', { method: 'POST' }])
     expect(sheet.querySelector('a[download]').getAttribute('href')).toBe('https://gym.example/shortcuts/opengym-sleep.shortcut')
+  })
+
+  it('gives the Shortcut a full address on the web too, where the API is a path of this origin', async () => {
+    apiUrl.mockImplementation(p => p)
+    try {
+      useStore.setState({ S: clone(DEF), user: { id: 'u1', name: 'One' } })
+      api.mockImplementation(async (path, opts) => (opts?.method === 'POST' ? { token: 'ogs_abc', on: true, at: 1, last: null, nights: null } : { on: false }))
+      sleepSyncSheet()
+      const sheet = topSheet()
+      await until(() => button(sheet, 'Make a token') && !button(sheet, 'Make a token').disabled)
+      await act(async () => { button(sheet, 'Make a token').click() })
+      await until(() => sheet.querySelector('.sleep-secret code'))
+      expect(sheet.querySelector('.sleep-secret code').textContent).toBe(`${location.origin}/api/sleep/ingest ogs_abc`)
+      expect(location.origin).toMatch(/^https?:\/\//)
+    } finally { apiUrl.mockImplementation(p => 'https://gym.example' + p) }
   })
 })

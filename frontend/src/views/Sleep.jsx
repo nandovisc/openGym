@@ -101,7 +101,8 @@ function SyncForm({ close }) {
     return () => { alive = false }
   }, [user])
   if (!user) return <><h3>{t('Sleep from Apple Health')}</h3><div className="muted small">{t('Sign in to your server to sync sleep from Apple Health.')}</div><Button onClick={close}>{t('Close')}</Button></>
-  const url = apiUrl('/api/sleep/ingest')
+  // Absolute: on the web apiUrl is a path of this origin, and the Shortcut runs outside the app.
+  const url = new URL(apiUrl('/api/sleep/ingest'), location.href).href
   // The one line the shortcut takes: its first Text, split on the space (scripts/sleep-shortcut.mjs).
   const line = token ? `${url} ${token}` : ''
   const copy = async v => toast((await copyText(v)) ? t('Copied') : t('Could not copy'))

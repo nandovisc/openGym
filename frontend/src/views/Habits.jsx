@@ -5,9 +5,10 @@ import { useUI } from '../store/useUI.js'
 import {
   KINDS, MEAL_SLOTS, MILESTONES, SCHEDULE_TYPES, SOURCES, UNITS, activeHabits, addDays, addSlip, addValue, dailyProgress, duplicateHabit,
   exportHabits, icsFor, logId, milestones, normalizeHabit, reorder, scheduleFor, series, setState, setValue, startTimer, stats, statusOn, stopTimer,
-  streak, timerExtra, timerReached, todayOf, toggleDone, typicalTime, undoSlip, weekdayMisses, weeklyRecap, suggestedHabits
+  streak, timerExtra, timerReached, todayOf, toggleDone, typicalTime, undoSlip, weekdayMisses, weeklyRecap, suggestedHabits, suggestKey, syncMedHabits
 } from '../lib/habits.js'
-import { adherence } from '../lib/meds.js'
+import { adherence, dosesOn, markDose, unmark } from '../lib/meds.js'
+import { moduleOn } from '../lib/modules.js'
 import { pushPermission } from '../lib/push.js'
 import { useWakeLock } from '../lib/wakelock.js'
 import { DAYN, fmtDate, fmtNum, localTZ, uid } from '../lib/format.js'
@@ -138,9 +139,36 @@ export function HabitRow({ h, d, S, today, now, drag }) {
       onClick={() => act(h, d, log => addValue(log, h, d, stepOf(h)))}><Icon name="plus" /></button>}
     {h.kind === 'timer' && st.state !== 'skipped' && <TimerButton h={h} d={d} entry={entry} now={now} />}
     {h.kind === 'avoid' && <button className="hab-act slip" aria-label={t('Log a slip')} onClick={() => act(h, d, log => addSlip(log, h, d))}><Icon name="xmark" /></button>}
-    {h.kind === 'auto' && <span className={'hab-auto ' + st.state}>{done ? <Icon name="check" /> : st.state === 'partial' ? `${fmtNum(st.value)}/${fmtNum(st.goal)}` : '–'}</span>}
+    {h.kind === 'auto' && h.auto?.medId && st.state !== 'off' ? <button className={'hab-act' + (done ? ' on' : '')} aria-label={done ? t('Mark as not done') : t('Mark as taken')}
+      onClick={() => markMedDoses(h, d, S)}>{st.state === 'partial' ? `${fmtNum(st.value)}/${fmtNum(st.goal)}` : <Icon name="check" />}</button>
+      : h.kind === 'auto' && <span className={'hab-auto ' + st.state}>{done ? <Icon name="check" /> : st.state === 'partial' ? `${fmtNum(st.value)}/${fmtNum(st.goal)}` : '–'}</span>}
     </>}
   </div>
+}
+
+// The doses of one medication on day `d`, from its habit: with one dose, a tap marks it taken (or
+// undoes it); with several, a sheet lists them to mark one by one. Any day, past ones too.
+function markMedDoses(h, d, S) {
+  const doses = dosesOn(S.meds, S.medLog, d).filter(x => x.med.id === h.auto.medId)
+  if (doses.length === 1) {
+    const [dose] = doses
+    update(s => { s.medLog = dose.entry?.status === 'taken' ? unmark(s.medLog, dose.id) : markDose(s.medLog, dose, 'taken') })
+    if (dose.entry?.status !== 'taken') toast(t('{0} taken', dose.med.name))
+    return
+  }
+  if (doses.length) ui().openSheet(close => <MedDoses medId={h.auto.medId} d={d} close={close} />)
+}
+function MedDoses({ medId, d, close }) {
+  const S = useStore(s => s.S)
+  const doses = dosesOn(S.meds, S.medLog, d).filter(x => x.med.id === medId)
+  return <>
+    <h3>{doses[0]?.med.name}</h3>
+    <div className="muted small" style={{ marginBottom: 10 }}>{fmtDate(d, true)}</div>
+    <Section>{doses.map(x => <Row key={x.id} title={x.time} subtitle={x.entry ? t(x.entry.status === 'taken' ? 'Taken' : 'Skipped') : undefined}>
+      <Switch aria-label={t('Taken')} checked={x.entry?.status === 'taken'} onChange={on => update(s => { s.medLog = on ? markDose(s.medLog, x, 'taken') : unmark(s.medLog, x.id) })} />
+    </Row>)}</Section>
+    <Button variant="ghost" className="dim" onClick={close}>{t('Close')}</Button>
+  </>
 }
 
 function autoText(h, st) {
@@ -196,11 +224,27 @@ function useDragOrder(ids, onDone) {
 const SOURCE_NAME = () => ({ meds: t('Medications'), workout: t('Workout'), weight: t('Weigh-in'), meals: t('Meals'), sleep: t('Sleep'), photo: t('Progress photo') })
 const addHabits = hs => update(s => { s.habits = [...list(s.habits).filter(x => !hs.some(h => h.id === x.id)), ...hs] })
 
+/**
+ * One habit per medication (lib/habits.js syncMedHabits), kept in step with the medications:
+ * wherever habits show (this screen, Today), the single habit of every dose is split, and a
+ * medication added or deleted gets or loses its own.
+ */
+export function useMedHabits() {
+  const meds = useStore(s => s.S.meds)
+  const on = useStore(s => moduleOn(s.S, 'habits'))
+  useEffect(() => {
+    if (!on) return
+    const st = useStore.getState().S
+    const next = syncMedHabits(st, todayOf(st), SOURCE_NAME())
+    if (next) update(s => { s.habits = next })
+  }, [meds, on])
+}
+
 // The habits the app's own data asks for (lib/habits.js suggestedHabits): made on the first visit,
 // offered here afterwards when a module gets data of its own (a first medication, say).
 function Suggestions({ S, today }) {
   const dismissed = list(S.habitPrefs?.dismissed)
-  const hs = suggestedHabits(S, today, SOURCE_NAME()).filter(h => !dismissed.includes(h.auto.source))
+  const hs = suggestedHabits(S, today, SOURCE_NAME()).filter(h => !dismissed.includes(suggestKey(h)))
   if (!hs.length) return null
   const dismiss = src => update(s => { s.habitPrefs = { ...(s.habitPrefs || {}), dismissed: [...list(s.habitPrefs?.dismissed), src] } })
   return <div className="card hab-suggest">
@@ -209,7 +253,7 @@ function Suggestions({ S, today }) {
       <span>{iconOf(h)} <b>{h.name}</b> <span className="small dim">· {t(SCHED_LABEL[h.schedules[0].type])}{h.schedules[0].times ? ` (${h.schedules[0].times}×)` : ''}</span></span>
       <span className="row" style={{ gap: 4 }}>
         <Button size="xs" onClick={() => { addHabits([h]); toast(t('Habit created')) }}>{t('Add')}</Button>
-        <button className="iconbtn" aria-label={t('Not now')} onClick={() => dismiss(h.auto.source)}><Icon name="xmark" /></button>
+        <button className="iconbtn" aria-label={t('Not now')} onClick={() => dismiss(suggestKey(h))}><Icon name="xmark" /></button>
       </span>
     </div>)}
     {hs.length > 1 && <Button size="sm" variant="primary" onClick={() => { addHabits(hs); toast(t('{0} habits created', hs.length)) }}>{t('Add all')}</Button>}
@@ -233,7 +277,7 @@ function Today({ S, today }) {
     if (group && !list(h.groups).includes(group)) return false
     const st = statusOn(h, d, S, today, now).state
     if (h.kind === 'task') { const doneDay = list(S.habitLog).find(e => e?.habitId === h.id && e.done); if (doneDay && doneDay.d !== d) return false }
-    if (st === 'off' && scheduleFor(h, d).type !== 'perWeek' && h.kind !== 'auto') return false
+    if (st === 'off' && scheduleFor(h, d).type !== 'perWeek' && (h.kind !== 'auto' || h.auto?.medId)) return false
     if (prefs.hideDone && st === 'done') return false
     if (prefs.hideFailed && (st === 'failed' || st === 'missed')) return false
     if (prefs.hideSkipped && st === 'skipped') return false
@@ -335,6 +379,7 @@ export default function Habits() {
   const loc = useLocation()
   const [tab, setTab] = useState(() => (/recap=1/.test(loc.search) ? 'stats' : 'today'))
   const today = todayOf(S)
+  useMedHabits()
   // The first visit: the habits the app's data asks for are made at once, already marked by it.
   useEffect(() => {
     const st = useStore.getState().S
@@ -392,7 +437,7 @@ function HabitDetail({ id, close }) {
   const st0 = statusOn(h, today, S, today)
   const pts = h.kind === 'quantity' || h.kind === 'timer' || (h.kind === 'auto' && ['sleep', 'meals'].includes(h.auto?.source))
     ? series(h, S, from, today, today).filter(x => x.state !== 'off').map(x => ({ t: Date.parse(x.d + 'T12:00:00'), y: h.auto?.source === 'sleep' ? Math.round(x.value / 6) / 10 : x.value, d: x.d })) : []
-  const medRows = h.auto?.source === 'meds' ? list(S.meds).filter(m => m.active !== false).map(m => ({ m, a: adherence([m], S.medLog, from, today, { d: today, hhmm: '23:59' }) })) : []
+  const medRows = h.auto?.source === 'meds' ? list(S.meds).filter(m => m.active !== false && (!h.auto.medId || m.id === h.auto.medId)).map(m => ({ m, a: adherence([m], S.medLog, from, today, { d: today, hhmm: '23:59' }) })) : []
   const skipToday = st0.state === 'skipped'
   return <>
     <div className="row" style={{ gap: 10, alignItems: 'center' }}>

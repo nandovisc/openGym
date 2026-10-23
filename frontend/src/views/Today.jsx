@@ -15,7 +15,7 @@ import { bwChartPoint } from '../lib/bodyweight.js'
 import { t, dateLocale } from '../lib/i18n.js'
 import { bwSheet, startFlow } from '../sheets.jsx'
 import { addFoodSheet } from './Food.jsx'
-import { HabitRow, useNow } from './Habits.jsx'
+import { HabitRow, useMedHabits, useNow } from './Habits.jsx'
 import Icon from '../components/Icon.jsx'
 import LineChart from '../components/LineChart.jsx'
 import { useConnectionTrouble } from '../components/SyncBanner.jsx'
@@ -190,6 +190,7 @@ function Customize({ close }) {
 export default function Today() {
   const nav = useNavigate()
   const S = useStore(s => s.S)
+  useMedHabits()
   const user = useStore(s => s.user)
   const trouble = useConnectionTrouble()
   const hToday = todayOf(S)

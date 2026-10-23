@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   addSlip, addValue, dailyProgress, dayStatus, duplicateHabit, habitsDue, icsFor, logicalDay, milestones, normalizeHabit, reorder, scheduledOn,
-  setState, startTimer, stats, stopTimer, streak, timerReached, toggleDone, weekdayMisses, weeklyRecap, suggestedHabits
+  setState, startTimer, stats, stopTimer, streak, timerReached, toggleDone, weekdayMisses, weeklyRecap, suggestedHabits, syncMedHabits
 } from './habits.js'
 
 const T = '2026-10-22'   // a Thursday
@@ -85,6 +85,12 @@ describe('habits the other modules mark', () => {
     expect(dayStatus(auto('weight'), T, S, T)).toMatchObject({ state: 'done', detail: '94.8' })
     expect(dayStatus(auto('meds'), T, S, T)).toMatchObject({ state: 'partial', value: 1, goal: 2 })
     expect(dayStatus(auto('meds'), T, { ...S, meds: [] }, T).state).toBe('off')
+    // One medication's habit counts its own doses only, and is off on the days it has none.
+    expect(dayStatus(auto('meds', { medId: 'm1' }), T, S, T)).toMatchObject({ state: 'partial', value: 1, goal: 2 })
+    const sunday = [0, 1, 2, 3, 4, 5, 6].map(i => back(i)).find(d => new Date(d + 'T12:00:00Z').getUTCDay() === 0)
+    const offDay = [0, 1, 2, 3, 4, 5, 6].map(i => back(i)).find(d => new Date(d + 'T12:00:00Z').getUTCDay() !== 0)
+    expect(dayStatus(auto('meds', { medId: 'm2' }), offDay, S, T).state).toBe('off')
+    expect(dayStatus(auto('meds', { medId: 'm2' }), sunday, S, T).goal).toBe(1)
   })
   it('meals by the ones logged or by the calorie target, and sleep by its goal or bedtime', () => {
     const meals = [{ id: 'a', d: T, slot: 'breakfast', items: [{ kcal: 500 }] }, { id: 'b', d: T, slot: 'lunch', items: [{ kcal: 900 }] }]
@@ -169,12 +175,29 @@ describe('habits from what the app already logs', () => {
     })
     const hs = suggestedHabits(S, T, { meds: 'Remédios', workout: 'Treino', weight: 'Pesagem', meals: 'Refeições', sleep: 'Sono' })
     expect(hs.map(h => [h.name, h.auto.source, h.schedules[0].type, h.schedules[0].times ?? null, h.start])).toEqual([
-      ['Remédios', 'meds', 'daily', null, back(89)],
+      ['Losartana', 'meds', 'daily', null, back(89)],
       ['Treino', 'workout', 'perWeek', 3, back(26)],
       ['Pesagem', 'weight', 'daily', null, back(13)],
       ['Refeições', 'meals', 'daily', null, back(2)]
     ])
     expect(suggestedHabits({ ...S, habits: hs }, T)).toEqual([])
     expect(suggestedHabits(base({}), T)).toEqual([])
+  })
+  it('one habit per medication: the single one of every dose is split, a new medication gets its own', () => {
+    const meds = [{ id: 'm1', name: 'Losartana', times: ['08:00'], active: true, start: back(10) }, { id: 'm2', name: 'Mounjaro', times: ['09:00'], days: [1], active: true, start: back(30) }]
+    const old = { ...make({ kind: 'auto', name: 'Medications', auto: { source: 'meds' } }), id: 'auto-meds', groups: ['g'], order: 5 }
+    const out = syncMedHabits(base({ meds, habits: [old] }), T)
+    expect(out.map(h => [h.id, h.name, h.archived, h.auto.medId ?? null, h.groups])).toEqual([
+      ['auto-meds', 'Medications', true, null, ['g']],
+      ['auto-meds-m1', 'Losartana', false, 'm1', ['g']],
+      ['auto-meds-m2', 'Mounjaro', false, 'm2', ['g']]
+    ])
+    expect(syncMedHabits(base({ meds, habits: out }), T)).toBe(null)
+    const more = [...meds, { id: 'm3', name: 'Vitamina D', times: ['12:00'], active: true }]
+    expect(syncMedHabits(base({ meds: more, habits: out }), T).at(-1)).toMatchObject({ id: 'auto-meds-m3', name: 'Vitamina D' })
+    // A medication deleted: its habit is archived.
+    expect(syncMedHabits(base({ meds: [meds[0]], habits: out }), T).find(h => h.id === 'auto-meds-m2').archived).toBe(true)
+    // Nobody with medication habits: nothing is made behind their back.
+    expect(syncMedHabits(base({ meds, habits: [] }), T)).toBe(null)
   })
 })

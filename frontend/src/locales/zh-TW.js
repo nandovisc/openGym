@@ -2837,4 +2837,7 @@ export default {
   'Side view': 'Side view',
   'Back view': 'Back view',
   'Done on a day with a progress photo, kept with the weigh-in or a workout. Set it to once a week for a weekly reminder.': 'Done on a day with a progress photo, kept with the weigh-in or a workout. Set it to once a week for a weekly reminder.',
+  // A habit per medication (views/Habits.jsx) and past days in Medications (views/Meds.jsx)
+  'Mark as taken': 'Mark as taken',
+  'Nothing scheduled that day.': 'Nothing scheduled that day.',
 }

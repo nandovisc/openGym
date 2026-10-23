@@ -66,6 +66,18 @@ describe('Medications', () => {
     expect(useStore.getState().S.medLog).toEqual([])
   })
 
+  it('goes back a day to mark a dose that was not marked on its day', () => {
+    const med = { id: 'm1', name: 'Mounjaro', dose: '5', unit: 'mg', times: ['09:00'], days: null, start: '2020-01-01', end: null, active: true, notes: '' }
+    const page = mount({ meds: [med] })
+    const yesterday = new Date(Date.parse(todayISO() + 'T12:00:00Z') - 86400000).toISOString().slice(0, 10)
+    act(() => page.querySelector('button[aria-label="Previous day"]').click())
+    expect(page.querySelector('button[aria-label="Next day"]')).not.toBe(null)
+    act(() => button(page, 'Taken').click())
+    expect(useStore.getState().S.medLog).toEqual([expect.objectContaining({ id: doseId('m1', yesterday, '09:00'), d: yesterday, status: 'taken' })])
+    act(() => page.querySelector('button[aria-label="Next day"]').click())
+    expect(page.querySelector('button[aria-label="Next day"]')).toBe(null)
+  })
+
   it('refuses a medication with no name', () => {
     const page = mount()
     act(() => button(page, 'Add medication').click())

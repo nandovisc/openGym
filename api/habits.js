@@ -3,7 +3,7 @@
 // (frontend/src/lib/habits-parity.test.js runs both). Change one, change the other. Self-contained
 // on purpose: the doses, workouts, weigh-ins, meals and nights are read straight off the profile.
 //
-//   S.habits [{ id, kind, name, goal: { value, unit }, auto: { source, slots, mode, bedBy },
+//   S.habits [{ id, kind, name, goal: { value, unit }, auto: { source, slots, mode, bedBy, medId },
 //               schedules: [{ from, type, days, times }], start, end, reminders: ['HH:MM'],
 //               archived, excludeFromDaily, created, … }]
 //     kind: check | quantity | timer | avoid | auto | task. A task has `due` (a day or null) and
@@ -51,11 +51,13 @@ export function scheduledOn(habit, d) {
   return true;
 }
 
-// The doses of the day: scheduled for a medication active then, at each of its times.
-function dosesOfDay(S, d) {
+// The doses of the day: scheduled for a medication active then, at each of its times — of one
+// medication only when `medId` is given (a habit per medication).
+function dosesOfDay(S, d, medId) {
   const taken = new Map(list(S.medLog).filter(e => e?.d === d && !e.extra).map(e => [e.id, e.status]));
   let total = 0, done = 0;
   for (const m of list(S.meds)) {
+    if (medId && m?.id !== medId) continue;
     if (!m?.id || m.active === false || (m.start && d < m.start) || (m.end && d > m.end)) continue;
     if (Array.isArray(m.days) && !m.days.includes(weekdayOf(d))) continue;
     for (const t of new Set(list(m.times).filter(x => TIME_RE.test(x || '')))) {
@@ -93,7 +95,7 @@ export function autoValue(habit, d, S) {
     return { value: n ? 1 : 0, goal: 1, done: n > 0, detail: String(n) };
   }
   if (a.source === 'meds') {
-    const { total, done } = dosesOfDay(S, d);
+    const { total, done } = dosesOfDay(S, d, a.medId);
     return { value: done, goal: total, done: total > 0 && done >= total, none: total === 0, detail: `${done}/${total}` };
   }
   if (a.source === 'meals') {

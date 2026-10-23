@@ -2008,6 +2008,13 @@ export const PT_BR_OVERRIDES = {
   // A habit per medication (views/Habits.jsx) and past days in Medications (views/Meds.jsx)
   'Mark as taken': 'Marcar como tomado',
   'Nothing scheduled that day.': 'Nada programado nesse dia.',
+  // The sign-in screen: an account you have, a new one, a code from another device (views/Login.jsx)
+  'Create your account': 'Crie sua conta',
+  'Already have an account?': 'Já tem uma conta?',
+  'A passkey is how you sign in here: your phone or computer confirms it is you with {0}. No password to create or remember.': 'A chave de acesso é como você entra aqui: seu celular ou computador confirma que é você com {0}. Sem senha para criar ou lembrar.',
+  'First time here?': 'Primeira vez aqui?',
+  'Create an account': 'Criar uma conta',
+  'Already use openGym on another device? Sign in with a code': 'Já usa o openGym em outro aparelho? Entre com um código',
 }
 
 export default { ...pt, ...PT_BR_OVERRIDES }

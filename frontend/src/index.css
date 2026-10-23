@@ -2318,3 +2318,7 @@ a.btn{text-decoration:none;box-sizing:border-box}
 #tabbar .quick-add{-webkit-touch-callout:none;user-select:none}
 .today-macro{display:flex;flex-direction:column;min-width:0}
 .today-macro span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* Login: who each way in is for, what a passkey is, and the quieter code from another device */
+.login-label{font-size:13px;color:var(--label-2);margin:0 0 8px;font-weight:600}
+.login-help{margin:8px 4px 0;line-height:1.45}
+.login-code{margin:22px auto 0;color:var(--label-2);text-decoration:underline;text-underline-offset:3px;font-size:13px}

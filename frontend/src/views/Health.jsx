@@ -6,6 +6,7 @@ import { foodToday } from './Food.jsx'
 import { sleepLast } from './Sleep.jsx'
 import { lastBW } from '../lib/history.js'
 import { fmtDate, fmtDur, fmtNum, todayISO } from '../lib/format.js'
+import { bwChartPoint } from '../lib/bodyweight.js'
 import { t } from '../lib/i18n.js'
 import Icon from '../components/Icon.jsx'
 import LineChart from '../components/LineChart.jsx'
@@ -68,7 +69,7 @@ export default function Health() {
     </div>
     {(weights.length > 1 || progress.length > 0) && <div className="card" style={{ marginTop: 12 }}>
       <div className="muted small">{t('Progress · 30 days')}</div>
-      {weights.length > 1 && <div className="chart" style={{ marginTop: 8 }}><LineChart points={weights.map(b => ({ t: b.t || Date.parse(b.d + 'T12:00:00'), y: b.w, d: b.d }))} h={120} unit={S.unit} goal={S.targetW} /></div>}
+      {weights.length > 1 && <div className="chart" style={{ marginTop: 8 }}><LineChart points={weights.map(bwChartPoint)} h={120} unit={S.unit} goal={S.targetW} /></div>}
       {progress.map((x, i) => <div key={i} className="small" style={{ marginTop: 6 }}>{x}</div>)}
     </div>}
   </div>

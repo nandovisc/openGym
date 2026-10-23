@@ -1002,6 +1002,23 @@ body.chips-dragging *{cursor:inherit}
 }
 .pp-label-before{inset-inline-start:10px}
 .pp-label-after{inset-inline-end:10px}
+/* Before/after side by side, and the weights under the stage (ProgressPhotos.jsx). */
+.pp-side{flex:1;min-height:0;display:grid;grid-template-columns:1fr 1fr;gap:2px;background:#000}
+.pp-side>div{position:relative;overflow:hidden}
+.pp-sum{flex:none;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 16px 4px}
+.pp-sum-d{font-size:12px;color:rgba(255,255,255,.7)}
+.pp-sum-w{font-size:17px;font-weight:700}
+.pp-sum-mid{text-align:center}
+.pp-tools{flex:none;display:flex;flex-direction:column;gap:8px;padding:8px 16px}
+/* A weigh-in's progress photos (WeighInPhotos.jsx): the pose on the tile, and the pose picker
+   under the viewer. */
+.bwp-pose{
+  position:absolute;inset-inline-start:4px;bottom:4px;font-size:10px;font-weight:600;color:#fff;
+  background:rgba(0,0,0,.55);padding:2px 6px;border-radius:99px;pointer-events:none;
+}
+.bwp-viewer-pose{flex:none;padding:10px 16px 4px}
+.bwp-row-btn{width:32px;height:30px;border-radius:8px;font-size:15px;color:var(--label-2)}
+.bwp-row-btn.has{color:var(--acc)}
 .wrow-media .icn{font-size:13px}
 .mviewer{
   position:absolute;inset:0;background:#000;color:#fff;display:flex;flex-direction:column;

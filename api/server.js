@@ -2853,9 +2853,10 @@ const routes = {
       unit: S.unit || 'kg',
       lastSync: lastSyncOf(u, S),
       routines: records(S.routines).map(r => ({ id: r.id, name: r.name, emoji: r.emoji, count: records(r.ex).length })),
-      bodyweight: records(S.bodyweight),
-      // records() already copied, so this reverse is ours: newest first for display. A workout's
-      // photos and videos are the owner's own: the admin view gets no refs to them.
+      // A weigh-in's progress photos, like a workout's photos and videos, are the owner's own:
+      // the admin view gets no refs to them.
+      bodyweight: records(S.bodyweight).map(({ photos, ...b }) => b),
+      // records() already copied, so this reverse is ours: newest first for display.
       workouts: records(S.workouts).reverse().map(({ media, ...w }) => w)
     });
   },

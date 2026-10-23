@@ -62,6 +62,8 @@ import { moveWorkout, sameWorkout, startTimeOf, durationMinOf, setWorkoutDuratio
 import { editCompletedSession, editLeftEmpty, editedRecord, editChangesNothing } from './lib/session-edit.js'
 import { stampWorkout } from './lib/sync-merge.js'
 import { weeklyWeights } from './lib/bodyweight.js'
+import { bwPhotosOf, hasBwPhoto } from './lib/bodyweight-photos.js'
+import { weighInSheet } from './components/WeighInPhotos.jsx'
 import { workoutText } from './lib/workout-text.js'
 import { workoutCardModel, layoutWorkoutCard, drawWorkoutCard, viewAspect, CARD_FONT } from './lib/workout-card.js'
 import { copyText } from './lib/clipboard.js'
@@ -353,17 +355,22 @@ export function bwSheet(opts = {}) {
 // One weigh-in with its delete button, in the log sheet's recent three and in the full list.
 // The full list asks first (`confirm`): it is months of history scrolled through on a phone, and a
 // stray tap on one of its trash buttons took a past weigh-in with nothing to bring it back. The log
-// sheet's three are the ones just typed, where taking back a typo in one tap is the point.
+// sheet's three are the ones just typed, where taking back a typo in one tap is the point — unless
+// the weigh-in has photos, which go with it. The camera opens the weigh-in with its photos.
 function WeighInRow({ b, unit, confirm = false }) {
   const delEntry = () => update(s => { s.bodyweight = s.bodyweight.filter(x => x.d !== b.d) })
+  const nPhotos = bwPhotosOf(b).length
   const ask = () => confirmSheet({
-    title: t('Delete weigh-in?'), message: `${fmtDate(b.d, true)} · ${fmtNum(b.w)} ${unit}`,
+    title: t('Delete weigh-in?'),
+    message: `${fmtDate(b.d, true)} · ${fmtNum(b.w)} ${unit}` + (nPhotos ? ' · ' + tn('{0} photo', '{0} photos', nPhotos) : ''),
     confirmText: t('Delete'), danger: true, onConfirm: delEntry,
   })
   return <div className="row between" style={{ padding: '9px 2px', borderBottom: '1px solid var(--sep)' }}>
     <span className="small muted">{fmtDate(b.d, true)}</span>
     <span className="row" style={{ gap: 12 }}><b>{fmtNum(b.w)} {unit}</b>
-      <button className="iconbtn" style={{ width: 32, height: 30, borderRadius: 8, fontSize: 15, color: 'var(--red)' }} onClick={confirm ? ask : delEntry} aria-label={t('Delete weigh-in')}><Icon name="trash" /></button></span>
+      <button className={'iconbtn bwp-row-btn' + (nPhotos ? ' has' : '')} onClick={() => weighInSheet(b.d)}
+        aria-label={nPhotos ? tn('{0} photo', '{0} photos', nPhotos) : t('Add a progress photo')}><Icon name={nPhotos ? 'image' : 'camera'} /></button>
+      <button className="iconbtn" style={{ width: 32, height: 30, borderRadius: 8, fontSize: 15, color: 'var(--red)' }} onClick={confirm || nPhotos ? ask : delEntry} aria-label={t('Delete weigh-in')}><Icon name="trash" /></button></span>
   </div>
 }
 
@@ -372,20 +379,23 @@ function WeighInRow({ b, unit, confirm = false }) {
 // moved from the week before, the numbers behind the curve on the card. The chart plots the
 // weekly means, since the swing from one morning to the next is what makes a single weigh-in
 // hard to read. The weeks start on the profile's first day of the week.
-function WeighIns() {
+function WeighIns({ close }) {
   const st = useStore(s => s.S)
   const ws = weekStartOf(st)
   const weeks = useMemo(() => weeklyWeights(st.bodyweight, ws), [st.bodyweight, ws])
   const points = useMemo(() => [...weeks].reverse()
-    .map(w => ({ t: new Date(w.key + 'T12:00:00').getTime(), y: Math.round(w.avg * 100) / 100, d: w.key })), [weeks])
+    .map(w => ({ t: new Date(w.key + 'T12:00:00').getTime(), y: Math.round(w.avg * 100) / 100, d: w.key, photo: w.entries.some(hasBwPhoto) })), [weeks])
   const n = weeks.reduce((sum, w) => sum + w.n, 0)
   if (!n) return <>
     <h3>{t('Weigh-ins')}</h3>
     <div className="empty"><div className="ico"><Icon name="scale" /></div>{t('No weigh-ins yet. Log your weight to start the curve.')}</div>
   </>
   return <>
-    <h3 style={{ marginBottom: 2 }}>{t('Weigh-ins')}</h3>
-    <div className="muted small" style={{ marginBottom: 10 }}>{tn('{0} weigh-in', '{0} weigh-ins', n)}</div>
+    <div className="row between" style={{ gap: 8 }}>
+      <div><h3 style={{ marginBottom: 2 }}>{t('Weigh-ins')}</h3>
+        <div className="muted small" style={{ marginBottom: 10 }}>{tn('{0} weigh-in', '{0} weigh-ins', n)}</div></div>
+      {st.bodyweight.some(hasBwPhoto) && <Button size="sm" variant="tinted" icon="image" style={{ flexShrink: 0 }} onClick={() => closeThenNav(close, '/progress-photos')}>{t('Compare')}</Button>}
+    </div>
     <div className="chart"><LineChart points={points} h={140} unit={st.unit} goal={st.targetW} /></div>
     <div className="small dim" style={{ marginTop: 6 }}>{t('Weekly average')}</div>
     {weeks.map(w => {

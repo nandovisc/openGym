@@ -23,14 +23,14 @@ const toast = message => ui().toast(message)
 const list = v => (Array.isArray(v) ? v : [])
 
 const KIND_LABEL = { check: 'Yes / no', quantity: 'Amount with a goal', timer: 'Time with a timer', avoid: 'Avoid (bad habit)', auto: 'Automatic (from the app)', task: 'One-off task' }
-const SOURCE_LABEL = { workout: 'Workout', weight: 'Weigh-in', meds: 'Medications', meals: 'Meals', sleep: 'Sleep' }
+const SOURCE_LABEL = { workout: 'Workout', weight: 'Weigh-in', meds: 'Medications', meals: 'Meals', sleep: 'Sleep', photo: 'Progress photo' }
 const SLOT_LABEL = { breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner', snack: 'Snacks' }
 const SCHED_LABEL = { daily: 'Every day', weekdays: 'Days of the week', monthdays: 'Days of the month', perWeek: 'Times a week' }
 const STATE_LABEL = { done: 'Done', partial: 'In progress', missed: 'Missed', failed: 'Failed', skipped: 'Skipped', pending: 'To do', off: 'Not today' }
 const COLORS = ['#30d158', '#0a84ff', '#ff9f0a', '#ff453a', '#bf5af2', '#64d2ff', '#ffd60a', '#ff375f']
 const ICONS = ['✅', '💧', '📖', '🧘', '🏃', '🏋️', '⚖️', '💊', '🍽️', '😴', '🚭', '🍬', '📵', '🦷', '🌿', '✍️']
 const WEEK = [0, 1, 2, 3, 4, 5, 6]
-const iconOf = h => h.icon || { check: '✅', quantity: '💧', timer: '⏱️', avoid: '🚫', task: '📝', auto: { workout: '🏋️', weight: '⚖️', meds: '💊', meals: '🍽️', sleep: '😴' }[h.auto?.source] || '🔄' }[h.kind]
+const iconOf = h => h.icon || { check: '✅', quantity: '💧', timer: '⏱️', avoid: '🚫', task: '📝', auto: { workout: '🏋️', weight: '⚖️', meds: '💊', meals: '🍽️', sleep: '😴', photo: '📸' }[h.auto?.source] || '🔄' }[h.kind]
 const unitText = u => (u ? t(u) : '')
 const valueText = (v, h) => (h.kind === 'timer' ? `${fmtNum(Math.floor(v))} min` : `${fmtNum(Math.round(v * 10) / 10)} ${unitText(h.goal?.unit)}`.trim())
 const stepOf = h => (h.goal?.unit === 'ml' ? 250 : h.goal?.unit === 'g' ? 50 : h.goal?.unit === 'steps' ? 1000 : h.goal?.value >= 20 ? Math.round(h.goal.value / 8) : 1)
@@ -193,7 +193,7 @@ function useDragOrder(ids, onDone) {
   return { state, start }
 }
 
-const SOURCE_NAME = () => ({ meds: t('Medications'), workout: t('Workout'), weight: t('Weigh-in'), meals: t('Meals'), sleep: t('Sleep') })
+const SOURCE_NAME = () => ({ meds: t('Medications'), workout: t('Workout'), weight: t('Weigh-in'), meals: t('Meals'), sleep: t('Sleep'), photo: t('Progress photo') })
 const addHabits = hs => update(s => { s.habits = [...list(s.habits).filter(x => !hs.some(h => h.id === x.id)), ...hs] })
 
 // The habits the app's own data asks for (lib/habits.js suggestedHabits): made on the first visit,
@@ -487,7 +487,7 @@ function HabitForm({ id, preset, close }) {
       <div className="sect-b"><SelectRow title={t('Type')} sheetTitle={t('Type')} value={k} onChange={v => set('kind', v)} options={KINDS.map(x => ({ value: x, label: t(KIND_LABEL[x]) }))} /></div>
       {k === 'auto' && <>
         <div className="sect-b"><SelectRow title={t('Comes from')} sheetTitle={t('Comes from')} value={f.auto.source} onChange={v => set('auto', { ...f.auto, source: v, mode: '' })} options={SOURCES.map(x => ({ value: x, label: t(SOURCE_LABEL[x]) }))} /></div>
-        <div className="small dim">{t({ workout: 'Done on a day with a finished workout.', weight: 'Done on a day with a weigh-in.', meds: 'Done when every dose of the day is taken. Days without a dose do not count.', meals: 'Done when the meals you choose are logged, or when the day is within your calorie target.', sleep: 'Done when the night reaches your sleep goal, or when you were in bed by a time.' }[f.auto.source])}</div>
+        <div className="small dim">{t({ workout: 'Done on a day with a finished workout.', weight: 'Done on a day with a weigh-in.', meds: 'Done when every dose of the day is taken. Days without a dose do not count.', meals: 'Done when the meals you choose are logged, or when the day is within your calorie target.', sleep: 'Done when the night reaches your sleep goal, or when you were in bed by a time.', photo: 'Done on a day with a progress photo, kept with the weigh-in or a workout. Set it to once a week for a weekly reminder.' }[f.auto.source])}</div>
         {f.auto.source === 'meals' && <>
           <Segmented value={f.auto.mode === 'target' ? 'target' : 'slots'} onChange={v => set('auto', { ...f.auto, mode: v })} options={[{ value: 'slots', label: t('Meals logged') }, { value: 'target', label: t('Calorie target') }]} />
           {f.auto.mode !== 'target' && <DayChips values={f.auto.slots} options={MEAL_SLOTS} labels={MEAL_SLOTS.map(x => t(SLOT_LABEL[x]))} onChange={v => set('auto', { ...f.auto, slots: v })} />}

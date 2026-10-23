@@ -153,13 +153,18 @@ export function stateMediaRefs(state) {
   for (const m of Array.isArray(state.meals) ? state.meals : []) {
     if (isObj(m) && isObj(m.photo)) out.push(m.photo)
   }
+  // The progress photos of a weigh-in (lib/bodyweight-photos.js): { pose, m } each.
+  for (const e of Array.isArray(state.bodyweight) ? state.bodyweight : []) {
+    if (!isObj(e) || !Array.isArray(e.photos)) continue
+    for (const p of e.photos) if (isObj(p) && isObj(p.m)) out.push(p.m)
+  }
   return out
 }
 
 /**
  * Every blob hash a state refers to, the same answer as api/media.js referencedHashes (the shared
  * fixture api/test/fixtures/media-refs.json pins both): customEx[].media, every entry of
- * workouts[].media and of exams[].files, and meals[].photo. Deliberately looser than normalizeMediaRef and workoutMediaOf: each hash and
+ * workouts[].media and of exams[].files, meals[].photo and bodyweight[].photos[].m. Deliberately looser than normalizeMediaRef and workoutMediaOf: each hash and
  * poster hash counts on its own as long as it is well-formed, and a workout's list counts past
  * its cap, because this set decides what is KEPT, and keeping too much is the safe side.
  */

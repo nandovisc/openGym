@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>openGym Saúde</title>
-<meta name="description" content="Treino, alimentação, sono, hábitos, remédios e exames num só app, com os seus dados no seu servidor.">
+<meta name="description" content="Treino, alimentação, sono, hábitos, remédios e exames num só app.">
 <meta name="theme-color" content="#000000">
 <link rel="icon" href="/favicon.ico" sizes="48x48">
 <link rel="apple-touch-icon" href="icon-180.png">
@@ -110,7 +110,7 @@ h2{font-size:clamp(30px,4vw,42px);line-height:1.1;letter-spacing:-.025em;margin:
 @media (max-width:900px){.gallery{grid-template-columns:repeat(3,1fr)}}
 @media (max-width:560px){.gallery{grid-template-columns:repeat(2,1fr)}}
 
-.privacy{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.privacy{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
 .privacy div{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:22px}
 .privacy b{display:block;font-size:18px;margin-bottom:6px}
 .privacy span{color:var(--text-2);font-size:15.5px}
@@ -147,8 +147,8 @@ footer a{color:var(--text-2)}
     <p class="eyebrow"><span lang="pt-BR">Treino, alimentação, sono, hábitos, remédios e exames</span><span lang="en">Training, food, sleep, habits, medications and exams</span></p>
     <h1 lang="pt-BR">Sua saúde inteira,<br><span>num app só.</span></h1>
     <h1 lang="en">All of your health,<br><span>in one app.</span></h1>
-    <p class="lead" lang="pt-BR">O openGym começou como um diário de academia e virou uma central de saúde: o dia aparece numa tela só, cada registro leva um toque, e o que um módulo sabe alimenta os outros. Os dados ficam no seu servidor.</p>
-    <p class="lead" lang="en">openGym started as a gym log and grew into a health hub: the whole day on one screen, every entry one tap away, and what one module knows feeds the others. Your data stays on your server.</p>
+    <p class="lead" lang="pt-BR">O openGym começou como um diário de academia e virou uma central de saúde: o dia aparece numa tela só, cada registro leva um toque, e o que um módulo sabe alimenta os outros.</p>
+    <p class="lead" lang="en">openGym started as a gym log and grew into a health hub: the whole day on one screen, every entry one tap away, and what one module knows feeds the others.</p>
     <div class="actions">
       <a class="btn" href="https://open-gym-tau.vercel.app"><span lang="pt-BR">Abrir o app</span><span lang="en">Open the app</span></a>
       <a class="btn ghost" href="#modules"><span lang="pt-BR">Ver o que ele faz</span><span lang="en">See what it does</span></a>
@@ -157,7 +157,6 @@ footer a{color:var(--text-2)}
       <li><b>PWA</b> · <span lang="pt-BR">instala na tela inicial</span><span lang="en">installs on the home screen</span></li>
       <li><b>Passkeys</b> · <span lang="pt-BR">sem senha</span><span lang="en">no password</span></li>
       <li><b>Apple Watch</b> · <span lang="pt-BR">sono e treinos</span><span lang="en">sleep and workouts</span></li>
-      <li><b>AGPL-3.0</b> · <span lang="pt-BR">código aberto</span><span lang="en">open source</span></li>
     </ul>
   </div>
   <div class="stage">
@@ -292,8 +291,6 @@ footer a{color:var(--text-2)}
       <ul class="points">
         <li lang="pt-BR"><b>Direto do app Saúde</b><span>Um Atalho do iPhone envia a noite toda manhã: Apple Watch, Oura, RingConn. Horários, duração e fases (profundo, REM, essencial, acordado).</span></li>
         <li lang="en"><b>Straight from the Health app</b><span>An iPhone Shortcut sends the night every morning: Apple Watch, Oura, RingConn. Times, length and stages (deep, REM, core, awake).</span></li>
-        <li lang="pt-BR"><b>Anos de histórico</b><span>Importe o export.xml do app Saúde (mesmo os enormes) e todas as noites antigas aparecem.</span></li>
-        <li lang="en"><b>Years of history</b><span>Import the Health app’s export.xml (even the huge ones) and every past night shows up.</span></li>
         <li lang="pt-BR"><b>Meta e evolução</b><span>Quanto faltou para a meta, a média de quando você deita e acorda, e as noites na meta.</span></li>
         <li lang="en"><b>Goal and trends</b><span>How far from your goal, when you usually go to bed and get up, and the nights on goal.</span></li>
       </ul>
@@ -343,8 +340,6 @@ footer a{color:var(--text-2)}
         <li lang="en"><b>Sleep, every morning</b><span>An automation at your wake-up time sends last night.</span></li>
         <li lang="pt-BR"><b>Treino, ao terminar</b><span>A automação "Treino do Apple Watch → Termina" envia as calorias. Se você registrou o treino no app, elas se juntam a ele; se não, entra um treino do relógio, que também marca o hábito de treino.</span></li>
         <li lang="en"><b>Workouts, when they end</b><span>The "Apple Watch Workout → Ends" automation sends the calories. They join the workout you logged, or come in as a watch workout that also ticks the workout habit.</span></li>
-        <li lang="pt-BR"><b>Peso e histórico</b><span>O export.xml traz os anos de pesagens e noites de uma vez, sem duplicar o que já está lá.</span></li>
-        <li lang="en"><b>Weight and history</b><span>The export.xml brings years of weigh-ins and nights at once, never doubling what is already there.</span></li>
       </ul>
     </div>
   </div>
@@ -379,7 +374,6 @@ footer a{color:var(--text-2)}
     <h2 lang="en">Health data is yours</h2>
   </div>
   <div class="privacy">
-    <div><b lang="pt-BR">No seu servidor</b><b lang="en">On your server</b><span lang="pt-BR">Docker com dois contêineres, Kubernetes ou Vercel com o seu Supabase. Nenhuma conta em serviço de terceiros, nenhuma telemetria.</span><span lang="en">Two Docker containers, Kubernetes, or Vercel with your own Supabase. No third-party account, no telemetry.</span></div>
     <div><b lang="pt-BR">Sem senha</b><b lang="en">No password</b><span lang="pt-BR">Entrada com chave de acesso (Face ID / Touch ID), sincronizada entre o celular e o computador.</span><span lang="en">Sign in with a passkey (Face ID / Touch ID), synced across phone and computer.</span></div>
     <div><b lang="pt-BR">Funciona offline</b><b lang="en">Works offline</b><span lang="pt-BR">Instale na tela inicial: o app abre e registra sem internet, e sincroniza quando voltar.</span><span lang="en">Install it on the home screen: it opens and logs without a connection, and syncs when it is back.</span></div>
   </div>
@@ -395,7 +389,7 @@ footer a{color:var(--text-2)}
 </main>
 
 <footer><div class="wrap">
-  <span lang="pt-BR">openGym · código aberto sob AGPL-3.0</span><span lang="en">openGym · open source under AGPL-3.0</span>
+  <span>openGym</span>
   <span><a href="https://github.com/nandovisc/openGym">GitHub</a> · <a href="https://open-gym-tau.vercel.app">openGym</a></span>
 </div></footer>
 

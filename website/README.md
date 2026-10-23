@@ -46,3 +46,12 @@ own it carries is the contents drawer and the card expand/collapse.
 `styles.css` and `site.js` are cache-busted with `?v=N` — nginx serves the site
 with `no-cache, must-revalidate`, but the query bump is what saves a Cloudflare
 edge from handing out an old stylesheet with new markup. Bump it on every change.
+
+## health.html
+
+The health side of the app (Today, the ＋ button, habits, nutrition, sleep, medications, exams,
+Apple Health) on one page, in Portuguese and English: each text is written twice, `lang="pt-BR"`
+and `lang="en"`, and the PT/EN switch sets `<html lang>`, which hides the other one. Unlike the
+rest of the site it is self-contained (its own styles, no `site.js`, nothing fetched elsewhere).
+Its screenshots are committed in `screens/<name>-<pt-BR|en>.jpg` (600 px wide): the real app
+with a made-up demo profile, at iPhone size in the dark theme.

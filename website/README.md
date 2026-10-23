@@ -56,5 +56,6 @@ rest of the site it is self-contained (its own styles, no `site.js`, nothing fet
 Its screenshots are committed in `screens/<name>-<pt-BR|en>.jpg` (600 px wide): the real app
 with a made-up demo profile, at iPhone size in the dark theme.
 
-`vercel.json` serves `health.html` at `/` on the Vercel project that publishes this folder
+`vercel.json` serves `health.html` at `/` (a route, not a rewrite: rewrites lose to `index.html`)
+on the Vercel project that publishes this folder
 (`open-gym-site`); nginx ignores it, so a self-hosted copy of the site keeps `index.html` there.

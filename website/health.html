@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>openGym Saúde</title>
+<meta name="description" content="Treino, alimentação, sono, hábitos, remédios e exames num só app, com os seus dados no seu servidor.">
+<meta name="theme-color" content="#000000">
+<link rel="icon" href="/favicon.ico" sizes="48x48">
+<link rel="apple-touch-icon" href="icon-180.png">
+<!-- The health side of openGym in one page: Today, the ＋ button and the modules (habits, food,
+     sleep, medications, exams) beside training, with their screenshots. Portuguese and English:
+     every text is there twice, the one not in use hidden by `html[lang]` below, and the
+     screenshots follow the same choice (screens/<name>-<pt-BR|en>.jpg, taken from the app with
+     a made-up profile). Self-contained: no script from elsewhere, no font to fetch. -->
+<style>
+:root{
+  --bg:#000;--surface:#111113;--surface-2:#1c1c1f;--line:#2a2a2e;
+  --text:#f5f5f7;--text-2:#a1a1a6;--text-3:#6e6e73;
+  --acc:#30d158;--acc-ink:#04220c;
+  --orange:#ff9f0a;--indigo:#5e5ce6;--teal:#40c8e0;--red:#ff453a;--blue:#0a84ff;--purple:#bf5af2;
+  --radius:22px;
+}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]){
+  --bg:#f5f5f7;--surface:#fff;--surface-2:#f0f0f2;--line:#e2e2e6;
+  --text:#1d1d1f;--text-2:#55555a;--text-3:#86868b;--acc:#1fa846;--acc-ink:#fff;
+}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--text);font:17px/1.55 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+html[lang="pt-BR"] [lang="en"],html[lang="en"] [lang="pt-BR"]{display:none!important}
+a{color:var(--acc)}
+img{display:block;max-width:100%;height:auto}
+.wrap{max-width:1120px;margin:0 auto;padding:0 20px}
+
+/* top bar */
+.bar{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--bg) 82%,transparent);backdrop-filter:saturate(1.6) blur(16px);-webkit-backdrop-filter:saturate(1.6) blur(16px);border-bottom:1px solid var(--line)}
+.bar .wrap{display:flex;align-items:center;gap:14px;height:56px}
+.brand{display:flex;align-items:center;gap:9px;font-weight:700;color:var(--text);text-decoration:none;letter-spacing:-.01em}
+.brand img{width:26px;height:26px;border-radius:7px}
+.bar nav{display:flex;gap:18px;margin-inline-start:auto}
+.bar nav a{color:var(--text-2);text-decoration:none;font-size:15px}
+.bar nav a:hover{color:var(--text)}
+.langs{display:flex;background:var(--surface-2);border-radius:99px;padding:3px}
+.langs button{border:0;background:none;color:var(--text-2);font:600 13px/1 inherit;font-family:inherit;padding:7px 11px;border-radius:99px;cursor:pointer}
+.langs button[aria-pressed="true"]{background:var(--surface);color:var(--text);box-shadow:0 1px 3px #0004}
+.open{background:var(--acc);color:var(--acc-ink);text-decoration:none;font-weight:600;font-size:15px;padding:8px 15px;border-radius:99px;white-space:nowrap}
+@media (max-width:820px){.bar nav{display:none}.langs{margin-inline-start:auto}}
+@media (max-width:420px){.open{display:none}}
+
+/* hero */
+.hero{padding:72px 0 40px;overflow:hidden}
+.hero .wrap{display:grid;grid-template-columns:1.05fr .95fr;gap:40px;align-items:center}
+.eyebrow{color:var(--acc);font-weight:600;font-size:15px;letter-spacing:.02em;margin:0 0 12px}
+h1{font-size:clamp(40px,6vw,64px);line-height:1.04;letter-spacing:-.035em;margin:0 0 20px}
+h1 span{color:var(--acc)}
+.lead{font-size:20px;color:var(--text-2);margin:0 0 28px;max-width:34em}
+.actions{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.btn{display:inline-flex;align-items:center;gap:8px;background:var(--acc);color:var(--acc-ink);font-weight:700;text-decoration:none;padding:14px 22px;border-radius:14px}
+.btn.ghost{background:var(--surface-2);color:var(--text)}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:28px 0 0;padding:0;list-style:none}
+.chips li{background:var(--surface);border:1px solid var(--line);border-radius:99px;padding:6px 13px;font-size:14px;color:var(--text-2)}
+.chips li b{color:var(--text);font-weight:600}
+.stage{position:relative;display:flex;justify-content:center;gap:18px}
+.stage .phone:nth-child(2){margin-top:70px}
+@media (max-width:860px){.hero{padding-top:44px}.hero .wrap{grid-template-columns:1fr}.stage .phone{max-width:44vw}}
+
+/* phone frame */
+.phone{width:250px;max-width:100%;border-radius:38px;padding:9px;background:linear-gradient(160deg,#3a3a3e,#151517);box-shadow:0 30px 60px -20px #000c,0 0 0 1px #ffffff14 inset;flex:none}
+.phone img{border-radius:30px;width:100%;aspect-ratio:600/1298;object-fit:cover;background:#000}
+
+/* sections */
+section{padding:64px 0;border-top:1px solid var(--line)}
+.sec-head{max-width:720px;margin:0 0 36px}
+.sec-head .tag{display:inline-flex;align-items:center;gap:8px;font-weight:600;font-size:14px;color:var(--tint,var(--acc));margin:0 0 10px}
+.sec-head .tag i{width:10px;height:10px;border-radius:3px;background:var(--tint,var(--acc))}
+h2{font-size:clamp(30px,4vw,42px);line-height:1.1;letter-spacing:-.025em;margin:0 0 14px}
+.sec-head p{color:var(--text-2);font-size:18px;margin:0}
+.feature{display:grid;grid-template-columns:auto 1fr;gap:48px;align-items:center}
+.feature.flip{grid-template-columns:1fr auto}
+.feature.flip .shots{order:2}
+.shots{display:flex;gap:16px}
+.shots .phone{width:230px}
+.points{display:grid;gap:14px;margin:0;padding:0;list-style:none}
+.points li{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px 18px}
+.points b{display:block;margin-bottom:3px}
+.points span{color:var(--text-2);font-size:15.5px}
+@media (max-width:900px){
+  .feature,.feature.flip{grid-template-columns:1fr;gap:28px}
+  .feature.flip .shots{order:0}
+  .shots{overflow-x:auto;scroll-snap-type:x mandatory;margin:0 -20px;padding:4px 20px 12px}
+  .shots .phone{width:62vw;max-width:250px;scroll-snap-align:center}
+}
+
+/* grid of modules */
+.mods{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.mod{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:20px;text-decoration:none;color:inherit;display:block}
+.mod .ic{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;background:var(--tint);color:#fff;font-size:20px;margin-bottom:12px}
+.mod b{display:block;font-size:18px;margin-bottom:4px}
+.mod span{color:var(--text-2);font-size:15px}
+@media (max-width:820px){.mods{grid-template-columns:1fr 1fr}}
+@media (max-width:480px){.mods{grid-template-columns:1fr}}
+
+/* gallery */
+.gallery{display:grid;grid-template-columns:repeat(5,1fr);gap:16px}
+.gallery figure{margin:0}
+.gallery .phone{width:100%;padding:6px;border-radius:28px}
+.gallery .phone img{border-radius:23px}
+.gallery figcaption{text-align:center;color:var(--text-2);font-size:14px;margin-top:10px}
+@media (max-width:900px){.gallery{grid-template-columns:repeat(3,1fr)}}
+@media (max-width:560px){.gallery{grid-template-columns:repeat(2,1fr)}}
+
+.privacy{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.privacy div{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:22px}
+.privacy b{display:block;font-size:18px;margin-bottom:6px}
+.privacy span{color:var(--text-2);font-size:15.5px}
+@media (max-width:820px){.privacy{grid-template-columns:1fr}}
+
+.cta{text-align:center;padding:80px 0}
+.cta p{color:var(--text-2);font-size:18px;margin:0 0 26px}
+footer{border-top:1px solid var(--line);padding:28px 0 40px;color:var(--text-3);font-size:14px}
+footer .wrap{display:flex;flex-wrap:wrap;gap:8px 20px;justify-content:space-between}
+footer a{color:var(--text-2)}
+</style>
+</head>
+<body>
+
+<header class="bar"><div class="wrap">
+  <a class="brand" href="#top"><img src="icon-180.png" alt="" width="26" height="26">openGym <span lang="pt-BR">Saúde</span><span lang="en">Health</span></a>
+  <nav aria-label="Seções">
+    <a href="#today"><span lang="pt-BR">Hoje</span><span lang="en">Today</span></a>
+    <a href="#modules"><span lang="pt-BR">Módulos</span><span lang="en">Modules</span></a>
+    <a href="#apple"><span lang="pt-BR">Apple Saúde</span><span lang="en">Apple Health</span></a>
+    <a href="#screens"><span lang="pt-BR">Telas</span><span lang="en">Screens</span></a>
+    <a href="#privacy"><span lang="pt-BR">Privacidade</span><span lang="en">Privacy</span></a>
+  </nav>
+  <div class="langs" role="group" aria-label="Idioma / Language">
+    <button type="button" data-lang="pt-BR" aria-pressed="true">PT</button>
+    <button type="button" data-lang="en" aria-pressed="false">EN</button>
+  </div>
+  <a class="open" href="https://open-gym-tau.vercel.app"><span lang="pt-BR">Abrir o app</span><span lang="en">Open the app</span></a>
+</div></header>
+
+<main id="top">
+<div class="hero"><div class="wrap">
+  <div>
+    <p class="eyebrow"><span lang="pt-BR">Treino, alimentação, sono, hábitos, remédios e exames</span><span lang="en">Training, food, sleep, habits, medications and exams</span></p>
+    <h1 lang="pt-BR">Sua saúde inteira,<br><span>num app só.</span></h1>
+    <h1 lang="en">All of your health,<br><span>in one app.</span></h1>
+    <p class="lead" lang="pt-BR">O openGym começou como um diário de academia e virou uma central de saúde: o dia aparece numa tela só, cada registro leva um toque, e o que um módulo sabe alimenta os outros. Os dados ficam no seu servidor.</p>
+    <p class="lead" lang="en">openGym started as a gym log and grew into a health hub: the whole day on one screen, every entry one tap away, and what one module knows feeds the others. Your data stays on your server.</p>
+    <div class="actions">
+      <a class="btn" href="https://open-gym-tau.vercel.app"><span lang="pt-BR">Abrir o app</span><span lang="en">Open the app</span></a>
+      <a class="btn ghost" href="#modules"><span lang="pt-BR">Ver o que ele faz</span><span lang="en">See what it does</span></a>
+    </div>
+    <ul class="chips">
+      <li><b>PWA</b> · <span lang="pt-BR">instala na tela inicial</span><span lang="en">installs on the home screen</span></li>
+      <li><b>Passkeys</b> · <span lang="pt-BR">sem senha</span><span lang="en">no password</span></li>
+      <li><b>Apple Watch</b> · <span lang="pt-BR">sono e treinos</span><span lang="en">sleep and workouts</span></li>
+      <li><b>AGPL-3.0</b> · <span lang="pt-BR">código aberto</span><span lang="en">open source</span></li>
+    </ul>
+  </div>
+  <div class="stage">
+    <div class="phone"><img data-shot="today" alt="" width="600" height="1298" fetchpriority="high"></div>
+    <div class="phone"><img data-shot="quickadd" alt="" width="600" height="1298"></div>
+  </div>
+</div></div>
+
+<section id="today"><div class="wrap">
+  <div class="feature">
+    <div class="shots">
+      <div class="phone"><img data-shot="today" alt="" width="600" height="1298" loading="lazy"></div>
+      <div class="phone"><img data-shot="quickadd" alt="" width="600" height="1298" loading="lazy"></div>
+    </div>
+    <div>
+      <div class="sec-head">
+        <p class="tag"><i></i><span lang="pt-BR">Hoje e o botão ＋</span><span lang="en">Today and the ＋ button</span></p>
+        <h2 lang="pt-BR">O dia numa tela, o registro num toque</h2>
+        <h2 lang="en">The day on one screen, a log in one tap</h2>
+      </div>
+      <ul class="points">
+        <li lang="pt-BR"><b>Cartões que seguem a hora</b><span>De manhã, a noite de sono, a balança e os remédios vêm primeiro; à noite, o que ainda falta. Você também pode escolher a ordem e esconder cartões.</span></li>
+        <li lang="en"><b>Cards that follow the clock</b><span>In the morning the night, the scale and the doses come first; in the evening, what is still open. Or set your own order and hide cards.</span></li>
+        <li lang="pt-BR"><b>＋ no meio da barra</b><span>Um toque abre o registro rápido: refeição da hora, água ou hábito, pesagem, dose, noite de sono ou tarefa. Segurando o botão, o treino de hoje começa direto.</span></li>
+        <li lang="en"><b>＋ in the middle of the bar</b><span>One tap opens quick log: the meal of the hour, water or a habit, a weigh-in, a dose, a night, a task. Hold it and today’s workout starts right away.</span></li>
+        <li lang="pt-BR"><b>Só o que você usa</b><span>Cada módulo liga e desliga em Ajustes. Com todos desligados, o openGym volta a ser só o app de treino.</span></li>
+        <li lang="en"><b>Only what you use</b><span>Each module turns on and off in Settings. With all of them off, openGym is the training app again.</span></li>
+      </ul>
+    </div>
+  </div>
+</div></section>
+
+<section id="modules"><div class="wrap">
+  <div class="sec-head">
+    <p class="tag"><i></i><span lang="pt-BR">Módulos</span><span lang="en">Modules</span></p>
+    <h2 lang="pt-BR">Seis áreas, um só lugar</h2>
+    <h2 lang="en">Six areas, one place</h2>
+    <p lang="pt-BR">Cada módulo tem a própria tela, mas eles conversam: o remédio tomado marca o hábito, o treino do relógio aparece no dia, a refeição soma nas metas.</p>
+    <p lang="en">Each module has its own screen, and they talk to each other: a dose taken ticks the habit, the watch’s workout shows on the day, a meal counts toward the targets.</p>
+  </div>
+  <div class="mods">
+    <a class="mod" href="#training" style="--tint:var(--acc)"><div class="ic">🏋️</div><b lang="pt-BR">Treino</b><b lang="en">Training</b><span lang="pt-BR">Plano da semana, progressão automática e 1.324 exercícios animados.</span><span lang="en">A weekly plan, automatic progression and 1,324 animated exercises.</span></a>
+    <a class="mod" href="#habits" style="--tint:var(--green,#34c759)"><div class="ic">✅</div><b lang="pt-BR">Hábitos</b><b lang="en">Habits</b><span lang="pt-BR">Sequências, metas, lembretes, e hábitos que se marcam sozinhos.</span><span lang="en">Streaks, goals, reminders, and habits that tick themselves.</span></a>
+    <a class="mod" href="#food" style="--tint:var(--orange)"><div class="ic">🍽️</div><b lang="pt-BR">Alimentação</b><b lang="en">Nutrition</b><span lang="pt-BR">TACO, USDA e Open Food Facts, código de barras e foto do prato.</span><span lang="en">TACO, USDA and Open Food Facts, barcodes and a photo of the plate.</span></a>
+    <a class="mod" href="#sleep" style="--tint:var(--indigo)"><div class="ic">🌙</div><b lang="pt-BR">Sono</b><b lang="en">Sleep</b><span lang="pt-BR">As noites do Apple Watch ou do anel, com as fases do sono.</span><span lang="en">Nights from an Apple Watch or a ring, with the sleep stages.</span></a>
+    <a class="mod" href="#meds" style="--tint:var(--teal)"><div class="ic">💊</div><b lang="pt-BR">Medicamentos</b><b lang="en">Medications</b><span lang="pt-BR">Horários, lembretes por notificação e quanto você tomou em dia.</span><span lang="en">Schedules, push reminders and how often you took them on time.</span></a>
+    <a class="mod" href="#exams" style="--tint:var(--red)"><div class="ic">🧪</div><b lang="pt-BR">Exames</b><b lang="en">Medical exams</b><span lang="pt-BR">O PDF do laboratório lido por IA, com a evolução de cada valor.</span><span lang="en">The lab’s PDF read by AI, with each value over time.</span></a>
+  </div>
+</div></section>
+
+<section id="training"><div class="wrap">
+  <div class="feature flip">
+    <div class="shots">
+      <div class="phone"><img data-shot="training" alt="" width="600" height="1298" loading="lazy"></div>
+      <div class="phone"><img data-shot="stats" alt="" width="600" height="1298" loading="lazy"></div>
+    </div>
+    <div>
+      <div class="sec-head">
+        <p class="tag" style="--tint:var(--acc)"><i></i><span lang="pt-BR">Treino</span><span lang="en">Training</span></p>
+        <h2 lang="pt-BR">O app de academia que continua no centro</h2>
+        <h2 lang="en">The gym app, still at the centre</h2>
+      </div>
+      <ul class="points">
+        <li lang="pt-BR"><b>Você abre e treina</b><span>Plano por dia da semana, pesos já preenchidos e timer de descanso. A progressão (linear, Greyskull, dupla, por tempo) decide o próximo peso.</span></li>
+        <li lang="en"><b>Open it and train</b><span>A plan per weekday, weights filled in, a rest timer. Progression (linear, Greyskull, double, time-based) decides the next load.</span></li>
+        <li lang="pt-BR"><b>Estatísticas que importam</b><span>1RM estimado, recordes, mapa de atividade, equilíbrio muscular, fadiga e sequência semanal.</span></li>
+        <li lang="en"><b>Stats that matter</b><span>Estimated 1RM, PRs, an activity heatmap, muscle balance, fatigue and the weekly streak.</span></li>
+        <li lang="pt-BR"><b>Calorias do Apple Watch</b><span>Quando o treino termina no relógio, as calorias e a duração entram no treino do dia.</span></li>
+        <li lang="en"><b>Apple Watch calories</b><span>When the workout ends on the watch, its calories and duration land on the day’s workout.</span></li>
+      </ul>
+    </div>
+  </div>
+</div></section>
+
+<section id="habits"><div class="wrap">
+  <div class="feature">
+    <div class="shots">
+      <div class="phone"><img data-shot="habits" alt="" width="600" height="1298" loading="lazy"></div>
+    </div>
+    <div>
+      <div class="sec-head">
+        <p class="tag" style="--tint:#34c759"><i></i><span lang="pt-BR">Hábitos</span><span lang="en">Habits</span></p>
+        <h2 lang="pt-BR">Hábitos que o app já registra por você</h2>
+        <h2 lang="en">Habits the app already logs for you</h2>
+      </div>
+      <ul class="points">
+        <li lang="pt-BR"><b>Automáticos</b><span>Treinar, tomar os remédios, comer as refeições, dormir a meta, se pesar: se outro módulo já sabe, o hábito se marca sozinho, com o histórico desde o primeiro dia.</span></li>
+        <li lang="en"><b>Automatic</b><span>Training, taking your doses, eating your meals, sleeping your goal, weighing in: if another module knows, the habit ticks itself, with history from day one.</span></li>
+        <li lang="pt-BR"><b>Do seu jeito</b><span>Sim ou não, quantidade (2 L de água, 20 páginas), cronômetro, evitar, tarefas avulsas; todo dia, em dias da semana ou X vezes por semana.</span></li>
+        <li lang="en"><b>Your way</b><span>Yes/no, an amount (2 L of water, 20 pages), a timer, something to avoid, one-off tasks; daily, on weekdays or X times a week.</span></li>
+        <li lang="pt-BR"><b>Sequências e lembretes</b><span>Marcos de 7, 21, 66 e 100 dias, grupos, resumo semanal e notificação só quando ainda não foi feito.</span></li>
+        <li lang="en"><b>Streaks and reminders</b><span>Milestones at 7, 21, 66 and 100 days, groups, a weekly recap, and a push only when it is not done yet.</span></li>
+      </ul>
+    </div>
+  </div>
+</div></section>
+
+<section id="food"><div class="wrap">
+  <div class="feature flip">
+    <div class="shots">
+      <div class="phone"><img data-shot="food" alt="" width="600" height="1298" loading="lazy"></div>
+    </div>
+    <div>
+      <div class="sec-head">
+        <p class="tag" style="--tint:var(--orange)"><i></i><span lang="pt-BR">Alimentação</span><span lang="en">Nutrition</span></p>
+        <h2 lang="pt-BR">Comida brasileira, medida em gramas</h2>
+        <h2 lang="en">Real food, measured in grams</h2>
+      </div>
+      <ul class="points">
+        <li lang="pt-BR"><b>Busca que entende o que você digita</b><span>TACO, mais de 1.800 alimentos do USDA traduzidos e produtos do Open Food Facts, com acentos, plurais e sinônimos. Os que você mais usa aparecem primeiro.</span></li>
+        <li lang="en"><b>Search that gets what you type</b><span>TACO, 1,800+ translated USDA foods and Open Food Facts products, forgiving accents, plurals and synonyms. Your usual foods come first.</span></li>
+        <li lang="pt-BR"><b>Código de barras e foto do prato</b><span>Leia a embalagem, ou tire uma foto (ou escolha da galeria) e a IA estima os itens. O que ela estimou fica salvo para a próxima vez.</span></li>
+        <li lang="en"><b>Barcodes and a photo of the plate</b><span>Scan the package, or take a photo (or pick one from the gallery) and AI estimates the items, kept for next time.</span></li>
+        <li lang="pt-BR"><b>Metas e refeições salvas</b><span>Calorias e macros calculadas para o seu objetivo, e refeições inteiras para repetir num toque.</span></li>
+        <li lang="en"><b>Targets and saved meals</b><span>Calories and macros worked out for your goal, and whole meals to repeat in one tap.</span></li>
+      </ul>
+    </div>
+  </div>
+</div></section>
+
+<section id="sleep"><div class="wrap">
+  <div class="feature">
+    <div class="shots">
+      <div class="phone"><img data-shot="sleep" alt="" width="600" height="1298" loading="lazy"></div>
+    </div>
+    <div>
+      <div class="sec-head">
+        <p class="tag" style="--tint:var(--indigo)"><i></i><span lang="pt-BR">Sono</span><span lang="en">Sleep</span></p>
+        <h2 lang="pt-BR">Cada noite, sem digitar nada</h2>
+        <h2 lang="en">Every night, without typing a thing</h2>
+      </div>
+      <ul class="points">
+        <li lang="pt-BR"><b>Direto do app Saúde</b><span>Um Atalho do iPhone envia a noite toda manhã: Apple Watch, Oura, RingConn. Horários, duração e fases (profundo, REM, essencial, acordado).</span></li>
+        <li lang="en"><b>Straight from the Health app</b><span>An iPhone Shortcut sends the night every morning: Apple Watch, Oura, RingConn. Times, length and stages (deep, REM, core, awake).</span></li>
+        <li lang="pt-BR"><b>Anos de histórico</b><span>Importe o export.xml do app Saúde (mesmo os enormes) e todas as noites antigas aparecem.</span></li>
+        <li lang="en"><b>Years of history</b><span>Import the Health app’s export.xml (even the huge ones) and every past night shows up.</span></li>
+        <li lang="pt-BR"><b>Meta e evolução</b><span>Quanto faltou para a meta, a média de quando você deita e acorda, e as noites na meta.</span></li>
+        <li lang="en"><b>Goal and trends</b><span>How far from your goal, when you usually go to bed and get up, and the nights on goal.</span></li>
+      </ul>
+    </div>
+  </div>
+</div></section>
+
+<section id="meds"><div class="wrap">
+  <div class="feature flip">
+    <div class="shots">
+      <div class="phone"><img data-shot="meds" alt="" width="600" height="1298" loading="lazy"></div>
+      <div class="phone"><img data-shot="exams" alt="" width="600" height="1298" loading="lazy"></div>
+    </div>
+    <div>
+      <div class="sec-head" id="exams">
+        <p class="tag" style="--tint:var(--teal)"><i></i><span lang="pt-BR">Medicamentos e exames</span><span lang="en">Medications and exams</span></p>
+        <h2 lang="pt-BR">Os remédios na hora e os exames em ordem</h2>
+        <h2 lang="en">Doses on time, exams in order</h2>
+      </div>
+      <ul class="points">
+        <li lang="pt-BR"><b>Doses do dia</b><span>Horários por remédio, "tomei" ou "pulei" num toque, dose avulsa, e lembrete por notificação no horário.</span></li>
+        <li lang="en"><b>Today’s doses</b><span>Times per medication, taken or skipped in one tap, an extra dose, and a push reminder on time.</span></li>
+        <li lang="pt-BR"><b>Adesão</b><span>A porcentagem de doses tomadas em 7, 30 ou 90 dias, dia a dia.</span></li>
+        <li lang="en"><b>Adherence</b><span>The share of doses taken over 7, 30 or 90 days, day by day.</span></li>
+        <li lang="pt-BR"><b>Exames lidos por IA</b><span>Envie o PDF ou a foto do laudo: os valores entram com a referência do laboratório, o que está fora dela fica marcado e cada exame mostra a evolução ao longo dos anos.</span></li>
+        <li lang="en"><b>Exams read by AI</b><span>Send the PDF or a photo of the report: values come in with the lab’s reference range, anything outside it is flagged, and each one shows its trend over the years.</span></li>
+      </ul>
+    </div>
+  </div>
+</div></section>
+
+<section id="apple"><div class="wrap">
+  <div class="feature">
+    <div class="shots">
+      <div class="phone"><img data-shot="health" alt="" width="600" height="1298" loading="lazy"></div>
+    </div>
+    <div>
+      <div class="sec-head">
+        <p class="tag" style="--tint:var(--red)"><i></i><span lang="pt-BR">Apple Saúde e Apple Watch</span><span lang="en">Apple Health and Apple Watch</span></p>
+        <h2 lang="pt-BR">Os seus dados do relógio, sem app extra</h2>
+        <h2 lang="en">Your watch’s data, no extra app</h2>
+        <p lang="pt-BR">Dois Atalhos prontos, baixados de dentro do openGym, usam um token só seu. Ele só serve para enviar dados ao seu perfil, não lê nada de volta e pode ser revogado.</p>
+        <p lang="en">Two ready-made Shortcuts, downloaded from inside openGym, use a token of your own. It can only send data into your profile, reads nothing back, and can be revoked.</p>
+      </div>
+      <ul class="points">
+        <li lang="pt-BR"><b>Sono, toda manhã</b><span>Uma automação no horário que você acorda envia a noite anterior.</span></li>
+        <li lang="en"><b>Sleep, every morning</b><span>An automation at your wake-up time sends last night.</span></li>
+        <li lang="pt-BR"><b>Treino, ao terminar</b><span>A automação "Treino do Apple Watch → Termina" envia as calorias. Se você registrou o treino no app, elas se juntam a ele; se não, entra um treino do relógio, que também marca o hábito de treino.</span></li>
+        <li lang="en"><b>Workouts, when they end</b><span>The "Apple Watch Workout → Ends" automation sends the calories. They join the workout you logged, or come in as a watch workout that also ticks the workout habit.</span></li>
+        <li lang="pt-BR"><b>Peso e histórico</b><span>O export.xml traz os anos de pesagens e noites de uma vez, sem duplicar o que já está lá.</span></li>
+        <li lang="en"><b>Weight and history</b><span>The export.xml brings years of weigh-ins and nights at once, never doubling what is already there.</span></li>
+      </ul>
+    </div>
+  </div>
+</div></section>
+
+<section id="screens"><div class="wrap">
+  <div class="sec-head">
+    <p class="tag"><i></i><span lang="pt-BR">Telas</span><span lang="en">Screens</span></p>
+    <h2 lang="pt-BR">Por dentro do app</h2>
+    <h2 lang="en">Inside the app</h2>
+    <p lang="pt-BR">Capturas do app real, com um perfil de demonstração.</p>
+    <p lang="en">Screenshots of the real app, with a demo profile.</p>
+  </div>
+  <div class="gallery">
+    <figure><div class="phone"><img data-shot="today" alt="" width="600" height="1298" loading="lazy"></div><figcaption><span lang="pt-BR">Hoje</span><span lang="en">Today</span></figcaption></figure>
+    <figure><div class="phone"><img data-shot="quickadd" alt="" width="600" height="1298" loading="lazy"></div><figcaption><span lang="pt-BR">Registro rápido</span><span lang="en">Quick log</span></figcaption></figure>
+    <figure><div class="phone"><img data-shot="training" alt="" width="600" height="1298" loading="lazy"></div><figcaption><span lang="pt-BR">Treino</span><span lang="en">Training</span></figcaption></figure>
+    <figure><div class="phone"><img data-shot="stats" alt="" width="600" height="1298" loading="lazy"></div><figcaption><span lang="pt-BR">Estatísticas</span><span lang="en">Stats</span></figcaption></figure>
+    <figure><div class="phone"><img data-shot="habits" alt="" width="600" height="1298" loading="lazy"></div><figcaption><span lang="pt-BR">Hábitos</span><span lang="en">Habits</span></figcaption></figure>
+    <figure><div class="phone"><img data-shot="food" alt="" width="600" height="1298" loading="lazy"></div><figcaption><span lang="pt-BR">Alimentação</span><span lang="en">Nutrition</span></figcaption></figure>
+    <figure><div class="phone"><img data-shot="sleep" alt="" width="600" height="1298" loading="lazy"></div><figcaption><span lang="pt-BR">Sono</span><span lang="en">Sleep</span></figcaption></figure>
+    <figure><div class="phone"><img data-shot="meds" alt="" width="600" height="1298" loading="lazy"></div><figcaption><span lang="pt-BR">Medicamentos</span><span lang="en">Medications</span></figcaption></figure>
+    <figure><div class="phone"><img data-shot="exams" alt="" width="600" height="1298" loading="lazy"></div><figcaption><span lang="pt-BR">Exames</span><span lang="en">Exams</span></figcaption></figure>
+    <figure><div class="phone"><img data-shot="health" alt="" width="600" height="1298" loading="lazy"></div><figcaption><span lang="pt-BR">Saúde</span><span lang="en">Health</span></figcaption></figure>
+  </div>
+</div></section>
+
+<section id="privacy"><div class="wrap">
+  <div class="sec-head">
+    <p class="tag"><i></i><span lang="pt-BR">Privacidade</span><span lang="en">Privacy</span></p>
+    <h2 lang="pt-BR">Dados de saúde são seus</h2>
+    <h2 lang="en">Health data is yours</h2>
+  </div>
+  <div class="privacy">
+    <div><b lang="pt-BR">No seu servidor</b><b lang="en">On your server</b><span lang="pt-BR">Docker com dois contêineres, Kubernetes ou Vercel com o seu Supabase. Nenhuma conta em serviço de terceiros, nenhuma telemetria.</span><span lang="en">Two Docker containers, Kubernetes, or Vercel with your own Supabase. No third-party account, no telemetry.</span></div>
+    <div><b lang="pt-BR">Sem senha</b><b lang="en">No password</b><span lang="pt-BR">Entrada com chave de acesso (Face ID / Touch ID), sincronizada entre o celular e o computador.</span><span lang="en">Sign in with a passkey (Face ID / Touch ID), synced across phone and computer.</span></div>
+    <div><b lang="pt-BR">Funciona offline</b><b lang="en">Works offline</b><span lang="pt-BR">Instale na tela inicial: o app abre e registra sem internet, e sincroniza quando voltar.</span><span lang="en">Install it on the home screen: it opens and logs without a connection, and syncs when it is back.</span></div>
+  </div>
+</div></section>
+
+<div class="cta"><div class="wrap">
+  <h2 lang="pt-BR">Experimente agora</h2>
+  <h2 lang="en">Try it now</h2>
+  <p lang="pt-BR">Abra no celular e adicione à tela de início.</p>
+  <p lang="en">Open it on your phone and add it to the home screen.</p>
+  <a class="btn" href="https://open-gym-tau.vercel.app"><span lang="pt-BR">Abrir o openGym</span><span lang="en">Open openGym</span></a>
+</div></div>
+</main>
+
+<footer><div class="wrap">
+  <span lang="pt-BR">openGym · código aberto sob AGPL-3.0</span><span lang="en">openGym · open source under AGPL-3.0</span>
+  <span><a href="https://github.com/nandovisc/openGym">GitHub</a> · <a href="/">openGym</a></span>
+</div></footer>
+
+<script>
+// The language: the one picked here before, else the browser's; Portuguese unless it says English.
+(() => {
+  const root = document.documentElement
+  let saved = null
+  try { saved = localStorage.getItem('og-health-lang') } catch {}
+  const pick = lang => {
+    root.lang = lang
+    for (const b of document.querySelectorAll('.langs button')) b.setAttribute('aria-pressed', String(b.dataset.lang === lang))
+    for (const img of document.querySelectorAll('img[data-shot]')) img.src = `screens/${img.dataset.shot}-${lang}.jpg`
+  }
+  pick(saved === 'en' || saved === 'pt-BR' ? saved : /^en/i.test(navigator.language || '') ? 'en' : 'pt-BR')
+  for (const b of document.querySelectorAll('.langs button')) b.addEventListener('click', () => {
+    pick(b.dataset.lang)
+    try { localStorage.setItem('og-health-lang', b.dataset.lang) } catch {}
+  })
+})()
+</script>
+</body>
+</html>

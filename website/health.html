@@ -102,12 +102,12 @@ h2{font-size:clamp(30px,4vw,42px);line-height:1.1;letter-spacing:-.025em;margin:
 @media (max-width:480px){.mods{grid-template-columns:1fr}}
 
 /* gallery */
-.gallery{display:grid;grid-template-columns:repeat(5,1fr);gap:16px}
+.gallery{display:grid;grid-template-columns:repeat(6,1fr);gap:14px}
 .gallery figure{margin:0}
 .gallery .phone{width:100%;padding:6px;border-radius:28px}
 .gallery .phone img{border-radius:23px}
 .gallery figcaption{text-align:center;color:var(--text-2);font-size:14px;margin-top:10px}
-@media (max-width:900px){.gallery{grid-template-columns:repeat(3,1fr)}}
+@media (max-width:900px){.gallery{grid-template-columns:repeat(4,1fr)}}@media (max-width:700px){.gallery{grid-template-columns:repeat(3,1fr)}}
 @media (max-width:560px){.gallery{grid-template-columns:repeat(2,1fr)}}
 
 .privacy{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
@@ -192,8 +192,8 @@ footer a{color:var(--text-2)}
 <section id="modules"><div class="wrap">
   <div class="sec-head">
     <p class="tag"><i></i><span lang="pt-BR">Módulos</span><span lang="en">Modules</span></p>
-    <h2 lang="pt-BR">Seis áreas, um só lugar</h2>
-    <h2 lang="en">Six areas, one place</h2>
+    <h2 lang="pt-BR">Sete áreas, um só lugar</h2>
+    <h2 lang="en">Seven areas, one place</h2>
     <p lang="pt-BR">Cada módulo tem a própria tela, mas eles conversam: o remédio tomado marca o hábito, o treino do relógio aparece no dia, a refeição soma nas metas.</p>
     <p lang="en">Each module has its own screen, and they talk to each other: a dose taken ticks the habit, the watch’s workout shows on the day, a meal counts toward the targets.</p>
   </div>
@@ -202,6 +202,7 @@ footer a{color:var(--text-2)}
     <a class="mod" href="#habits" style="--tint:var(--green,#34c759)"><div class="ic">✅</div><b lang="pt-BR">Hábitos</b><b lang="en">Habits</b><span lang="pt-BR">Sequências, metas, lembretes, e hábitos que se marcam sozinhos.</span><span lang="en">Streaks, goals, reminders, and habits that tick themselves.</span></a>
     <a class="mod" href="#food" style="--tint:var(--orange)"><div class="ic">🍽️</div><b lang="pt-BR">Alimentação</b><b lang="en">Nutrition</b><span lang="pt-BR">TACO, USDA e Open Food Facts, código de barras e foto do prato.</span><span lang="en">TACO, USDA and Open Food Facts, barcodes and a photo of the plate.</span></a>
     <a class="mod" href="#sleep" style="--tint:var(--indigo)"><div class="ic">🌙</div><b lang="pt-BR">Sono</b><b lang="en">Sleep</b><span lang="pt-BR">As noites do Apple Watch ou do anel, com as fases do sono.</span><span lang="en">Nights from an Apple Watch or a ring, with the sleep stages.</span></a>
+    <a class="mod" href="#photos" style="--tint:var(--purple)"><div class="ic">📸</div><b lang="pt-BR">Peso e fotos</b><b lang="en">Weight and photos</b><span lang="pt-BR">Fotos de frente, lado e costas em cada pesagem, e o antes e depois com o peso.</span><span lang="en">Front, side and back photos with each weigh-in, and the before/after with the weight.</span></a>
     <a class="mod" href="#meds" style="--tint:var(--teal)"><div class="ic">💊</div><b lang="pt-BR">Medicamentos</b><b lang="en">Medications</b><span lang="pt-BR">Horários, lembretes por notificação e quanto você tomou em dia.</span><span lang="en">Schedules, push reminders and how often you took them on time.</span></a>
     <a class="mod" href="#exams" style="--tint:var(--red)"><div class="ic">🧪</div><b lang="pt-BR">Exames</b><b lang="en">Medical exams</b><span lang="pt-BR">O PDF do laboratório lido por IA, com a evolução de cada valor.</span><span lang="en">The lab’s PDF read by AI, with each value over time.</span></a>
   </div>
@@ -243,8 +244,8 @@ footer a{color:var(--text-2)}
         <h2 lang="en">Habits the app already logs for you</h2>
       </div>
       <ul class="points">
-        <li lang="pt-BR"><b>Automáticos</b><span>Treinar, tomar os remédios, comer as refeições, dormir a meta, se pesar: se outro módulo já sabe, o hábito se marca sozinho, com o histórico desde o primeiro dia.</span></li>
-        <li lang="en"><b>Automatic</b><span>Training, taking your doses, eating your meals, sleeping your goal, weighing in: if another module knows, the habit ticks itself, with history from day one.</span></li>
+        <li lang="pt-BR"><b>Automáticos</b><span>Treinar, tomar cada remédio, comer as refeições, dormir a meta, se pesar, tirar a foto de progresso: se outro módulo já sabe, o hábito se marca sozinho, com o histórico desde o primeiro dia.</span></li>
+        <li lang="en"><b>Automatic</b><span>Training, taking each medication, eating your meals, sleeping your goal, weighing in, taking a progress photo: if another module knows, the habit ticks itself, with history from day one.</span></li>
         <li lang="pt-BR"><b>Do seu jeito</b><span>Sim ou não, quantidade (2 L de água, 20 páginas), cronômetro, evitar, tarefas avulsas; todo dia, em dias da semana ou X vezes por semana.</span></li>
         <li lang="en"><b>Your way</b><span>Yes/no, an amount (2 L of water, 20 pages), a timer, something to avoid, one-off tasks; daily, on weekdays or X times a week.</span></li>
         <li lang="pt-BR"><b>Sequências e lembretes</b><span>Marcos de 7, 21, 66 e 100 dias, grupos, resumo semanal e notificação só quando ainda não foi feito.</span></li>
@@ -298,8 +299,32 @@ footer a{color:var(--text-2)}
   </div>
 </div></section>
 
-<section id="meds"><div class="wrap">
+<section id="photos"><div class="wrap">
   <div class="feature flip">
+    <div class="shots">
+      <div class="phone"><img data-shot="compare" alt="" width="600" height="1298" loading="lazy"></div>
+      <div class="phone"><img data-shot="photos" alt="" width="600" height="1298" loading="lazy"></div>
+    </div>
+    <div>
+      <div class="sec-head">
+        <p class="tag" style="--tint:var(--purple)"><i></i><span lang="pt-BR">Peso e fotos de progresso</span><span lang="en">Weight and progress photos</span></p>
+        <h2 lang="pt-BR">O antes e depois, com o peso de cada dia</h2>
+        <h2 lang="en">Before and after, with each day’s weight</h2>
+      </div>
+      <ul class="points">
+        <li lang="pt-BR"><b>Fotos na pesagem</b><span>Cada pesagem guarda até seis fotos, marcadas como frente, lado ou costas. No gráfico de peso, os dias com foto ganham um anel.</span></li>
+        <li lang="en"><b>Photos with the weigh-in</b><span>Each weigh-in keeps up to six photos, marked front, side or back. On the weight chart, days with a photo get a ring.</span></li>
+        <li lang="pt-BR"><b>Comparação</b><span>Escolha duas fotos e compare com o controle deslizante ou lado a lado: o app mostra o peso de cada dia, a diferença e quantos dias se passaram.</span></li>
+        <li lang="en"><b>Compare</b><span>Pick two photos and compare them with a slider or side by side: the app shows each day’s weight, the difference and how many days apart.</span></li>
+        <li lang="pt-BR"><b>Tudo junto</b><span>As fotos das pesagens e dos treinos ficam numa linha do tempo só, com filtro por pose. Um hábito automático lembra da foto da semana.</span></li>
+        <li lang="en"><b>All in one place</b><span>Photos from weigh-ins and workouts share one timeline, filtered by pose. An automatic habit reminds you of the weekly photo.</span></li>
+      </ul>
+    </div>
+  </div>
+</div></section>
+
+<section id="meds"><div class="wrap">
+  <div class="feature">
     <div class="shots">
       <div class="phone"><img data-shot="meds" alt="" width="600" height="1298" loading="lazy"></div>
       <div class="phone"><img data-shot="exams" alt="" width="600" height="1298" loading="lazy"></div>
@@ -311,8 +336,10 @@ footer a{color:var(--text-2)}
         <h2 lang="en">Doses on time, exams in order</h2>
       </div>
       <ul class="points">
-        <li lang="pt-BR"><b>Doses do dia</b><span>Horários por remédio, "tomei" ou "pulei" num toque, dose avulsa, e lembrete por notificação no horário.</span></li>
-        <li lang="en"><b>Today’s doses</b><span>Times per medication, taken or skipped in one tap, an extra dose, and a push reminder on time.</span></li>
+        <li lang="pt-BR"><b>Doses do dia</b><span>Horários por remédio, "tomei" ou "pulei" num toque, dose avulsa e lembrete por notificação no horário. Esqueceu ontem? Volte o dia e marque a dose.</span></li>
+        <li lang="en"><b>Today’s doses</b><span>Times per medication, taken or skipped in one tap, an extra dose and a push reminder on time. Forgot yesterday? Go back a day and mark it.</span></li>
+        <li lang="pt-BR"><b>Um hábito por remédio</b><span>Cada remédio vira um hábito com o nome dele, que só aparece nos dias de dose. Um semanal, por exemplo, aparece só no dia dele.</span></li>
+        <li lang="en"><b>One habit per medication</b><span>Each medication becomes a habit of its own, shown only on its dose days. A weekly one, for example, shows up only on its day.</span></li>
         <li lang="pt-BR"><b>Adesão</b><span>A porcentagem de doses tomadas em 7, 30 ou 90 dias, dia a dia.</span></li>
         <li lang="en"><b>Adherence</b><span>The share of doses taken over 7, 30 or 90 days, day by day.</span></li>
         <li lang="pt-BR"><b>Exames lidos por IA</b><span>Envie o PDF ou a foto do laudo: os valores entram com a referência do laboratório, o que está fora dela fica marcado e cada exame mostra a evolução ao longo dos anos.</span></li>
@@ -323,7 +350,7 @@ footer a{color:var(--text-2)}
 </div></section>
 
 <section id="apple"><div class="wrap">
-  <div class="feature">
+  <div class="feature flip">
     <div class="shots">
       <div class="phone"><img data-shot="health" alt="" width="600" height="1298" loading="lazy"></div>
     </div>
@@ -361,6 +388,8 @@ footer a{color:var(--text-2)}
     <figure><div class="phone"><img data-shot="habits" alt="" width="600" height="1298" loading="lazy"></div><figcaption><span lang="pt-BR">Hábitos</span><span lang="en">Habits</span></figcaption></figure>
     <figure><div class="phone"><img data-shot="food" alt="" width="600" height="1298" loading="lazy"></div><figcaption><span lang="pt-BR">Alimentação</span><span lang="en">Nutrition</span></figcaption></figure>
     <figure><div class="phone"><img data-shot="sleep" alt="" width="600" height="1298" loading="lazy"></div><figcaption><span lang="pt-BR">Sono</span><span lang="en">Sleep</span></figcaption></figure>
+    <figure><div class="phone"><img data-shot="photos" alt="" width="600" height="1298" loading="lazy"></div><figcaption><span lang="pt-BR">Fotos de progresso</span><span lang="en">Progress photos</span></figcaption></figure>
+    <figure><div class="phone"><img data-shot="compare" alt="" width="600" height="1298" loading="lazy"></div><figcaption><span lang="pt-BR">Antes e depois</span><span lang="en">Before and after</span></figcaption></figure>
     <figure><div class="phone"><img data-shot="meds" alt="" width="600" height="1298" loading="lazy"></div><figcaption><span lang="pt-BR">Medicamentos</span><span lang="en">Medications</span></figcaption></figure>
     <figure><div class="phone"><img data-shot="exams" alt="" width="600" height="1298" loading="lazy"></div><figcaption><span lang="pt-BR">Exames</span><span lang="en">Exams</span></figcaption></figure>
     <figure><div class="phone"><img data-shot="health" alt="" width="600" height="1298" loading="lazy"></div><figcaption><span lang="pt-BR">Saúde</span><span lang="en">Health</span></figcaption></figure>

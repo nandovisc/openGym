@@ -405,6 +405,40 @@ paths:
         '401': { description: No token, or not a valid one (`sleep-token`). }
         '429': { description: Too many posts this hour (`locked`). }
         '503': { description: The profile could not be read. }
+  /api/workouts/ingest:
+    post:
+      tags: [data]
+      operationId: ingestWorkout
+      summary: Put the workout that just ended on an Apple Watch into the profile
+      description: |
+        Posted by an iPhone Shortcut the automation "Apple Watch Workout → Ends" runs
+        (docs/SLEEP_SHORTCUT.md), with the same `Authorization: Bearer <sleep token>`. The body
+        holds the Health samples of the last hours — Exercise Minutes, Active Energy, Heart Rate —
+        as lists side by side (`{ exercise|energy|hr: { start, end, value, unit } }`, one sample a
+        line in each), as text (`start;end;value;kind;unit`) or as an array; `name` is optional.
+        The last run of exercise minutes is the workout; its calories and average and peak heart
+        rate go as `health` onto the workout logged in openGym at that time, or into a workout of
+        its own (id `hk-w:<local start>`, no exercises). Sent again, it replaces itself. A watch
+        workout later covered by one logged in openGym is folded into it on the next write.
+        Sixty posts an hour, shared with `/api/sleep/ingest`.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                samples: { oneOf: [{ type: string }, { type: array, items: { type: object } }] }
+                exercise: { type: object }
+                energy: { type: object }
+                hr: { type: object }
+      responses:
+        '200': { description: '`{ ok, action: matched|created|updated|unchanged, workout: { id, start, end, min, kcal, avgHr, maxHr } }`, or `workout: null` when the samples hold no workout.' }
+        '401': { description: No token, or not a valid one (`sleep-token`). }
+        '429': { description: Too many posts this hour (`locked`). }
+        '503': { description: The profile could not be read. }
   /api/config:
     get:
       tags: [meta]

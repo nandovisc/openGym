@@ -2808,4 +2808,18 @@ export default {
   'Bed and wake times': 'Horário de dormir e acordar',
   'A one-off to-do': 'Uma tarefa avulsa',
   'Hold ＋ to start today’s workout straight away.': 'Segure o ＋ para iniciar o treino de hoje direto.',
+  // Workouts from the Apple Watch (lib/workout-health.js, views/Sleep.jsx)
+  '{0} kcal': '{0} kcal',
+  'avg HR {0}': 'FC média {0}',
+  'max {0}': 'máx. {0}',
+  'Apple Watch': 'Apple Watch',
+  'Trained today · {0} kcal burned': 'Treinou hoje · {0} kcal gastas',
+  'Workouts from the Apple Watch': 'Treinos do Apple Watch',
+  'A second Shortcut sends the calories and heart rate of each workout when it ends on the watch. It joins the workout you logged here, or adds one of its own, and marks the workout habit.': 'Um segundo Atalho envia as calorias e a frequência cardíaca de cada treino quando ele termina no relógio. Ele se junta ao treino que você registrou aqui, ou cria um próprio, e marca o hábito de treino.',
+  'Last workout received: {0}': 'Último treino recebido: {0}',
+  'Download the workout Shortcut': 'Baixar o Atalho de treino',
+  'Paste the same line into its first Text.': 'Cole a mesma linha no primeiro Texto dele.',
+  'In Automation, choose Apple Watch Workout, then Ends and any workout, run it immediately, without asking.': 'Em Automação, escolha Treino do Apple Watch, depois Termina e qualquer treino, com Executar Imediatamente, sem perguntar.',
+  'Optional: one automation per kind of workout, each with its name in the second Text (Run, Strength…).': 'Opcional: uma automação por tipo de treino, cada uma com o nome no segundo Texto (Corrida, Musculação…).',
+  'iPhone Shortcuts send last night and each Apple Watch workout': 'Atalhos do iPhone enviam a noite de sono e cada treino do Apple Watch',
 }

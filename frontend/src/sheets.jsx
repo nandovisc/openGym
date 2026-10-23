@@ -65,6 +65,7 @@ import { weeklyWeights } from './lib/bodyweight.js'
 import { workoutText } from './lib/workout-text.js'
 import { workoutCardModel, layoutWorkoutCard, drawWorkoutCard, viewAspect, CARD_FONT } from './lib/workout-card.js'
 import { copyText } from './lib/clipboard.js'
+import { healthParts, watchOnly } from './lib/workout-health.js'
 import { queueRemaining, pinState } from './lib/queue.js'
 import { DAY_NOTE_TAGS, DAY_NOTE_LABEL, DAY_NOTE_ICON, dayNoteOf, dayNoteLine, canNoteDay, withDayNote } from './lib/day-notes.js'
 
@@ -2542,7 +2543,12 @@ function WorkoutDetail({ w, close }) {
   const grouped = groups.length > 1 || (groups[0] && groups[0].rid && (w.routineIds || []).length > 1)
   return <>
     <h3>{w.name}</h3>
-    <div className="muted small" style={{ marginBottom: 12 }}>{[fmtDate(w.d, true), ...durPart(w.end - w.start), fmtVol(w.vol, st.unit), ...(w.bw ? [fmtNum(w.bw) + ' ' + st.unit] : [])].join(' · ')}</div>
+    <div className="muted small" style={{ marginBottom: 12 }}>{[fmtDate(w.d, true), ...durPart(w.end - w.start), ...(watchOnly(w) ? [] : [fmtVol(w.vol, st.unit)]), ...(w.bw ? [fmtNum(w.bw) + ' ' + st.unit] : [])].join(' · ')}</div>
+    {/* What the Apple Watch measured over the same span (POST /api/workouts/ingest). */}
+    {healthParts(w).length > 0 && <div className="row wd-health" style={{ gap: 6, marginBottom: 12 }}>
+      <Icon name="flame" style={{ color: 'var(--orange)' }} /><span>{healthParts(w).join(' · ')}</span>
+      <span className="small dim" style={{ marginInlineStart: 'auto' }}>{w.health.source || t('Apple Watch')}</span>
+    </div>}
     {grouped ? groups.map(g => {
       const r = g.rid ? st.routines.find(x => x.id === g.rid) : null
       const items = g.items.map(i => w.entries[i])
@@ -2577,11 +2583,11 @@ function WorkoutDetail({ w, close }) {
     <div style={{ height: 8 }} />
     {/* The same exercises again, today, as a new session (#58): the rows read what was logged
         in this workout. The record itself stays as it is. */}
-    <Button icon="reset" disabled={!!st.active} style={{ marginBottom: 8 }} onClick={() => {
+    {!watchOnly(w) && <Button icon="reset" disabled={!!st.active} style={{ marginBottom: 8 }} onClick={() => {
       saveNote()
       initial.current = latest.current.trim().slice(0, NOTE_MAX)
       repeatWorkout(w, close)
-    }}>{t('Repeat today')}</Button>
+    }}>{t('Repeat today')}</Button>}
     {/* The note lives in a textarea that only writes on blur, and moving the workout re-keys a
         legacy record — so flush it first and stop the unmount hook writing it a second time. */}
     <Button icon="calendar" style={{ marginBottom: 8 }} onClick={() => {
@@ -2594,7 +2600,7 @@ function WorkoutDetail({ w, close }) {
       initial.current = latest.current.trim().slice(0, NOTE_MAX)
       workoutDurationSheet(w, close)
     }}>{t('Change duration')}</Button>
-    <Button icon="plus" onClick={() => confirmSheet({
+    {!watchOnly(w) && <Button icon="plus" onClick={() => confirmSheet({
       title: t('Save as routine?'),
       message: t('Create an independent routine from these exercise targets. Your workout history is kept.'),
       confirmText: t('Save'),
@@ -2605,7 +2611,7 @@ function WorkoutDetail({ w, close }) {
         close()
         nav('/plan/r/' + id)
       }
-    })}>{t('Save as routine')}</Button>
+    })}>{t('Save as routine')}</Button>}
     <div style={{ height: 8 }} />
     <Button icon="copy" onClick={copyAsText}>{t('Copy as text')}</Button>
     <div style={{ height: 8 }} />
@@ -2773,7 +2779,8 @@ export function WorkoutRow({ w, onClick }) {
   return <div className="item" {...tappable(onClick)}>
     <span className="lrow-i" style={{ width: 34, height: 34, borderRadius: 8, fontSize: 19 }}><Icon name={glyph} /></span>
     <div className="grow"><div className="tt">{w.name}</div>
-      <div className="ss">{[fmtDate(w.d, true), ...durPart(w.end - w.start), tn('{0} set', '{0} sets', setsDone(w)), fmtVol(w.vol, st.unit)].join(' · ')}</div></div>
+      <div className="ss">{[fmtDate(w.d, true), ...durPart(w.end - w.start), ...(watchOnly(w) ? [] : [tn('{0} set', '{0} sets', setsDone(w)), fmtVol(w.vol, st.unit)]), ...healthParts(w).slice(0, 1)].join(' · ')}</div></div>
+    {w.src === 'health' && <span className="tag">{t('Apple Watch')}</span>}
     {mediaN > 0 && <span className="wrow-media" title={tn('{0} photo or video', '{0} photos or videos', mediaN)} aria-label={tn('{0} photo or video', '{0} photos or videos', mediaN)}><Icon name="image" />{mediaN}</span>}
     {w.prs && w.prs.length > 0 && <span className="pr"><Icon name="trophy" />{w.prs.length} PR</span>}
     <Icon name="chevronRight" className="chev" />

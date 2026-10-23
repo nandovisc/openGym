@@ -24,7 +24,7 @@ const weekdayOf = d => new Date(d + 'T12:00:00Z').getUTCDay()
 const dayOfMonth = d => +d.slice(8, 10)
 
 export const logId = (habitId, d) => `${habitId}|${d}`
-export const SOURCES = ['workout', 'weight', 'meds', 'meals', 'sleep']
+export const SOURCES = ['workout', 'weight', 'meds', 'meals', 'sleep', 'photo']
 export const MEAL_SLOTS = ['breakfast', 'lunch', 'dinner', 'snack']
 
 /** The schedule of `habit` in force on day `d`: the last version starting on or before it. */
@@ -81,6 +81,16 @@ export function autoValue(habit, d, S) {
   if (a.source === 'weight') {
     const e = list(S.bodyweight).find(x => x?.d === d)
     return { value: e ? 1 : 0, goal: 1, done: !!e, detail: e ? String(e.w) : '' }
+  }
+  // A progress photo: one kept with the day's weigh-in (bodyweight[].photos) or a still on a
+  // workout of that day (workouts[].media). Counted loosely — any entry with a hash — the way
+  // the other sources count what is there rather than check it.
+  if (a.source === 'photo') {
+    const isStill = m => !!m && typeof m === 'object' && typeof m.hash === 'string' && m.kind !== 'video' && m.kind !== 'doc'
+    const e = list(S.bodyweight).find(x => x?.d === d)
+    const n = list(e?.photos).filter(p => isStill(p?.m)).length
+      + list(S.workouts).filter(w => w?.d === d).reduce((s, w) => s + list(w.media).filter(isStill).length, 0)
+    return { value: n ? 1 : 0, goal: 1, done: n > 0, detail: String(n) }
   }
   if (a.source === 'meds') {
     const { total, done } = dosesOfDay(S, d)

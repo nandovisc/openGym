@@ -110,3 +110,20 @@ describe('progressPhotosOf — one file on two workouts', () => {
     expect(new Set(keys).size).toBe(2)
   })
 })
+
+describe('progressPhotosOf — weigh-in photos', () => {
+  it('lines them up with the workouts\' by date, each with its pose and its weigh-in', () => {
+    const S = {
+      workouts: [{ id: 'w', d: '2026-02-01', start: 1, media: [img('wk')] }],
+      bodyweight: [
+        { d: '2026-03-01', w: 81, t: 5, photos: [{ pose: 'front', m: img('f') }, { pose: 'side', m: video('v') }] },
+        { d: '2026-01-01', w: 86, t: 4, photos: [{ pose: 'back', m: img('b') }] }
+      ]
+    }
+    const got = progressPhotosOf(S)
+    expect(hashes(got)).toEqual(['f', 'wk', 'b'])
+    expect(got.map(p => p.pose)).toEqual(['front', null, 'back'])
+    expect(got[0].bw).toBe('2026-03-01')
+    expect(got[1].bw).toBe(undefined)
+  })
+})

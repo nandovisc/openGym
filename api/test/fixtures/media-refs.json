@@ -1,5 +1,5 @@
 {
-  "about": "Which blob hashes a state references. api/media.js referencedHashes() and frontend/src/lib/media-refs.js referencedHashes() must both give `expect` (compared as sorted lists) for every `state` here: the server keeps and the client keeps exactly this set. Each of customEx[].media.hash, customEx[].media.poster.hash and the same two of every entry of workouts[].media and of exams[].files count on its own when it matches /^[0-9a-f]{64}$/ — deliberately looser than normalizeMediaRef, because this set decides what is kept.",
+  "about": "Which blob hashes a state references. api/media.js referencedHashes() and frontend/src/lib/media-refs.js referencedHashes() must both give `expect` (compared as sorted lists) for every `state` here: the server keeps and the client keeps exactly this set. Each of customEx[].media.hash, customEx[].media.poster.hash and the same two of every entry of workouts[].media and of exams[].files, meals[].photo and bodyweight[].photos[].m count on its own when it matches /^[0-9a-f]{64}$/ — deliberately looser than normalizeMediaRef, because this set decides what is kept.",
   "referencedHashes": [
     {
       "name": "no state at all",
@@ -1006,6 +1006,99 @@
         "7777777777777777777777777777777777777777777777777777777777777777",
         "8888888888888888888888888888888888888888888888888888888888888888"
       ]
+    },
+    {
+      "name": "the progress photos of a weigh-in, with a poster, and junk beside them",
+      "state": {
+        "bodyweight": [
+          {
+            "d": "2026-10-01",
+            "w": 82,
+            "t": 1,
+            "photos": [
+              {
+                "pose": "front",
+                "m": {
+                  "kind": "image",
+                  "hash": "9999999999999999999999999999999999999999999999999999999999999999",
+                  "mime": "image/webp",
+                  "size": 900,
+                  "width": 800,
+                  "height": 1000,
+                  "poster": {
+                    "hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    "mime": "image/webp",
+                    "size": 50,
+                    "width": 320,
+                    "height": 400
+                  },
+                  "at": 1
+                }
+              },
+              {
+                "pose": "side",
+                "m": {
+                  "kind": "image",
+                  "hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+                  "mime": "image/webp",
+                  "size": 900,
+                  "width": 800,
+                  "height": 1000,
+                  "at": 1
+                }
+              },
+              {
+                "pose": "back"
+              },
+              {
+                "m": "nope"
+              },
+              null
+            ]
+          },
+          {
+            "d": "2026-10-02",
+            "w": 81.8,
+            "t": 2,
+            "photos": "nope"
+          },
+          {
+            "d": "2026-10-03",
+            "w": 81.6,
+            "t": 3
+          },
+          null
+        ]
+      },
+      "expect": [
+        "9999999999999999999999999999999999999999999999999999999999999999",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      ]
+    },
+    {
+      "name": "bodyweight as an object is ignored",
+      "state": {
+        "bodyweight": {
+          "x": {
+            "d": "2026-10-01",
+            "photos": [
+              {
+                "m": {
+                  "kind": "image",
+                  "hash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+                  "mime": "image/webp",
+                  "size": 900,
+                  "width": 800,
+                  "height": 1000,
+                  "at": 1
+                }
+              }
+            ]
+          }
+        }
+      },
+      "expect": []
     }
   ]
 }

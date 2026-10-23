@@ -15,11 +15,13 @@ const S = {
     { id: 'm', kind: 'auto', name: 'Remédios', auto: { source: 'meds' }, schedules: [{ type: 'daily' }], start: '2026-10-01', reminders: ['08:30'] },
     { id: 'f', kind: 'auto', name: 'Refeições', auto: { source: 'meals', slots: ['lunch'] }, schedules: [{ type: 'daily' }], start: '2026-10-01', reminders: ['12:30'] },
     { id: 's', kind: 'auto', name: 'Sono', auto: { source: 'sleep', mode: 'bedBy', bedBy: '23:30' }, schedules: [{ type: 'daily' }], start: '2026-10-01' },
+    { id: 'ph', kind: 'auto', name: 'Foto', auto: { source: 'photo' }, schedules: [{ type: 'perWeek', times: 1 }], start: '2026-10-01', reminders: ['07:00'] },
     { id: 't', kind: 'task', name: 'Marcar dentista', due: T, reminders: ['09:00'] }
   ],
   habitLog: [{ id: `q|${T}`, habitId: 'q', d: T, value: 500 }, { id: 'a|2026-10-20', habitId: 'a', d: '2026-10-20', slips: 1 }, { id: 'c|2026-10-21', habitId: 'c', d: '2026-10-21', state: 'skipped' }],
   habitPrefs: { vacations: [{ from: '2026-10-10', to: '2026-10-12', habitIds: ['q'] }] },
-  workouts: [{ d: '2026-10-20', name: 'A' }], bodyweight: [{ d: T, w: 90 }],
+  workouts: [{ d: '2026-10-20', name: 'A', media: [{ kind: 'image', hash: 'b'.repeat(64) }] }],
+  bodyweight: [{ d: T, w: 90 }, { d: '2026-10-13', w: 91, photos: [{ pose: 'front', m: { kind: 'image', hash: 'a'.repeat(64) } }, { pose: 'side', m: { kind: 'video', hash: 'c'.repeat(64) } }] }],
   meds: [{ id: 'm1', times: ['08:00'], active: true }], medLog: [],
   meals: [{ d: T, slot: 'lunch', items: [{ kcal: 700 }] }],
   sleep: [{ d: T, bed: '2026-10-22T00:10', asleepMin: 400 }]
@@ -31,6 +33,14 @@ describe('the server and the app read habits alike', () => {
     for (const h of S.habits) for (let i = 1; i <= 25; i++) {
       const d = `2026-10-${String(i).padStart(2, '0')}`
       expect(app.dayStatus(h, d, S, T)).toEqual(api.dayStatus(h, d, S, T))
+    }
+  })
+  it('a progress photo counts from a weigh-in or a workout, stills only', () => {
+    const h = S.habits.find(x => x.id === 'ph')
+    for (const side of [app, api]) {
+      expect(side.autoValue(h, '2026-10-13', S)).toEqual({ value: 1, goal: 1, done: true, detail: '1' })
+      expect(side.autoValue(h, '2026-10-20', S).done).toBe(true)
+      expect(side.autoValue(h, T, S).done).toBe(false)
     }
   })
   it('the reminders owed through the day', () => {

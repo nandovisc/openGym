@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef, useState } from 'react'
 import { fmtNum, fmtDate, MONTHS, isoOf } from '../lib/format.js'
 import { t } from '../lib/i18n.js'
+import Icon from './Icon.jsx'
 
 const W = 340   // viewBox width; the svg stretches to its container, height comes from `h`
 
@@ -9,6 +10,7 @@ const W = 340   // viewBox width; the svg stretches to its container, height com
 //        more of it). Used for effort on the weight curve, where the two belong on one line:
 //        the same weight with less left in the tank is not the same session.
 //   note extra text for that point's tooltip.
+//   photo the day has a progress photo: a ring on the point, and a camera in its tooltip.
 // opts: { h, unit, color, axes, goal, invert, series }
 //   invert flips the y axis, for a scale that counts down as it gets harder (RIR). Without it
 //   a curve of reps-in-reserve reads upside down, with the hardest sets at the floor.
@@ -107,7 +109,7 @@ export default function LineChart({ points, h = 150, unit = '', color = 'var(--a
   const hoverSource = single ? [points[0]] : points
   const hoverDates = hoverSource.map(p => p.d || isoOf(new Date(p.t)))
   const showYear = new Set(hoverDates.map(iso => new Date(iso + 'T12:00:00').getFullYear())).size > 1
-  const hoverPts = hoverSource.map((p, i) => ({ x: X(p.t), y: Y(p.y), t: p.t, iso: hoverDates[i], v: p.y, note: p.note }))
+  const hoverPts = hoverSource.map((p, i) => ({ x: X(p.t), y: Y(p.y), t: p.t, iso: hoverDates[i], v: p.y, note: p.note, photo: !!p.photo }))
   const marked = points.some(p => p.m != null)
 
   const onMove = e => {
@@ -151,6 +153,8 @@ export default function LineChart({ points, h = 150, unit = '', color = 'var(--a
           {marked && pts.map((p, i) => (p.m == null ? null :
             <circle key={'m' + i} cx={X(p.t)} cy={Y(p.y)} r={2.4 + p.m * 3} fill={color} opacity={0.3 + p.m * 0.7} />))}
           <circle cx={X(last.t)} cy={Y(last.y)} r="4" fill={color} />
+          {pts.map((p, i) => (p.photo ? <circle key={'p' + i} className="cphoto" cx={X(p.t)} cy={Y(p.y)} r="4.5"
+            fill="var(--bg)" stroke={color} strokeWidth="2.2" /> : null))}
         </>}
         {hover && <g>
           <line className="cvl" x1={hover.x} y1={P.t} x2={hover.x} y2={H - P.b} stroke="var(--label-3)" strokeWidth="1" strokeDasharray="3 3" />
@@ -166,7 +170,8 @@ export default function LineChart({ points, h = 150, unit = '', color = 'var(--a
       {hover && <div className="ctip" ref={tipRef}>
         {multi
           ? <>{fmtDate(hover.iso, true, showYear)}{hover.note ? ' · ' + hover.note : ''}</>
-          : <>{fmtDate(hover.iso, true, showYear)} · {fmtNum(hover.v)}{unit ? ' ' + unit : ''}{hover.note ? ' · ' + hover.note : ''}</>}
+          : <>{fmtDate(hover.iso, true, showYear)} · {fmtNum(hover.v)}{unit ? ' ' + unit : ''}{hover.note ? ' · ' + hover.note : ''}
+            {hover.photo && <> · <Icon name="camera" aria-label={t('Has a photo')} /></>}</>}
       </div>}
     </div>
   )

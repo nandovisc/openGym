@@ -338,6 +338,9 @@ export function suggestedHabits(S, today, names = {}) {
     const daily = last(bDays, 14).length >= 10
     add('weight', { schedule: daily ? { type: 'daily' } : { type: 'perWeek', times: Math.min(7, Math.max(1, Math.round(last(bDays, 28).length / 4))) } }, since(bDays))
   }
+  // Progress photos with a weigh-in: once a week is the rhythm a before/after wants.
+  const pDays = list(S.bodyweight).filter(e => list(e?.photos).length).map(e => e.d)
+  if (last(pDays, 28).length && !have.has('photo')) add('photo', { schedule: { type: 'perWeek', times: 1 } }, since(pDays))
   const mDays = [...new Set(list(S.meals).filter(m => list(m?.items).length).map(m => m.d))]
   if (last(mDays, 14).length >= 3 && !have.has('meals')) add('meals', { auto: { mode: 'slots', slots: ['breakfast', 'lunch', 'dinner'] } }, since(mDays))
   const sDays = list(S.sleep).map(n => n?.d)

@@ -11,6 +11,7 @@ import { goalOf, lastNight, stageShares } from '../lib/sleep.js'
 import { examsByDate, outOfRange } from '../lib/exams.js'
 import { kcalOn } from '../lib/workout-health.js'
 import { DAYN, fmtDate, fmtDur, fmtNum, todayISO } from '../lib/format.js'
+import { bwChartPoint } from '../lib/bodyweight.js'
 import { t, dateLocale } from '../lib/i18n.js'
 import { bwSheet, startFlow } from '../sheets.jsx'
 import { addFoodSheet } from './Food.jsx'
@@ -150,7 +151,7 @@ function WeightCard({ S }) {
     {bw ? <>
       <div className="today-big">{fmtNum(bw.w)} {S.unit} {delta ? <span className="small" style={{ color: delta < 0 ? 'var(--acc)' : 'var(--orange)' }}>{delta > 0 ? '+' : '−'}{fmtNum(Math.abs(delta))} {t('in 7 days')}</span> : null}</div>
       <div className="small dim">{fmtDate(bw.d, true)}</div>
-      {S.bodyweight.length > 1 && <div className="chart" style={{ marginTop: 6 }}><LineChart points={S.bodyweight.slice(-14).map(b => ({ t: b.t || Date.parse(b.d + 'T12:00:00'), y: b.w, d: b.d }))} h={70} axes={false} unit={S.unit} /></div>}
+      {S.bodyweight.length > 1 && <div className="chart" style={{ marginTop: 6 }}><LineChart points={S.bodyweight.slice(-14).map(bwChartPoint)} h={70} axes={false} unit={S.unit} /></div>}
     </> : <div className="small dim">{t('No weigh-ins yet. Log your weight to start the curve.')}</div>}
   </Card>
 }

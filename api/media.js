@@ -84,8 +84,9 @@ export function mediaLimits(env = process.env) {
  *  them before the first upload to refuse a file the server would refuse anyway. */
 // `workouts: true`: this server keeps the files a logged workout's `media` names (its GC walks
 // workouts[].media), so a signed-in client may offer attaching them. A server from before says
-// nothing, and the client offers them on custom exercises only.
-export const mediaConfig = l => ({ imageMB: l.imageMB, gifMB: l.gifMB, videoMB: l.videoMB, videoSec: l.videoSec, docMB: l.docMB, quotaMB: l.quotaMB, workouts: true });
+// nothing, and the client offers them on custom exercises only. `bodyweight: true` is the same
+// for the progress photos of a weigh-in (bodyweight[].photos[].m).
+export const mediaConfig = l => ({ imageMB: l.imageMB, gifMB: l.gifMB, videoMB: l.videoMB, videoSec: l.videoSec, docMB: l.docMB, quotaMB: l.quotaMB, workouts: true, bodyweight: true });
 
 /* ---------------------------------------------------------------- errors */
 
@@ -310,6 +311,11 @@ export function referencedHashes(state) {
   }
   for (const m of Array.isArray(state.meals) ? state.meals : []) {
     if (isObj(m) && isObj(m.photo)) ref(m.photo);
+  }
+  // The progress photos of a weigh-in: { pose, m } each.
+  for (const e of Array.isArray(state.bodyweight) ? state.bodyweight : []) {
+    if (!isObj(e) || !Array.isArray(e.photos)) continue;
+    for (const p of e.photos) if (isObj(p) && isObj(p.m)) ref(p.m);
   }
   return out;
 }

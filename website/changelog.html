@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Novidades do openGym</title>
+<meta name="description" content="Todas as atualizações do openGym, deploy a deploy.">
+<meta name="theme-color" content="#000000">
+<link rel="icon" href="/favicon.ico" sizes="48x48">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="stylesheet" href="health.css">
+<!-- Every deploy of the app, newest first: each merge into `main`, with what it brought (the pull
+     request's own notes, read from GitHub — changelog-core.mjs). The GitHub API is read at view
+     time; changelog.json, written at build time, is what shows when it cannot be reached. -->
+<style>
+.log-head{padding:56px 0 8px}
+.log-head h1{font-size:clamp(36px,5vw,52px)}
+.log-head p{color:var(--text-2);font-size:18px;margin:0}
+.log{list-style:none;margin:28px 0 0;padding:0;display:grid;gap:16px}
+.deploy{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:20px 22px}
+.deploy time{display:block;color:var(--acc);font-weight:600;font-size:14px;margin-bottom:4px}
+.deploy h3{font-size:20px;line-height:1.3;margin:0}
+.deploy h3 a{color:var(--text);text-decoration:none}
+.deploy h3 a:hover{text-decoration:underline}
+.deploy h3 small{color:var(--text-3);font-weight:500;font-size:14px;margin-inline-start:6px}
+.parts{margin:12px 0 0;padding:0;list-style:none;display:grid;gap:8px}
+.parts li{background:var(--surface-2);border-radius:12px;padding:10px 14px}
+.parts b{font-weight:600}
+details{margin-top:10px}
+summary{cursor:pointer;color:var(--acc);font-weight:600;font-size:15px}
+.notes{color:var(--text-2);font-size:15.5px;margin-top:8px}
+.notes h5{color:var(--text);font-size:15px;margin:14px 0 4px}
+.notes p{margin:6px 0}
+.notes ul{margin:4px 0;padding-inline-start:20px}
+.notes code{font-size:13.5px;background:var(--surface-2);padding:1px 5px;border-radius:5px}
+.parts .notes code{background:var(--surface)}
+.status{color:var(--text-3);font-size:14px;margin:18px 0 0}
+.pt-only{color:var(--text-3);font-size:14px}
+</style>
+</head>
+<body>
+
+<header class="bar"><div class="wrap">
+  <a class="brand" href="health.html"><img src="icon-180.png" alt="" width="26" height="26">openGym <span lang="pt-BR">Saúde</span><span lang="en">Health</span></a>
+  <nav aria-label="Seções">
+    <a href="health.html#modules"><span lang="pt-BR">Módulos</span><span lang="en">Modules</span></a>
+    <a href="health.html#screens"><span lang="pt-BR">Telas</span><span lang="en">Screens</span></a>
+    <a href="changelog.html" aria-current="page"><span lang="pt-BR">Novidades</span><span lang="en">Changelog</span></a>
+  </nav>
+  <div class="langs" role="group" aria-label="Idioma / Language">
+    <button type="button" data-lang="pt-BR" aria-pressed="true">PT</button>
+    <button type="button" data-lang="en" aria-pressed="false">EN</button>
+  </div>
+  <a class="open" href="https://open-gym-tau.vercel.app"><span lang="pt-BR">Abrir o app</span><span lang="en">Open the app</span></a>
+</div></header>
+
+<main id="top"><div class="wrap">
+  <div class="log-head">
+    <p class="eyebrow"><span lang="pt-BR">Novidades</span><span lang="en">Changelog</span></p>
+    <h1 lang="pt-BR">Cada atualização, deploy a deploy</h1>
+    <h1 lang="en">Every update, deploy by deploy</h1>
+    <p lang="pt-BR">Cada item é uma versão publicada do app, da mais nova para a mais antiga, com as notas de cada mudança.</p>
+    <p lang="en">Each item is a published version of the app, newest first, with the notes of each change. <span class="pt-only">The notes are written in Portuguese.</span></p>
+  </div>
+  <ol class="log" id="log" aria-live="polite"></ol>
+  <p class="status" id="status"><span lang="pt-BR">Carregando…</span><span lang="en">Loading…</span></p>
+</div></main>
+
+<footer><div class="wrap">
+  <span>openGym</span>
+  <span><a href="health.html"><span lang="pt-BR">Funcionalidades</span><span lang="en">Features</span></a> · <a href="https://github.com/nandovisc/openGym">GitHub</a> · <a href="https://open-gym-tau.vercel.app">openGym</a></span>
+</div></footer>
+
+<script type="module">
+import { deploysOf, fetchMerged, mdToHtml } from './changelog-core.mjs'
+
+const root = document.documentElement
+const $log = document.getElementById('log'), $status = document.getElementById('status')
+let deploys = [], source = null
+const L = () => (root.lang === 'en' ? 'en' : 'pt-BR')
+const T = {
+  details: { 'pt-BR': 'Detalhes', en: 'Details' },
+  with: { 'pt-BR': 'Junto com este deploy', en: 'Shipped with this deploy' },
+  live: { 'pt-BR': 'Lido do GitHub agora.', en: 'Read from GitHub just now.' },
+  saved: { 'pt-BR': 'Cópia salva no último deploy do site ({0}). O GitHub não respondeu agora.', en: 'Copy saved at the site’s last deploy ({0}). GitHub did not answer just now.' },
+  none: { 'pt-BR': 'Não foi possível carregar as novidades.', en: 'The changelog could not be loaded.' }
+}
+const t = (k, a) => T[k][L()].replace('{0}', a ?? '')
+const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+const when = iso => new Date(iso).toLocaleString(L(), { dateStyle: 'long', timeStyle: 'short' })
+
+function render() {
+  $log.innerHTML = deploys.map(d => `<li class="deploy">
+    <time datetime="${d.at}">${when(d.at)}</time>
+    <h3><a href="${d.url}" rel="noopener">${esc(d.title)}</a><small>#${d.n}</small></h3>
+    ${d.body ? `<details><summary>${t('details')}</summary><div class="notes">${mdToHtml(d.body)}</div></details>` : ''}
+    ${d.parts.length ? `<p class="pt-only" style="margin:12px 0 0">${t('with')}</p><ul class="parts">${d.parts.map(p => `<li>
+      <b><a href="${p.url}" rel="noopener">#${p.n}</a> ${esc(p.title)}</b>
+      ${p.body ? `<details><summary>${t('details')}</summary><div class="notes">${mdToHtml(p.body)}</div></details>` : ''}
+    </li>`).join('')}</ul>` : ''}
+  </li>`).join('')
+  $status.textContent = !deploys.length ? t('none') : source === 'live' ? t('live') : t('saved', source ? when(source) : '–')
+}
+
+// The language, shared with health.html.
+function pick(lang) {
+  root.lang = lang
+  for (const b of document.querySelectorAll('.langs button')) b.setAttribute('aria-pressed', String(b.dataset.lang === lang))
+  if (deploys.length || source) render()
+}
+let saved = null
+try { saved = localStorage.getItem('og-health-lang') } catch {}
+pick(saved === 'en' || saved === 'pt-BR' ? saved : /^en/i.test(navigator.language || '') ? 'en' : 'pt-BR')
+for (const b of document.querySelectorAll('.langs button')) b.addEventListener('click', () => {
+  pick(b.dataset.lang)
+  try { localStorage.setItem('og-health-lang', b.dataset.lang) } catch {}
+})
+
+// GitHub first, so a deploy shows up as soon as it is merged; the saved copy when it cannot be read.
+const timed = (url, opts) => { const c = new AbortController(); setTimeout(() => c.abort(), 6000); return fetch(url, { ...opts, signal: c.signal }) }
+try {
+  deploys = deploysOf(await fetchMerged(timed)); source = 'live'
+} catch {
+  try {
+    const j = await (await fetch('changelog.json', { cache: 'no-cache' })).json()
+    deploys = deploysOf(j.prs); source = j.at
+  } catch { deploys = [] }
+}
+render()
+</script>
+</body>
+</html>

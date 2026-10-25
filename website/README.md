@@ -59,3 +59,12 @@ with a made-up demo profile, at iPhone size in the dark theme.
 `vercel.json` serves `health.html` at `/` (a route, not a rewrite: rewrites lose to `index.html`)
 on the Vercel project that publishes this folder
 (`open-gym-site`); nginx ignores it, so a self-hosted copy of the site keeps `index.html` there.
+
+## changelog.html
+
+Every deploy of the app, newest first: each pull request merged into `main`, with the ones
+merged into a stacked branch since the deploy before it listed under it (`changelog-core.mjs`,
+shared by the page and the build script). The page reads the GitHub API at view time;
+`changelog.json` is the copy `scripts/changelog.mjs` writes at build time (the Vercel project's
+build command, run on every push to `main`), shown when GitHub cannot be reached. The two pages
+share `health.css`.

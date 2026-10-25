@@ -1,0 +1,347 @@
+{
+ "at": "2026-10-25T15:30:15.645Z",
+ "prs": [
+  {
+   "n": 38,
+   "title": "Resumo semanal, padrões, relatório para consulta e lembretes inteligentes",
+   "at": "2026-10-25T12:27:11Z",
+   "url": "https://github.com/nandovisc/openGym/pull/38",
+   "base": "main",
+   "head": "health-report",
+   "body": "Leva para a `main` os PRs #35, #36 e #37, que já foram revisados e aprovados.\n\nEles estavam empilhados sobre o #34 (Hidratação). No merge, os três foram mesclados nas branches de base (`water`, `health-week` e `health-report`), e não na `main`. Este PR traz a branch `health-report`, que contém os três, sem nenhuma mudança nova:\n- #35: resumo semanal de saúde e padrões entre módulos;\n- #36: relatório para consulta;\n- #37: lembretes inteligentes."
+  },
+  {
+   "n": 37,
+   "title": "Lembretes inteligentes",
+   "at": "2026-10-25T12:22:37Z",
+   "url": "https://github.com/nandovisc/openGym/pull/37",
+   "base": "health-report",
+   "head": "smart-reminders",
+   "body": "PR D do plano (item 10). A base é a branch `health-report` (PR #36). Depois dos merges anteriores, eu mudo a base para `main`.\n\n## O que muda\nEm **Ajustes → Lembretes**, nova seção **Lembretes inteligentes**, com quatro interruptores. Todos começam desligados e cada aviso chega no máximo uma vez por dia:\n- **Dose ainda não marcada:** uma hora depois do horário em que você costuma marcar aquela dose (a mediana das marcações dos últimos 14 dias). Sem histórico suficiente, vale o horário da dose. É um segundo aviso, além do lembrete no horário.\n- **Pesagem esquecida:** sem pesagem há o dobro do seu intervalo habitual (no mínimo 3 dias), no horário em que você costuma se pesar.\n- **Água atrasada:** às 15h e às 19h, se o total do dia estiver abaixo de 70% do ritmo esperado até aquela hora.\n- **Noite não sincronizada:** às 11h, se o Atalho do sono costuma enviar a noite (5 dos últimos 7 dias) e ainda não enviou.\n\n## Como funciona\n- **A decisão** fica em `api/smart-nudges.js`, uma lib pura com teste.\n- **O envio** é feito pelo `smartTick` dentro do `reminderTick` em `api/server.js`. Cada aviso tem uma chave e sai uma vez por dia (`user.smartSent`), no fuso salvo com os interruptores, que é atualizado a cada abertura do app.\n- **Textos** em PT e EN, em `push-messages.js` (`smartPush`)."
+  },
+  {
+   "n": 36,
+   "title": "Relatório para consulta (imprimir ou salvar PDF)",
+   "at": "2026-10-25T12:22:27Z",
+   "url": "https://github.com/nandovisc/openGym/pull/36",
+   "base": "health-week",
+   "head": "health-report",
+   "body": "PR C do plano (item 3). A base é a branch `health-week` (PR #35), porque usa a água do #34. Depois dos merges anteriores, eu mudo a base para `main`.\n\n## O que muda\n- **Saúde → Relatório para consulta** (`/health/report`), com:\n  - período de 1, 3, 6 ou 12 meses e interruptores por seção;\n  - o botão **Imprimir ou salvar PDF**, que usa a impressão do próprio navegador. No iPhone, o \"Salvar em Arquivos\" da impressão gera o PDF.\n- **Seções:**\n  - **Identificação:** nome, idade e altura, se houver, e o período.\n  - **Remédios:** dose, horários, dias e adesão de cada um e no total.\n  - **Exames:** os exames do período, com os marcadores fora da referência primeiro (⚠︎, em vermelho), a referência e a evolução de cada marcador alterado em gráfico.\n  - **Peso:** variação, mínimo e máximo, com gráfico.\n  - **Sono, alimentação, água e treino:** uma frase cada.\n  - **Anotações:** o que for digitado sai impresso.\n- **CSS de impressão:** papel branco, sem barra de abas nem controles, e seções que não se partem entre páginas.\n- **Os números** vêm de `lib/health-report.js`, uma lib pura com teste."
+  },
+  {
+   "n": 35,
+   "title": "Resumo semanal de saúde e padrões entre módulos",
+   "at": "2026-10-25T12:22:18Z",
+   "url": "https://github.com/nandovisc/openGym/pull/35",
+   "base": "water",
+   "head": "health-week",
+   "body": "PR B do plano (itens 1 e 2). **Depende do #34 (Hidratação):** a base deste PR é a branch `water`. Depois do merge do #34, eu mudo a base para `main`.\n\n## Resumo semanal\n- **Notificação do primeiro dia da semana:** passa a ser o resumo de saúde, em uma linha, por exemplo \"Sono 6h40 · 3 treinos · −0,4 kg · 92% das doses · água 1,8 l por dia · hábitos 80%\". Sai no mesmo horário e com o mesmo interruptor do resumo de hábitos. Quem não tem nenhum módulo de saúde ligado continua recebendo o resumo de hábitos.\n- **Saúde → Sua semana** (`/health/week`):\n  - sono, treino (com as kcal do Watch), peso, doses, alimentação (com dias de proteína abaixo da meta), água e hábitos;\n  - cada número comparado com a semana anterior;\n  - setas para ver semanas anteriores.\n- **Hoje:** no primeiro dia da semana, um cartão \"Sua semana\".\n- **Regras:** ficam em `api/health-week.js`, com a cópia `lib/health-week.js` no app e um teste de paridade, como nos hábitos.\n\n## Padrões entre módulos (`lib/insights.js`)\nCalculados sobre as últimas 12 semanas, só quando há dias suficientes dos dois lados e uma diferença relevante:\n- noites com menos de 6 h × treinos naquele dia;\n- semanas com 3 ou mais treinos × variação do peso;\n- noites na meta de sono × hábitos feitos no dia;\n- dias na meta de água × a noite seguinte;\n- proteína na meta × variação do peso.\n\nAs frases dizem \"nos dias em que…\" e não afirmam causa. Os padrões aparecem no cartão Padrões em Saúde e em \"Sua semana\"."
+  },
+  {
+   "n": 34,
+   "title": "Hidratação: módulo de água",
+   "at": "2026-10-25T12:22:08Z",
+   "url": "https://github.com/nandovisc/openGym/pull/34",
+   "base": "main",
+   "head": "water",
+   "body": "PR A do plano (item 6).\n\n## O que muda\n- **Saúde → Água** (`views/Water.jsx`):\n  - anel do dia com a meta, que por padrão é 35 ml por kg da última pesagem;\n  - botões de copo, garrafa e outra quantidade;\n  - lista do dia com remover;\n  - média e dias na meta em 30 dias, com gráfico;\n  - meta e tamanho do copo configuráveis.\n- **Hoje:** cartão Água com \"+250 ml\" num toque, na ordem automática pela hora.\n- **Botão ＋:** item \"Água · +250 ml\". O antigo \"Água / hábito\" virou \"Hábito\".\n- **Saúde:** novo bloco Água. **Ajustes → Módulos:** interruptor de Água. Se nunca foi mexido, ele acompanha os outros módulos, então um perfil só de treino continua só de treino.\n- **Sincronização:** `S.water` sincroniza como as outras listas de saúde (`sync-merge`, `sync-stamps`, código `q`). A paridade foi atualizada.\n- **Hábitos:** nova fonte automática `water` (`api/habits.js` e a cópia no frontend), concluída quando a meta do dia é atingida. Também aparece como sugestão para quem registra água.\n- **Migração:** o hábito \"Água\" em ml feito à mão vira o módulo uma vez. O histórico vira registros de água e o hábito passa a automático, mantendo id, grupos e sequência. A meta do hábito vira a meta de água."
+  },
+  {
+   "n": 33,
+   "title": "Site: fotos de progresso, hábito por remédio e screenshots novas",
+   "at": "2026-10-23T17:46:06Z",
+   "url": "https://github.com/nandovisc/openGym/pull/33",
+   "base": "main",
+   "head": "site-update-photos",
+   "body": "Atualiza `website/health.html` com o que entrou no app desde a última versão do site (PRs #30, #31 e #32).\n\n## Fotos de progresso (#30)\n- Nova seção **Peso e fotos de progresso**:\n  - fotos de frente, lado e costas em cada pesagem;\n  - anel no gráfico de peso nos dias com foto;\n  - comparação deslizante ou lado a lado, com o peso e a diferença;\n  - linha do tempo com filtro por pose e o hábito da foto da semana.\n- Novo cartão **Peso e fotos** na lista de módulos, que agora diz \"Sete áreas\".\n\n## Remédios e hábitos (#31)\n- **Medicamentos:** doses de dias anteriores e um hábito por remédio, que só aparece nos dias de dose.\n- **Hábitos:** o texto dos automáticos agora fala em \"cada remédio\" e na foto de progresso.\n\n## Tela de entrada (#32)\nNão muda nada na página, que não mostra a tela de entrada.\n\n## Screenshots\n- Todas foram refeitas com o app atual, em PT e EN. Agora são 24.\n- Duas são novas: as **fotos de progresso** e o **antes e depois**.\n- As fotos do perfil de demonstração são silhuetas desenhadas, sem pessoa real.\n- A galeria passou para 6 colunas no computador (12 telas).\n\nConferido no navegador nos temas claro e escuro, em 375 px sem rolagem lateral, e na troca PT/EN."
+  },
+  {
+   "n": 32,
+   "title": "Tela de entrada: entrar ou criar conta, com explicação da chave de acesso",
+   "at": "2026-10-23T17:35:21Z",
+   "url": "https://github.com/nandovisc/openGym/pull/32",
+   "base": "main",
+   "head": "login-copy",
+   "body": "Ajustes pedidos para a tela de entrada:\n\n- **\"Entrar com chave de acesso\"** ganhou a pergunta \"Já tem uma conta?\" acima e, abaixo, a explicação: \"A chave de acesso é como você entra aqui: seu celular ou computador confirma que é você com Face ID / Touch ID. Sem senha para criar ou lembrar.\"\n- **\"Criar novo perfil\" passou a ser \"Criar uma conta\"**, com a pergunta \"Primeira vez aqui?\". A folha de cadastro agora se chama \"Crie sua conta\".\n- **O código de outro aparelho** virou um link discreto no rodapé: \"Já usa o openGym em outro aparelho? Entre com um código\".\n- **\"Continuar sem conta\"** sai pela variável `ALLOW_GUEST=0`, já criada na Vercel (produção e prévia), que vale a partir do próximo deploy. O código desse botão não muda, então no servidor local ele continua aparecendo.\n- O rodapé com \"As chaves de acesso usam…\" e \"Cada perfil mantém…\" saiu da tela com chave de acesso, porque a explicação agora fica sob o botão. Ele continua quando o login por senha está ligado e quando o navegador não suporta chave de acesso."
+  },
+  {
+   "n": 31,
+   "title": "Um hábito por medicamento e doses de dias anteriores",
+   "at": "2026-10-23T13:35:56Z",
+   "url": "https://github.com/nandovisc/openGym/pull/31",
+   "base": "main",
+   "head": "med-habits",
+   "body": "## O que muda\n\n### Um hábito por medicamento\n- **Antes:** havia um único hábito \"Medicamentos\", que somava todas as doses (\"1 de 5\").\n- **Agora:** cada remédio tem o próprio hábito, com o nome dele (`auto.medId`).\n- **Sincronização** (`syncMedHabits` em `lib/habits.js`), rodando nas telas Hábitos e Hoje:\n  - o hábito único antigo é arquivado e dividido, e os novos herdam os grupos e a ordem dele;\n  - um remédio adicionado depois ganha o próprio hábito;\n  - o hábito de um remédio apagado é arquivado.\n- **O botão do hábito** marca a dose do dia que está aberto, inclusive em dias passados. Se o remédio tem mais de um horário, abre uma lista para marcar um por um.\n- **Nos dias sem dose, o hábito fica escondido.** Um remédio semanal, como o Mounjaro, só aparece no dia dele.\n- **O servidor** (`api/habits.js`, espelhado em `habits-core.js`) conta as doses de um remédio só, e o teste de paridade continua passando.\n\n### Doses de dias anteriores\nA tela Medicamentos ganhou ‹ › no cartão de doses: dá para voltar dias e marcar uma dose esquecida, como o Mounjaro de ontem. O botão \"Hoje\" volta para o dia atual."
+  },
+  {
+   "n": 30,
+   "title": "Fotos de progresso nas pesagens: pose, antes/depois com peso, marca no gráfico e hábito",
+   "at": "2026-10-23T13:18:51Z",
+   "url": "https://github.com/nandovisc/openGym/pull/30",
+   "base": "main",
+   "head": "bw-photos",
+   "body": "## O que muda\n- **Pesagens:** cada pesagem pode ter até 6 fotos, cada uma marcada como frente, lado ou costas (`bodyweight[].photos = [{ pose, m }]`). Um ícone de câmera em cada linha abre a pesagem com as fotos e um botão por pose. No visualizador dá para remover a foto ou trocar a pose. Apagar uma pesagem que tem fotos sempre pede confirmação.\n- **Fotos de progresso:** reúne as fotos das pesagens e as dos treinos em ordem de data, com filtro por pose. A comparação funciona com controle deslizante ou lado a lado e mostra o peso de cada dia e a diferença entre eles (com cor conforme a meta, se houver uma).\n- **Gráficos de peso** (Estatísticas, Treino, Hoje, Saúde, Pesagens): os pontos com foto ganham um anel, e a dica do ponto mostra uma câmera. Os pontos agora são posicionados pelo dia da pesagem (`bwTime`). Sem isso, adicionar uma foto atualizava o `t` e jogava o ponto para hoje.\n- **Hábitos:** nova fonte automática \"Foto de progresso\" (foto na pesagem ou no treino), no app e em `api/habits.js`, com teste de paridade. É sugerida uma vez por semana para quem já tem fotos.\n- **Mídia:** as fotos usam o mesmo sistema de envio, armazenamento local, sincronização e limpeza automática que já existia. `stateMediaRefs` e `referencedHashes` passam a percorrer `bodyweight[].photos[].m`, e a fixture compartilhada cobre os dois lados. `/api/config` passa a informar `media.bodyweight: true`, e o OpenAPI foi atualizado.\n- **Privacidade:** a tela de admin não recebe as referências das fotos, igual já acontece com as mídias dos treinos.\n\nTextos novos em EN e PT. Os outros 16 idiomas recebem o texto em inglês."
+  },
+  {
+   "n": 29,
+   "title": "Página de saúde: sem export.xml, servidor próprio e AGPL",
+   "at": "2026-10-23T01:43:18Z",
+   "url": "https://github.com/nandovisc/openGym/pull/29",
+   "base": "main",
+   "head": "site-no-import",
+   "body": "Tira da página `website/health.html` o que não faz sentido mostrar, em PT e EN:\n\n- **export.xml:** os itens \"Peso e histórico\" (Apple Saúde) e \"Anos de histórico\" (Sono).\n- **Servidor próprio:** o cartão \"No seu servidor\" (Docker, Kubernetes, Supabase) e as frases \"Os dados ficam no seu servidor\" no texto de abertura e na descrição da página. A seção Privacidade fica com dois cartões: sem senha e funciona offline.\n- **AGPL-3.0:** o selo na abertura e a menção no rodapé."
+  },
+  {
+   "n": 28,
+   "title": "Site na Vercel: a raiz abre a página de saúde",
+   "at": "2026-10-23T01:35:05Z",
+   "url": "https://github.com/nandovisc/openGym/pull/28",
+   "base": "main",
+   "head": "site-root-health",
+   "body": "- **Raiz do site:** `website/vercel.json` faz o projeto `open-gym-site` da Vercel servir `health.html` em `/`. As outras páginas da pasta continuam acessíveis pelo caminho delas. O nginx do site original ignora esse arquivo.\n- **Rodapé:** o link \"openGym\" agora aponta para o app, porque `/` passou a ser a própria página.\n- **README:** uma nota sobre o `vercel.json`."
+  },
+  {
+   "n": 27,
+   "title": "Site: página das funcionalidades de saúde, com screenshots (PT/EN)",
+   "at": "2026-10-23T01:23:40Z",
+   "url": "https://github.com/nandovisc/openGym/pull/27",
+   "base": "main",
+   "head": "website-health",
+   "body": "Nova página `website/health.html`: apresenta o openGym como central de saúde.\n\n## O que a página tem\n- **Abertura:** a tela Hoje e o botão ＋.\n- **Módulos:** Treino, Hábitos, Alimentação, Sono, Medicamentos e Exames, cada um com uma seção própria e screenshots.\n- **Apple Saúde e Apple Watch:** os Atalhos de sono e de treino e o export.xml.\n- **Galeria:** as 10 telas do app.\n- **Privacidade:** servidor próprio, chave de acesso, uso offline.\n- **Idioma:** botão PT/EN. A escolha fica salva no navegador; na primeira visita vem do idioma do navegador. As imagens também trocam de idioma.\n\n## Detalhes\n- A página é independente: CSS próprio, sem `site.js`, nada carregado de fora. Tem tema claro e escuro e foi conferida em 375 px, sem rolagem lateral.\n- `website/screens/`: 20 JPEGs de 600 px (1,9 MB no total). São do app real, com um perfil de demonstração inventado (nenhum dado real), em tamanho de iPhone e tema escuro.\n- O README do site ganhou uma seção explicando a página."
+  },
+  {
+   "n": 26,
+   "title": "Apple Saúde: a linha do Atalho com o endereço completo do servidor",
+   "at": "2026-10-23T01:03:56Z",
+   "url": "https://github.com/nandovisc/openGym/pull/26",
+   "base": "main",
+   "head": "sleep-line-absolute",
+   "body": "**Problema:** na web, a linha copiada para o Atalho começava com `/api/sleep/ingest`, sem o `https://servidor`. O motivo é que `apiUrl` devolve um caminho relativo à própria origem do app. O Atalho roda fora do app e não consegue transformar essa linha em URL, por isso dava o \"Erro de Conversão\" no Obter Conteúdo de URL, tanto no Atalho do sono quanto no de treino.\n\n**Correção:** `views/Sleep.jsx` agora resolve o endereço a partir do endereço da página (`new URL(..., location.href)`). No app móvel, que já usava o endereço completo, nada muda."
+  },
+  {
+   "n": 25,
+   "title": "Atalho de treino: tipos com o nome que o iPhone usa, sem FC",
+   "at": "2026-10-23T00:48:03Z",
+   "url": "https://github.com/nandovisc/openGym/pull/25",
+   "base": "main",
+   "head": "workout-shortcut-fix",
+   "body": "Correção do Atalho de treino (PR #24), depois do primeiro teste no iPhone:\n\n- **Tipos:** lidos do Atalho que o iPhone salvou (link do iCloud). Dentro da ação de Saúde, os nomes são **\"Exercise Time\"** e **\"Active Calories\"**, gravados no mesmo formato que o iPhone usa. Os nomes antigos (\"Exercise Minutes\", \"Active Energy\") deixavam o filtro de tipo vazio.\n- **Sem frequência cardíaca:** a ação Localizar Amostras de Saúde não oferece esse tipo. O servidor já aceita a falta dela e só não mostra a FC.\n- **Janela de um dia**, igual ao que o iPhone salvou.\n- **Erro de Conversão (URL):** a troca de `/api/sleep/ingest` por `/api/workouts/ingest` agora é feita na linha colada inteira, antes de separar endereço e token, como no Atalho do sono.\n- Textos (EN e PT) e documentação ajustados."
+  },
+  {
+   "n": 24,
+   "title": "Treinos do Apple Watch: calorias e FC por Atalho ao terminar o treino",
+   "at": "2026-10-23T00:11:52Z",
+   "url": "https://github.com/nandovisc/openGym/pull/24",
+   "base": "main",
+   "head": "workout-shortcut",
+   "body": "## O que muda\n- **`POST /api/workouts/ingest`** (`api/workouts-ingest.js`): recebe do Atalho as amostras das últimas 4 h de Minutos de Exercício, Energia Ativa e Frequência Cardíaca, com o mesmo token do sono.\n  - O treino é o último bloco contínuo de minutos de exercício: intervalos de até 2 min, pelo menos 5 min.\n  - As kcal e a FC média e máxima do bloco vão para o treino registrado no openGym no mesmo horário (até 15 min de diferença).\n  - Sem treino registrado, entra um treino próprio `hk-w:<início>`, sem exercícios, que conta no dia e no hábito automático de treino.\n- **Sem duplicar**:\n  - reenviar o mesmo treino não altera nada;\n  - se o treino do Watch chega antes e o do app é finalizado depois, os dois viram um só na próxima gravação (`foldWatchWorkouts` em `commitState`, com a remoção registrada em `deleted`).\n- **App**:\n  - \"🔥 kcal · FC média · máx.\" no histórico, no detalhe do treino e no cartão Hoje;\n  - selo *Apple Watch* nos treinos que vieram só do relógio;\n  - a folha do Apple Saúde ganhou a seção *Treinos do Apple Watch*, com o download do Atalho e o passo a passo.\n- **Atalho assinado** `frontend/public/shortcuts/opengym-workout.shortcut`, gerado por `frontend/scripts/workout-shortcut.mjs`. Ele envia as listas como propriedades (sem laço Repetir), e o servidor também aceita o formato em linhas.\n- Documentação em `docs/SLEEP_SHORTCUT.md` e `api/openapi.yaml`; textos em EN e PT.\n\n## Falta conferir no iPhone\n- O nome dos tipos no filtro do Atalho: `Exercise Minutes`, `Active Energy`, `Heart Rate`. Se algum vier vazio, basta escolher o tipo no app Atalhos.\n- A automação \"Treino do Apple Watch → Termina\"."
+  },
+  {
+   "n": 23,
+   "title": "Today and the ＋ button (navigation part 2)",
+   "at": "2026-10-22T23:24:52Z",
+   "url": "https://github.com/nandovisc/openGym/pull/23",
+   "base": "main",
+   "head": "home-today",
+   "body": "Part 2 of the navigation chosen from the prototype, on top of #22.\n\n**Today** (`views/Today.jsx`, Home whenever a module beside training is on; training-only keeps the old Home):\n- Top: ring of today's habits, workouts this week, week streak.\n- Cards, each with its action in place: **Today's workout** (Start / Resume / trained ✓ / next training day), **Nutrition** (kcal left, macro bars, ＋ adds to the meal of the hour), **Habits to do** (up to 4, marked/added in place via the Habits row), **Medications** (next dose → *Taken*), **Sleep** (last night vs goal, stages), **Body weight** (last, 7-day change, sparkline, *Weigh in*), **Medical exams** (only when the last exam has values out of range).\n- Order by the hour (`cardOrder`: morning sleep/weight/doses first; evening open habits/food first) unless set by the person; **Customize Today** hides and reorders (`S.homeCards`).\n\n**＋ button** (`components/QuickAdd.jsx`): tap → **Log** sheet (Start workout, Meal, Water/habit, Weigh-in, Dose taken, Night of sleep, Task — per module on); hold 500 ms → starts today's workout (the old ▶). With a session under way the bar keeps the resume/clock button.\n\nTests: `views/Today.test.jsx` (card order by hour/custom/modules, dose taken, habit marked, weigh-in, hidden card, exam call-out; ＋ items per module, long press vs tap), TabBar and navigation tests updated. Full suite passes apart from the known baseline failure. Checked in the browser at phone width with sample data."
+  },
+  {
+   "n": 22,
+   "title": "Navigation by modules: Today · Training · Start · Habits · Health (part 1)",
+   "at": "2026-10-22T23:08:29Z",
+   "url": "https://github.com/nandovisc/openGym/pull/22",
+   "base": "main",
+   "head": "nav-tabs",
+   "body": "Part 1 of the navigation chosen from the prototype (option A). Part 2 brings the new Today screen and the ＋ quick-log button.\n\n- **Tab bar** (`components/TabBar.jsx`): with any module beside training on → **Today · Training · ▶ · Habits · Health** (Habits off → Stats in its place). All modules off → the original bar (Home · Plan · ▶ · Stats · Exercises) and the original Home.\n- **Settings → Modules** (`S.modules`, `lib/modules.js`): switch Habits, Nutrition, Sleep, Medications, Exams; hiding keeps the data. Shows the resulting bar.\n- **Training tab**: `views/Training.jsx` (was `Home.jsx`, cards gated by `sections`) at `/training` — week/queue, today's session, gym check-in, starter plan, streak — with **Week · Plan · Exercises · Stats** tabs (`components/TrainingNav.jsx`, read off the hash) on top of Training, Plan, Library and Stats. All existing routes and back links unchanged.\n- **Habits** at `/habits` (no back button there; `/health/habits` still works). **Health**: tiles for each module on + a \"Progress · 30 days\" card (weight chart, change, average kcal vs target).\n- **Home** (interim): health + weight cards; part 2 replaces it with Today.\n\nTests: `TabBar.test.jsx` (new bar, Habits off, training-only bar), `lib/modules.test.js`, `views/navigation.test.jsx` (Health tiles per module, Training tabs, Home legacy vs new), the old Home tests now render the training view, settings pages include Modules. Full suite passes apart from the known baseline failure. Checked in the browser at phone width (Today, Training, Plan with tabs, Health, Settings → Modules)."
+  },
+  {
+   "n": 21,
+   "title": "Habits: made from what the app already logs",
+   "at": "2026-10-22T17:01:59Z",
+   "url": "https://github.com/nandovisc/openGym/pull/21",
+   "base": "main",
+   "head": "habits-from-modules",
+   "body": "The Habits page opened empty although the profile has a daily medication, workouts, weigh-ins, meals and sleep.\n\n- `suggestedHabits(S, today)` (`lib/habits.js`): the automatic habits the data asks for — medications (active, with times), workouts (N×/week from the last 4 weeks), weigh-ins (daily if ≥10 of the last 14 days, else N×/week), meals (≥3 days in the last 14), sleep (≥3 nights in the last 14) — starting at the first day of their data within 90 days, so streaks and rates show at once.\n- First visit: made at once (`habitPrefs.seeded`), with a toast naming them. Afterwards: a \\\"From what you already log\\\" card for new ones (Add / Add all / Not now → `habitPrefs.dismissed`).\n- Ids `auto-<source>`: two devices seeding before they sync merge into one habit.\n\nTests: lib (what is suggested, schedules, starts, nothing twice) and the screen (made on first visit and marked by a dose taken; suggestion added later). Full suite passes apart from the known baseline failure."
+  },
+  {
+   "n": 20,
+   "title": "Habits, part B: weekly recap, calendar, group and usual-time reminders, order, list charts",
+   "at": "2026-10-22T16:54:23Z",
+   "url": "https://github.com/nandovisc/openGym/pull/20",
+   "base": "main",
+   "head": "health-habits-extras",
+   "body": "Part B of the habits module, on top of #19.\n\n- **Weekly recap**: \"Your week\" card in Statistics (rate, points vs. the week before, done every day, fell behind) + a push on the first morning of the week at 09:00 (`weekSummary`, deduped in `user.habitRecap`, switch in habit settings; tapping it opens Statistics).\n- **Calendar (.ics)**: per habit (detail) or per group (group editor): events at the reminder times, `RRULE` daily / `BYDAY` / `BYMONTHDAY`, `UNTIL` the habit's end.\n- **Usual-time reminders**: a habit without its own time can remind at the median time of its last marks (`typicalTime`, ≥3 marks, user's zone).\n- **Group reminders**: times per group, pushed when any of its habits is still to do; \"silence the habits' own reminders\" so only the group reminds.\n- **Drag to reorder** habits (Reorder mode, pointer events — finger or mouse).\n- **List charts**: last 7 days as bars, grid or line, chosen per habit.\n\n`groupsDue`, `typicalTime`, `weekSummary` are in `api/habits.js` and `lib/habits-core.js` with the parity test. Tests: lib (recap, .ics, order, options), parity, api (group and recap pushes, muted groups). Full suites pass apart from the known baseline failures. Checked in the browser at phone width: list charts, drag reorder, recap card."
+  },
+  {
+   "n": 19,
+   "title": "Health: habits, Grit-style, marked by the rest of the app (part A)",
+   "at": "2026-10-22T16:47:39Z",
+   "url": "https://github.com/nandovisc/openGym/pull/19",
+   "base": "main",
+   "head": "health-habits",
+   "body": "Part A of the habits module (core). Part B (weekly recap, .ics, smart and group reminders, drag to reorder, mini charts) follows on top.\n\n**Kinds**: yes/no · amount with goal (tap +step or drag the bar) · timer (runs with the app closed, stops at goal, interval vibration, wake lock) · avoid (days without, log a slip) · one-off task (leaves the list when done) · automatic: workout, weigh-in, medications (all doses of the day), meals (chosen slots or ±10% of the kcal target), sleep (goal or in bed by).\n\n**Scheduling**: daily, weekdays, days of the month, N×/week; schedule versions so the past keeps its rule; start/end; skip/undo, failed, vacations, \"day starts at\", filters, search, groups (collapsible, several per habit), duplicate, archive/restore, export JSON.\n\n**Stats**: streaks (days / weeks / days without), success 7/30/90, year map, chart with goal, milestones 7·21·30·66·100·365 (toast when reached), misses by weekday, most missed, per-medication regularity.\n\n**Reminders**: `api/habits.js` `habitsDue` (mirrored by `lib/habits-core.js`, parity test over a month and every 5 minutes of a day) → `habitTick` inside `reminderTick` (single process and `cron/tick`), only when not done, deduped in `user.habitSent`; copy en/pt-BR; medication habits defer to the medication reminder when it is on.\n\n**Data**: `S.habits`, `S.habitLog` (one entry per habit and day), `S.habitGroups`, `S.habitPrefs` (tz stamped on boot) — synced via `HEALTH_LISTS` on both sides.\n\nLeft out (PWA limits / scope): Siri, full-screen alarms, sharing with friends, app blocking, widgets, reordering stats sections.\n\nTests: `lib/habits.test.js`, `lib/habits-parity.test.js`, `views/Habits.test.jsx`, `api/test/habits.test.js` (incl. a real server tick). Full suites pass apart from the known baseline failures. Checked in the browser at phone width, dark theme."
+  },
+  {
+   "n": 18,
+   "title": "Food: a bigger food base, a forgiving search, my foods and saved meals",
+   "at": "2026-10-22T15:23:57Z",
+   "url": "https://github.com/nandovisc/openGym/pull/18",
+   "base": "main",
+   "head": "food-search-bank",
+   "body": "Searching \"nugget\" found nothing. Now:\n\n- **Forgiving search**: accents, plurals and synonyms (`lib/food-synonyms.js`); grouped results — my foods (most used first), saved meals, TACO, USDA, packaged products.\n- **USDA FoodData Central SR Legacy (CC0)**: 1,851 generic foods translated to pt-BR, foods TACO already has removed (exact and \"same food + same preparation, only generic qualifiers\" rules), per 100 g only — no oz/cups. `scripts/usda-build.mjs` rebuilds it; translations in `scripts/usda-pt.json`. Lazy chunk, ~36 kB gzip.\n- **Open Food Facts products while typing**, via `GET /api/foods/search` (`api/food-search.js`): the browser-callable search endpoints answer 503 most of the time and Search-a-licious sends no CORS header, so the server asks (signed-in only, 60/min, 30-min cache, User-Agent set). A `kcal` value above 900 is read as kJ.\n- **Create food** when nothing matches (label portion in g/ml, or per 100 g); **My foods** to edit/delete, ordered by use.\n- **Saved meals** (`S.savedMeals`, synced): plates from photos saved automatically, any meal savable; add whole or only ticked foods, ×½…×2. Earlier photo plates backfilled once.\n- Strings in English and Portuguese only (other packs carry English). TBCA left out: its database needs a paid licence for reuse.\n\nTests: nutrition (plurals, synonyms, order, portions, OFF parsing, saved meals, USDA has no TACO duplicates), Food view (nuggets → products, create food, edit in My foods, photo plate added in part), `api/test/foods-search.test.js`. Full suites pass apart from the known baseline failures. Checked in the browser at phone width, dark theme."
+  },
+  {
+   "n": 17,
+   "title": "Food: number fields styled like the rest of the app",
+   "at": "2026-10-22T14:46:34Z",
+   "url": "https://github.com/nandovisc/openGym/pull/17",
+   "base": "main",
+   "head": "food-fields-dark",
+   "body": "In the dark theme the number inputs of Health → Food (daily targets, quick add, amounts) showed as white boxes with white text: `NumberField` there had no `field` class, so the browser default background stayed while the text took the theme colour. All 13 now use `.field`; `Food.test.jsx` checks the targets form."
+  },
+  {
+   "n": 16,
+   "title": "Food: foods estimated from a photo are kept among my foods",
+   "at": "2026-10-22T07:02:48Z",
+   "url": "https://github.com/nandovisc/openGym/pull/16",
+   "base": "main",
+   "head": "food-ai-to-mine",
+   "body": "When the AI estimates a plate, each food is also saved to the person's foods (`foodsFromItems` in `lib/nutrition.js`): per 100 g from the estimate, the estimated grams as the serving, `src: 'ai'` (a ✨ in the search list). The meal items link to them by `ref`, so they show under *Recent and my foods* and in search. A name already saved (accents and case aside) is linked, not duplicated or overwritten.\n\nTests: `nutrition.test.js` (per 100 g, dedupe, search) and `Food.test.jsx` (background estimate saves the foods and search finds them)."
+  },
+  {
+   "n": 15,
+   "title": "Sleep: download the Shortcut from the app, paste one line",
+   "at": "2026-10-22T06:55:03Z",
+   "url": "https://github.com/nandovisc/openGym/pull/15",
+   "base": "main",
+   "head": "sleep-shortcut-download",
+   "body": "- **Download the Shortcut** button on Health → Sleep → 🔗, serving `frontend/public/shortcuts/opengym-sleep.shortcut`.\n- Making a token copies one line, `<ingest address> <token>`; the shortcut's first Text takes it and splits it, so one signed file serves any server.\n- `frontend/scripts/sleep-shortcut.mjs` builds the shortcut (type **Sleep**, last 2 days, ISO 8601 dates, POST JSON `samples`) and signs it with `shortcuts sign --mode anyone` — needs a Mac, which is why the file is committed rather than made per token on the server.\n- Steps rewritten in the app (18 locales) and in `docs/SLEEP_SHORTCUT.md`.\n\nNot yet run on an iPhone: the split/first/last-item actions are new compared to the file already tested."
+  },
+  {
+   "n": 14,
+   "title": "Sleep: the Shortcut's Health type is \"Sleep\"",
+   "at": "2026-10-22T06:42:34Z",
+   "url": "https://github.com/nandovisc/openGym/pull/14",
+   "base": "main",
+   "head": "sleep-shortcut-type",
+   "body": "Tried on an iPhone set to Portuguese: in *Find Health Samples* the night is the type **Sleep** (English name kept); *Alterações do Sono* is a hand-logged symptom. The setup step in the app (18 locales) and `docs/SLEEP_SHORTCUT.md` now name it."
+  },
+  {
+   "n": 13,
+   "title": "Import: a Health export with only sleep in it can be imported",
+   "at": "2026-10-22T05:59:05Z",
+   "url": "https://github.com/nandovisc/openGym/pull/13",
+   "base": "main",
+   "head": "sleep-import-button",
+   "body": "The import summary enabled its button on new weigh-ins only, so an `export.xml` cut down to its sleep records showed 1223 new nights and a disabled **Nothing new to import**. New nights now count as well. Regression test: `src/sheets.import-sleep.test.jsx` (fails without the fix)."
+  },
+  {
+   "n": 12,
+   "title": "Health: sleep, from Apple Health through an iPhone Shortcut or by hand",
+   "at": "2026-10-22T05:41:23Z",
+   "url": "https://github.com/nandovisc/openGym/pull/12",
+   "base": "main",
+   "head": "health-sleep",
+   "body": "Stage 4 of the health center: **Health → Sleep**.\n\n- **Last night**: bed → wake, time asleep and in bed, stage bar (deep, core, REM, awake), goal (default 8 h, adjustable).\n- **Nights** list, **log by hand** (bed/wake time, quality 1–5, note), edit and delete; an edited Apple Health night is marked and never overwritten.\n- **Trends** 7/30/90 days: average length, bed and wake times, nights on goal, bedtime regularity, chart with the goal line.\n- **Sync from Apple Health** via an iPhone Shortcut: `POST /api/sleep/ingest` with a personal token (`/api/sleep/token`, hashed, write-only, revocable). Samples in text lines or JSON, stage names in Apple/pt/en; one night a day, the source with stages wins when a watch and a ring both recorded it. Writes go through `commitState` (extracted from `PUT /api/data`), so devices pick them up on the next poll.\n- **export.xml import** now reads the file in slices and brings the nights too.\n- Health hub row, Home line, Settings → Data row, 18 locales, `docs/SLEEP_SHORTCUT.md`, OpenAPI.\n\nTests: sleep logic + server/app parity, Health export reader (slices, cut tags), Sleep view, `api/test/sleep-ingest.test.js`; full suites pass apart from the known baseline failures (sheets.day-note, 10 coach tests). Build passes."
+  },
+  {
+   "n": 11,
+   "title": "Food: pick the plate photo from the gallery too",
+   "at": "2026-10-22T04:57:45Z",
+   "url": "https://github.com/nandovisc/openGym/pull/11",
+   "base": "main",
+   "head": "food-gallery",
+   "body": "The photo tab gets a **From the gallery** button next to **Photo of the plate**: same flow (up to 3 photos, AI estimate in the background), but its file input has no \\`capture\\` attribute, so the phone opens the photo library. Label in the 18 locales; Food view test covers both inputs."
+  },
+  {
+   "n": 10,
+   "title": "Health: food diary with calories, macros and AI plate photos",
+   "at": "2026-10-22T01:39:22Z",
+   "url": "https://github.com/nandovisc/openGym/pull/10",
+   "base": "main",
+   "head": "health-food",
+   "body": "Stage 3 of the health center: **Health → Food**.\n\n- Meals by slot with kcal, protein, carbs and fat; day view with targets left/over and per-macro bars.\n- Add food from the **TACO** table (search as you type, accent-insensitive), a **barcode** (Open Food Facts, camera or typed), a **plate photo** estimated by AI in the background (never overwrites food added by hand), or a **quick** entry.\n- **Targets** suggested by Mifflin-St Jeor (protein 1.8 g/kg, fat 25 %, carbs the rest), editable.\n- **Trends**: 7/30/90 days with the target line.\n- API: `POST /api/meals/read` (only with `ANTHROPIC_API_KEY`), shared `api/anthropic-call.js` with the exam reader; `meals_ai` in `/api/config`.\n- Sync of `meals`/`foods`, meal photos in the media pipeline, 18 locales, TACO credit in NOTICE.md.\n\nTests: nutrition (15), Food view (6), meals-read (3); full frontend and api suites pass apart from the known baseline failures (sheets.day-note, 10 coach tests)."
+  },
+  {
+   "n": 9,
+   "title": "Exames: reler com IA um exame ou todos",
+   "at": "2026-10-22T01:17:33Z",
+   "url": "https://github.com/nandovisc/openGym/pull/9",
+   "base": "main",
+   "head": "exams-reread",
+   "body": "- No detalhe de um exame que já tem resultados: **Ler de novo com IA**.\n- Na lista de Exames: **Ler todos de novo com IA**.\n\nAntes de começar, o app pergunta, porque cada leitura é cobrada pela API. A nova leitura substitui os resultados e preenche médico, data e laboratório; o título também é trocado quando era o nome do médico. Ela nunca sobrescreve resultados alterados enquanto estava a caminho, e uma leitura vazia não apaga resultados existentes. Roda duas leituras por vez, em segundo plano. Testes novos em `views/Exams.test.jsx`; textos nos 18 idiomas."
+  },
+  {
+   "n": 8,
+   "title": "Exames: busca, filtro fora da referência, ordem alfabética e médico lido pela IA",
+   "at": "2026-10-22T01:02:09Z",
+   "url": "https://github.com/nandovisc/openGym/pull/8",
+   "base": "main",
+   "head": "exams-search-doctor",
+   "body": "- **Busca** que filtra enquanto você digita, sem diferenciar acentos e maiúsculas. Funciona em Evolução, em Exames (por título, laboratório, médico ou nome do resultado) e no detalhe do exame.\n- Filtro **Fora da referência**, também nos três lugares.\n- **Ordem alfabética** sem diferenciar acentos e maiúsculas, com números pelo valor. No detalhe, os resultados ficam em ordem alfabética dentro de cada seção.\n- **Médico lido pela IA**: o esquema ganhou o campo `doctor`, separado do laboratório e do título. A data, o laboratório e o médico encontrados preenchem o exame, e um título que era o nome do médico é trocado. O médico aparece no formulário, no detalhe e na lista.\n\nTestes novos em `lib/exams.test.js` e `views/Exams.test.jsx`; a API passa a testar o campo `doctor`. Textos nos 18 idiomas."
+  },
+  {
+   "n": 7,
+   "title": "Exames: leitura por IA em segundo plano com salvamento automático",
+   "at": "2026-10-21T23:14:51Z",
+   "url": "https://github.com/nandovisc/openGym/pull/7",
+   "base": "main",
+   "head": "exams-background-read",
+   "body": "A leitura por IA não prende mais a tela:\n\n- No detalhe de um exame sem resultados, e no formulário de um exame novo (que é salvo antes), **Ler com IA** dispara a leitura em segundo plano. Os resultados são salvos sozinhos no exame quando chegam, com aviso.\n- Resultados digitados nesse meio-tempo nunca são substituídos.\n- O ✨ da lista pisca enquanto o exame está sendo lido.\n- O detalhe avisa que os valores foram lidos pela IA e devem ser conferidos com o laudo.\n\nA leitura continua enquanto o app estiver aberto. Testes novos em `views/Exams.test.jsx`; textos nos 18 idiomas."
+  },
+  {
+   "n": 6,
+   "title": "Exames: ler com IA pelo detalhe e marca de IA na lista",
+   "at": "2026-10-21T23:08:02Z",
+   "url": "https://github.com/nandovisc/openGym/pull/6",
+   "base": "main",
+   "head": "exams-ai-shortcuts",
+   "body": "Agora, num exame com laudo e sem resultados:\n\n- o detalhe mostra **Ler com IA**; os valores lidos abrem no formulário para conferir antes de salvar;\n- na lista, o exame aparece com o ícone de IA (✨), só quando o servidor tem a leitura por IA ligada.\n\nO exame também guarda quando os resultados foram lidos por IA (`ai`). Testes novos em `views/Exams.test.jsx`."
+  },
+  {
+   "n": 5,
+   "title": "Exames: chave da organização (ANTHROPIC_WORKSPACE_ID) e erro de chave claro",
+   "at": "2026-10-21T22:46:28Z",
+   "url": "https://github.com/nandovisc/openGym/pull/5",
+   "base": "main",
+   "head": "exam-read-workspace",
+   "body": "A leitura falhava com 400 da Anthropic: a chave configurada é da organização inteira e precisa do cabeçalho `anthropic-workspace-id`. Agora `ANTHROPIC_WORKSPACE_ID` manda esse cabeçalho. Quando a API recusa a chave, a resposta vem com o código `config`, e o app diz para conferir a chave no servidor em vez de \\\"tente de novo\\\". Teste novo em `exams-read.test.js`; texto traduzido nos 18 idiomas."
+  },
+  {
+   "n": 4,
+   "title": "Exames: corrige o envio da leitura por IA",
+   "at": "2026-10-21T22:36:20Z",
+   "url": "https://github.com/nandovisc/openGym/pull/4",
+   "base": "main",
+   "head": "fix-exam-read",
+   "body": "A leitura falhava sempre: `api()` repassa o corpo ao `fetch` sem converter, e os arquivos saíam como `\\\"[object Object]\\\"`. O servidor recusava o corpo (400) antes de chamar a IA. O teste de tela simulava `api()` e não pegou o erro; agora ele confere que o corpo enviado é o texto JSON.\n\nTambém junta de volta os acentos que vêm separados no texto copiado de PDF (\\\"Magalha˜es\\\" vira \\\"Magalhães\\\")."
+  },
+  {
+   "n": 3,
+   "title": "Saúde: exames médicos com leitura por IA",
+   "at": "2026-10-21T21:48:06Z",
+   "url": "https://github.com/nandovisc/openGym/pull/3",
+   "base": "main",
+   "head": "health-exams",
+   "body": "## O quê\nEtapa 2 da central de saúde: **Exames médicos** (`#/health/exams`).\n\n- **Novo exame**: escolher um PDF do laboratório ou até 6 fotos e tocar em **Ler com IA**. Os valores lidos (nome, valor, unidade, faixa de referência e alto/baixo) aparecem para conferir antes de salvar. Também dá para preencher à mão.\n- **Detalhe**: abrir o arquivo original e ver os resultados destacados por cor.\n- **Evolução**: cada exame com o último valor e um gráfico ao longo do tempo. O identificador padrão que a IA devolve junta nomes diferentes de laboratórios diferentes.\n\n## Leitura por IA\n`POST /api/exams/read`, que só existe com `ANTHROPIC_API_KEY`.\n\n- O servidor confere o tipo do arquivo pelos bytes e o tamanho.\n- A chamada à Messages API usa `fetch` direto, no mesmo padrão do adaptador do coach, porque o `api/` tem regra de poucas dependências.\n- Modelo `claude-opus-5-5`, esforço `low`. O PDF vai como bloco `document`, as fotos como `image`.\n- A resposta vem em JSON garantido por esquema (`output_config.format`), com `fallbacks: \"default\"`.\n- Nada é guardado no servidor. O limite é de 30 leituras por hora por perfil.\n\n## Arquivos\nPDF passa a ser um tipo de mídia (`doc`) nos dois lados. `exams[].files` entra nos hashes referenciados, então o arquivo sincroniza e não é apagado pela limpeza. O fixture compartilhado ganhou casos de exame.\n\n## Depois do merge\nNa Vercel: `ANTHROPIC_API_KEY` (Sensitive) e `MEDIA_DOC_MAX_MB=3`."
+  },
+  {
+   "n": 2,
+   "title": "Saúde: medicamentos com lembretes",
+   "at": "2026-10-21T20:00:12Z",
+   "url": "https://github.com/nandovisc/openGym/pull/2",
+   "base": "main",
+   "head": "health-meds",
+   "body": "## O quê\nEtapa 1 da central de saúde: a tela **Saúde** (`#/health`) e o módulo **Medicamentos** (`#/health/meds`).\n\n- **Cadastro**: nome, dose e unidade, vários horários, dias da semana, início e fim, observações, pausar.\n- **Hoje**: cada dose com **Tomei / Pular**, dose avulsa e destaque para doses atrasadas.\n- **Adesão**: 7/30/90 dias e calendário colorido. Doses anteriores ao cadastro do remédio não contam.\n- **Histórico** das doses.\n- **Lembrete por push** no horário de cada dose ainda não marcada: um push por horário, com interruptor próprio em Configurações → Lembretes. Tocar abre a lista de hoje.\n- **Card no Início** com o resumo do dia.\n\n## Sincronização\n`meds` e `medLog` fazem merge entrada por entrada, como os gym cards: união por id, merge por campo, exclusões com tombstone e \"Redefinir tudo\". O servidor (`api/sync-stamps.js`) tem a mesma regra; o teste de paridade foi estendido. O id de uma dose agendada é `remédio|dia|horário`, então a mesma dose marcada em dois aparelhos vira um registro só."
+  },
+  {
+   "n": 1,
+   "title": "Rodar na Vercel com Supabase (STORE=supabase)",
+   "at": "2026-10-21T17:47:46Z",
+   "url": "https://github.com/nandovisc/openGym/pull/1",
+   "base": "main",
+   "head": "vercel-supabase",
+   "body": "## O quê\nPermite rodar o openGym na Vercel com os dados no Supabase self-hosted, sem servidor próprio. O modo Docker (`./data`) continua igual quando `STORE` não está definido.\n\n## Como\n- **`api/store/tx.js`**: cada requisição é uma transação. Carrega a própria cópia dos dados, roda a rota sem mudança e grava tudo numa chamada atômica (`opengym_commit`) com controle de versão. Se outra instância gravou antes, a requisição roda de novo. A resposta só sai depois de gravar.\n- **`api/store/remote.js`**: acesso ao Supabase só por HTTPS (PostgREST + Storage), sem abrir a porta do Postgres.\n- **`api/store/supabase.sql`**: schema `opengym` com RLS ligado e sem acesso para anon/authenticated. As RPCs só podem ser executadas pela `service_role`. Cria também o bucket privado `opengym-media`.\n- **`api/store/supabase-cron.sql`**: o `pg_cron` chama `POST /api/cron/tick`, que substitui os `setInterval` (timer de descanso, lembretes, limpeza).\n- **`api/media-remote.js`**: fotos e vídeos no Storage, com as mesmas validações de antes.\n- **`frontend/api/index.js`** e **`frontend/vercel.json`**: a função e a configuração da Vercel (Root Directory = `frontend`).\n- Os workflows exclusivos do repositório original (CLA, Pages, publicação de imagem) agora só rodam lá.\n\nDetalhes e passo a passo: `docs/VERCEL.md`.\n\n## Limites nesta hospedagem\n- Upload de mídia até ~4 MB.\n- Coach de IA desligado.\n- Limite de tentativas de login por senha vale por instância.\n- Timer de descanso chega com até ~15 s de atraso."
+  }
+ ]
+}

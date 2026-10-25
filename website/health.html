@@ -13,115 +13,7 @@
      every text is there twice, the one not in use hidden by `html[lang]` below, and the
      screenshots follow the same choice (screens/<name>-<pt-BR|en>.jpg, taken from the app with
      a made-up profile). Self-contained: no script from elsewhere, no font to fetch. -->
-<style>
-:root{
-  --bg:#000;--surface:#111113;--surface-2:#1c1c1f;--line:#2a2a2e;
-  --text:#f5f5f7;--text-2:#a1a1a6;--text-3:#6e6e73;
-  --acc:#30d158;--acc-ink:#04220c;
-  --orange:#ff9f0a;--indigo:#5e5ce6;--teal:#40c8e0;--red:#ff453a;--blue:#0a84ff;--purple:#bf5af2;
-  --radius:22px;
-}
-@media (prefers-color-scheme:light){:root:not([data-theme="dark"]){
-  --bg:#f5f5f7;--surface:#fff;--surface-2:#f0f0f2;--line:#e2e2e6;
-  --text:#1d1d1f;--text-2:#55555a;--text-3:#86868b;--acc:#1fa846;--acc-ink:#fff;
-}}
-*{box-sizing:border-box}
-html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
-body{margin:0;background:var(--bg);color:var(--text);font:17px/1.55 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
-html[lang="pt-BR"] [lang="en"],html[lang="en"] [lang="pt-BR"]{display:none!important}
-a{color:var(--acc)}
-img{display:block;max-width:100%;height:auto}
-.wrap{max-width:1120px;margin:0 auto;padding:0 20px}
-
-/* top bar */
-.bar{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--bg) 82%,transparent);backdrop-filter:saturate(1.6) blur(16px);-webkit-backdrop-filter:saturate(1.6) blur(16px);border-bottom:1px solid var(--line)}
-.bar .wrap{display:flex;align-items:center;gap:14px;height:56px}
-.brand{display:flex;align-items:center;gap:9px;font-weight:700;color:var(--text);text-decoration:none;letter-spacing:-.01em}
-.brand img{width:26px;height:26px;border-radius:7px}
-.bar nav{display:flex;gap:18px;margin-inline-start:auto}
-.bar nav a{color:var(--text-2);text-decoration:none;font-size:15px}
-.bar nav a:hover{color:var(--text)}
-.langs{display:flex;background:var(--surface-2);border-radius:99px;padding:3px}
-.langs button{border:0;background:none;color:var(--text-2);font:600 13px/1 inherit;font-family:inherit;padding:7px 11px;border-radius:99px;cursor:pointer}
-.langs button[aria-pressed="true"]{background:var(--surface);color:var(--text);box-shadow:0 1px 3px #0004}
-.open{background:var(--acc);color:var(--acc-ink);text-decoration:none;font-weight:600;font-size:15px;padding:8px 15px;border-radius:99px;white-space:nowrap}
-@media (max-width:820px){.bar nav{display:none}.langs{margin-inline-start:auto}}
-@media (max-width:420px){.open{display:none}}
-
-/* hero */
-.hero{padding:72px 0 40px;overflow:hidden}
-.hero .wrap{display:grid;grid-template-columns:1.05fr .95fr;gap:40px;align-items:center}
-.eyebrow{color:var(--acc);font-weight:600;font-size:15px;letter-spacing:.02em;margin:0 0 12px}
-h1{font-size:clamp(40px,6vw,64px);line-height:1.04;letter-spacing:-.035em;margin:0 0 20px}
-h1 span{color:var(--acc)}
-.lead{font-size:20px;color:var(--text-2);margin:0 0 28px;max-width:34em}
-.actions{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
-.btn{display:inline-flex;align-items:center;gap:8px;background:var(--acc);color:var(--acc-ink);font-weight:700;text-decoration:none;padding:14px 22px;border-radius:14px}
-.btn.ghost{background:var(--surface-2);color:var(--text)}
-.chips{display:flex;flex-wrap:wrap;gap:8px;margin:28px 0 0;padding:0;list-style:none}
-.chips li{background:var(--surface);border:1px solid var(--line);border-radius:99px;padding:6px 13px;font-size:14px;color:var(--text-2)}
-.chips li b{color:var(--text);font-weight:600}
-.stage{position:relative;display:flex;justify-content:center;gap:18px}
-.stage .phone:nth-child(2){margin-top:70px}
-@media (max-width:860px){.hero{padding-top:44px}.hero .wrap{grid-template-columns:1fr}.stage .phone{max-width:44vw}}
-
-/* phone frame */
-.phone{width:250px;max-width:100%;border-radius:38px;padding:9px;background:linear-gradient(160deg,#3a3a3e,#151517);box-shadow:0 30px 60px -20px #000c,0 0 0 1px #ffffff14 inset;flex:none}
-.phone img{border-radius:30px;width:100%;aspect-ratio:600/1298;object-fit:cover;background:#000}
-
-/* sections */
-section{padding:64px 0;border-top:1px solid var(--line)}
-.sec-head{max-width:720px;margin:0 0 36px}
-.sec-head .tag{display:inline-flex;align-items:center;gap:8px;font-weight:600;font-size:14px;color:var(--tint,var(--acc));margin:0 0 10px}
-.sec-head .tag i{width:10px;height:10px;border-radius:3px;background:var(--tint,var(--acc))}
-h2{font-size:clamp(30px,4vw,42px);line-height:1.1;letter-spacing:-.025em;margin:0 0 14px}
-.sec-head p{color:var(--text-2);font-size:18px;margin:0}
-.feature{display:grid;grid-template-columns:auto 1fr;gap:48px;align-items:center}
-.feature.flip{grid-template-columns:1fr auto}
-.feature.flip .shots{order:2}
-.shots{display:flex;gap:16px}
-.shots .phone{width:230px}
-.points{display:grid;gap:14px;margin:0;padding:0;list-style:none}
-.points li{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px 18px}
-.points b{display:block;margin-bottom:3px}
-.points span{color:var(--text-2);font-size:15.5px}
-@media (max-width:900px){
-  .feature,.feature.flip{grid-template-columns:1fr;gap:28px}
-  .feature.flip .shots{order:0}
-  .shots{overflow-x:auto;scroll-snap-type:x mandatory;margin:0 -20px;padding:4px 20px 12px}
-  .shots .phone{width:62vw;max-width:250px;scroll-snap-align:center}
-}
-
-/* grid of modules */
-.mods{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
-.mod{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:20px;text-decoration:none;color:inherit;display:block}
-.mod .ic{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;background:var(--tint);color:#fff;font-size:20px;margin-bottom:12px}
-.mod b{display:block;font-size:18px;margin-bottom:4px}
-.mod span{color:var(--text-2);font-size:15px}
-@media (max-width:820px){.mods{grid-template-columns:1fr 1fr}}
-@media (max-width:480px){.mods{grid-template-columns:1fr}}
-
-/* gallery */
-.gallery{display:grid;grid-template-columns:repeat(6,1fr);gap:14px}
-.gallery figure{margin:0}
-.gallery .phone{width:100%;padding:6px;border-radius:28px}
-.gallery .phone img{border-radius:23px}
-.gallery figcaption{text-align:center;color:var(--text-2);font-size:14px;margin-top:10px}
-@media (max-width:900px){.gallery{grid-template-columns:repeat(4,1fr)}}@media (max-width:700px){.gallery{grid-template-columns:repeat(3,1fr)}}
-@media (max-width:560px){.gallery{grid-template-columns:repeat(2,1fr)}}
-
-.privacy{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
-.privacy div{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:22px}
-.privacy b{display:block;font-size:18px;margin-bottom:6px}
-.privacy span{color:var(--text-2);font-size:15.5px}
-@media (max-width:820px){.privacy{grid-template-columns:1fr}}
-
-.cta{text-align:center;padding:80px 0}
-.cta p{color:var(--text-2);font-size:18px;margin:0 0 26px}
-footer{border-top:1px solid var(--line);padding:28px 0 40px;color:var(--text-3);font-size:14px}
-footer .wrap{display:flex;flex-wrap:wrap;gap:8px 20px;justify-content:space-between}
-footer a{color:var(--text-2)}
-</style>
+<link rel="stylesheet" href="health.css">
 </head>
 <body>
 
@@ -180,8 +72,8 @@ footer a{color:var(--text-2)}
       <ul class="points">
         <li lang="pt-BR"><b>Cartões que seguem a hora</b><span>De manhã, a noite de sono, a balança e os remédios vêm primeiro; à noite, o que ainda falta. Você também pode escolher a ordem e esconder cartões.</span></li>
         <li lang="en"><b>Cards that follow the clock</b><span>In the morning the night, the scale and the doses come first; in the evening, what is still open. Or set your own order and hide cards.</span></li>
-        <li lang="pt-BR"><b>＋ no meio da barra</b><span>Um toque abre o registro rápido: refeição da hora, água ou hábito, pesagem, dose, noite de sono ou tarefa. Segurando o botão, o treino de hoje começa direto.</span></li>
-        <li lang="en"><b>＋ in the middle of the bar</b><span>One tap opens quick log: the meal of the hour, water or a habit, a weigh-in, a dose, a night, a task. Hold it and today’s workout starts right away.</span></li>
+        <li lang="pt-BR"><b>＋ no meio da barra</b><span>Um toque abre o registro rápido: refeição da hora, um copo d’água, hábito, pesagem, dose, noite de sono ou tarefa. Segurando o botão, o treino de hoje começa direto.</span></li>
+        <li lang="en"><b>＋ in the middle of the bar</b><span>One tap opens quick log: the meal of the hour, a glass of water, a habit, a weigh-in, a dose, a night, a task. Hold it and today’s workout starts right away.</span></li>
         <li lang="pt-BR"><b>Só o que você usa</b><span>Cada módulo liga e desliga em Ajustes. Com todos desligados, o openGym volta a ser só o app de treino.</span></li>
         <li lang="en"><b>Only what you use</b><span>Each module turns on and off in Settings. With all of them off, openGym is the training app again.</span></li>
       </ul>
@@ -192,8 +84,8 @@ footer a{color:var(--text-2)}
 <section id="modules"><div class="wrap">
   <div class="sec-head">
     <p class="tag"><i></i><span lang="pt-BR">Módulos</span><span lang="en">Modules</span></p>
-    <h2 lang="pt-BR">Sete áreas, um só lugar</h2>
-    <h2 lang="en">Seven areas, one place</h2>
+    <h2 lang="pt-BR">Oito áreas, um só lugar</h2>
+    <h2 lang="en">Eight areas, one place</h2>
     <p lang="pt-BR">Cada módulo tem a própria tela, mas eles conversam: o remédio tomado marca o hábito, o treino do relógio aparece no dia, a refeição soma nas metas.</p>
     <p lang="en">Each module has its own screen, and they talk to each other: a dose taken ticks the habit, the watch’s workout shows on the day, a meal counts toward the targets.</p>
   </div>
@@ -201,6 +93,7 @@ footer a{color:var(--text-2)}
     <a class="mod" href="#training" style="--tint:var(--acc)"><div class="ic">🏋️</div><b lang="pt-BR">Treino</b><b lang="en">Training</b><span lang="pt-BR">Plano da semana, progressão automática e 1.324 exercícios animados.</span><span lang="en">A weekly plan, automatic progression and 1,324 animated exercises.</span></a>
     <a class="mod" href="#habits" style="--tint:var(--green,#34c759)"><div class="ic">✅</div><b lang="pt-BR">Hábitos</b><b lang="en">Habits</b><span lang="pt-BR">Sequências, metas, lembretes, e hábitos que se marcam sozinhos.</span><span lang="en">Streaks, goals, reminders, and habits that tick themselves.</span></a>
     <a class="mod" href="#food" style="--tint:var(--orange)"><div class="ic">🍽️</div><b lang="pt-BR">Alimentação</b><b lang="en">Nutrition</b><span lang="pt-BR">TACO, USDA e Open Food Facts, código de barras e foto do prato.</span><span lang="en">TACO, USDA and Open Food Facts, barcodes and a photo of the plate.</span></a>
+    <a class="mod" href="#water" style="--tint:var(--blue)"><div class="ic">💧</div><b lang="pt-BR">Água</b><b lang="en">Water</b><span lang="pt-BR">Um copo num toque, meta pelo seu peso e os dias na meta.</span><span lang="en">A glass in one tap, a goal from your weight and the days on goal.</span></a>
     <a class="mod" href="#sleep" style="--tint:var(--indigo)"><div class="ic">🌙</div><b lang="pt-BR">Sono</b><b lang="en">Sleep</b><span lang="pt-BR">As noites do Apple Watch ou do anel, com as fases do sono.</span><span lang="en">Nights from an Apple Watch or a ring, with the sleep stages.</span></a>
     <a class="mod" href="#photos" style="--tint:var(--purple)"><div class="ic">📸</div><b lang="pt-BR">Peso e fotos</b><b lang="en">Weight and photos</b><span lang="pt-BR">Fotos de frente, lado e costas em cada pesagem, e o antes e depois com o peso.</span><span lang="en">Front, side and back photos with each weigh-in, and the before/after with the weight.</span></a>
     <a class="mod" href="#meds" style="--tint:var(--teal)"><div class="ic">💊</div><b lang="pt-BR">Medicamentos</b><b lang="en">Medications</b><span lang="pt-BR">Horários, lembretes por notificação e quanto você tomou em dia.</span><span lang="en">Schedules, push reminders and how often you took them on time.</span></a>
@@ -244,8 +137,8 @@ footer a{color:var(--text-2)}
         <h2 lang="en">Habits the app already logs for you</h2>
       </div>
       <ul class="points">
-        <li lang="pt-BR"><b>Automáticos</b><span>Treinar, tomar cada remédio, comer as refeições, dormir a meta, se pesar, tirar a foto de progresso: se outro módulo já sabe, o hábito se marca sozinho, com o histórico desde o primeiro dia.</span></li>
-        <li lang="en"><b>Automatic</b><span>Training, taking each medication, eating your meals, sleeping your goal, weighing in, taking a progress photo: if another module knows, the habit ticks itself, with history from day one.</span></li>
+        <li lang="pt-BR"><b>Automáticos</b><span>Treinar, tomar cada remédio, comer as refeições, beber a meta de água, dormir a meta, se pesar, tirar a foto de progresso: se outro módulo já sabe, o hábito se marca sozinho, com o histórico desde o primeiro dia.</span></li>
+        <li lang="en"><b>Automatic</b><span>Training, taking each medication, eating your meals, drinking your water goal, sleeping your goal, weighing in, taking a progress photo: if another module knows, the habit ticks itself, with history from day one.</span></li>
         <li lang="pt-BR"><b>Do seu jeito</b><span>Sim ou não, quantidade (2 L de água, 20 páginas), cronômetro, evitar, tarefas avulsas; todo dia, em dias da semana ou X vezes por semana.</span></li>
         <li lang="en"><b>Your way</b><span>Yes/no, an amount (2 L of water, 20 pages), a timer, something to avoid, one-off tasks; daily, on weekdays or X times a week.</span></li>
         <li lang="pt-BR"><b>Sequências e lembretes</b><span>Marcos de 7, 21, 66 e 100 dias, grupos, resumo semanal e notificação só quando ainda não foi feito.</span></li>
@@ -278,8 +171,31 @@ footer a{color:var(--text-2)}
   </div>
 </div></section>
 
-<section id="sleep"><div class="wrap">
+<section id="water"><div class="wrap">
   <div class="feature">
+    <div class="shots">
+      <div class="phone"><img data-shot="water" alt="" width="600" height="1298" loading="lazy"></div>
+    </div>
+    <div>
+      <div class="sec-head">
+        <p class="tag" style="--tint:var(--blue)"><i></i><span lang="pt-BR">Água</span><span lang="en">Water</span></p>
+        <h2 lang="pt-BR">Hidratação sem conta de cabeça</h2>
+        <h2 lang="en">Hydration without the mental maths</h2>
+      </div>
+      <ul class="points">
+        <li lang="pt-BR"><b>Um copo num toque</b><span>No cartão Hoje e no botão ＋: +250 ml e pronto. Copo, garrafa ou outra quantidade na tela de Água.</span></li>
+        <li lang="en"><b>A glass in one tap</b><span>On the Today card and the ＋ button: +250 ml and done. A glass, a bottle or any amount on the Water screen.</span></li>
+        <li lang="pt-BR"><b>Meta pelo seu peso</b><span>35 ml por kg da última pesagem, ou a meta que você escolher, com o quanto falta para o dia.</span></li>
+        <li lang="en"><b>A goal from your weight</b><span>35 ml per kg of your last weigh-in, or a goal of your own, with what is left for the day.</span></li>
+        <li lang="pt-BR"><b>Evolução e hábito</b><span>Média e dias na meta em 30 dias. O hábito de água se marca sozinho quando a meta é atingida.</span></li>
+        <li lang="en"><b>Trends and the habit</b><span>Average and days on goal over 30 days. The water habit ticks itself when you reach the goal.</span></li>
+      </ul>
+    </div>
+  </div>
+</div></section>
+
+<section id="sleep"><div class="wrap">
+  <div class="feature flip">
     <div class="shots">
       <div class="phone"><img data-shot="sleep" alt="" width="600" height="1298" loading="lazy"></div>
     </div>
@@ -300,7 +216,7 @@ footer a{color:var(--text-2)}
 </div></section>
 
 <section id="photos"><div class="wrap">
-  <div class="feature flip">
+  <div class="feature">
     <div class="shots">
       <div class="phone"><img data-shot="compare" alt="" width="600" height="1298" loading="lazy"></div>
       <div class="phone"><img data-shot="photos" alt="" width="600" height="1298" loading="lazy"></div>
@@ -324,7 +240,7 @@ footer a{color:var(--text-2)}
 </div></section>
 
 <section id="meds"><div class="wrap">
-  <div class="feature">
+  <div class="feature flip">
     <div class="shots">
       <div class="phone"><img data-shot="meds" alt="" width="600" height="1298" loading="lazy"></div>
       <div class="phone"><img data-shot="exams" alt="" width="600" height="1298" loading="lazy"></div>
@@ -349,8 +265,54 @@ footer a{color:var(--text-2)}
   </div>
 </div></section>
 
-<section id="apple"><div class="wrap">
+<section id="week"><div class="wrap">
+  <div class="feature">
+    <div class="shots">
+      <div class="phone"><img data-shot="week" alt="" width="600" height="1298" loading="lazy"></div>
+    </div>
+    <div>
+      <div class="sec-head">
+        <p class="tag" style="--tint:var(--purple)"><i></i><span lang="pt-BR">Sua semana e padrões</span><span lang="en">Your week and patterns</span></p>
+        <h2 lang="pt-BR">A semana inteira numa tela, e o que se repete</h2>
+        <h2 lang="en">The whole week on one screen, and what repeats</h2>
+      </div>
+      <ul class="points">
+        <li lang="pt-BR"><b>Resumo semanal</b><span>Sono, treinos, peso, doses, alimentação, água e hábitos, cada número comparado com a semana anterior. No primeiro dia da semana chega uma notificação com o resumo numa linha.</span></li>
+        <li lang="en"><b>Weekly summary</b><span>Sleep, workouts, weight, doses, food, water and habits, each number against the week before. On the first day of the week a notification sums it up in one line.</span></li>
+        <li lang="pt-BR"><b>Padrões entre módulos</b><span>O app cruza 12 semanas de dados: noites curtas e treinos, água e sono, proteína e peso. As frases dizem "nos dias em que…", sem afirmar causa.</span></li>
+        <li lang="en"><b>Patterns across modules</b><span>The app looks across 12 weeks: short nights and workouts, water and sleep, protein and weight. It says "on days when…", never claiming a cause.</span></li>
+        <li lang="pt-BR"><b>Lembretes inteligentes</b><span>Avisos que aprendem com a sua rotina: a dose ainda não marcada no horário em que você costuma tomar, a pesagem esquecida, a água atrasada no meio da tarde e a noite que o Atalho ainda não enviou. Cada um liga separado e chega no máximo uma vez por dia.</span></li>
+        <li lang="en"><b>Smart reminders</b><span>Nudges that learn your routine: a dose not yet marked at the time you usually take it, a missed weigh-in, water falling behind in the afternoon, and a night the Shortcut has not sent. Each one is opt-in and comes at most once a day.</span></li>
+      </ul>
+    </div>
+  </div>
+</div></section>
+
+<section id="report"><div class="wrap">
   <div class="feature flip">
+    <div class="shots">
+      <div class="phone"><img data-shot="report" alt="" width="600" height="1298" loading="lazy"></div>
+    </div>
+    <div>
+      <div class="sec-head">
+        <p class="tag" style="--tint:var(--teal)"><i></i><span lang="pt-BR">Relatório para consulta</span><span lang="en">Report for an appointment</span></p>
+        <h2 lang="pt-BR">Leve tudo para o médico numa folha</h2>
+        <h2 lang="en">Take it all to your doctor on one page</h2>
+      </div>
+      <ul class="points">
+        <li lang="pt-BR"><b>Imprimir ou salvar PDF</b><span>Escolha 1, 3, 6 ou 12 meses e as seções. O relatório sai pela impressão do navegador; no iPhone, "Salvar em Arquivos" gera o PDF.</span></li>
+        <li lang="en"><b>Print or save as PDF</b><span>Pick 1, 3, 6 or 12 months and the sections. The report goes out through the browser’s print; on an iPhone, "Save to Files" makes the PDF.</span></li>
+        <li lang="pt-BR"><b>O que importa primeiro</b><span>Remédios com a adesão de cada um, exames com o que está fora da referência no topo e a evolução em gráfico, peso, sono, alimentação, água e treino.</span></li>
+        <li lang="en"><b>What matters first</b><span>Medications with each one’s adherence, exams with what is out of range on top and its trend in a chart, then weight, sleep, food, water and training.</span></li>
+        <li lang="pt-BR"><b>Suas anotações</b><span>Escreva as dúvidas para a consulta e elas saem impressas junto.</span></li>
+        <li lang="en"><b>Your notes</b><span>Write down your questions for the appointment and they print with it.</span></li>
+      </ul>
+    </div>
+  </div>
+</div></section>
+
+<section id="apple"><div class="wrap">
+  <div class="feature">
     <div class="shots">
       <div class="phone"><img data-shot="health" alt="" width="600" height="1298" loading="lazy"></div>
     </div>
@@ -392,6 +354,9 @@ footer a{color:var(--text-2)}
     <figure><div class="phone"><img data-shot="compare" alt="" width="600" height="1298" loading="lazy"></div><figcaption><span lang="pt-BR">Antes e depois</span><span lang="en">Before and after</span></figcaption></figure>
     <figure><div class="phone"><img data-shot="meds" alt="" width="600" height="1298" loading="lazy"></div><figcaption><span lang="pt-BR">Medicamentos</span><span lang="en">Medications</span></figcaption></figure>
     <figure><div class="phone"><img data-shot="exams" alt="" width="600" height="1298" loading="lazy"></div><figcaption><span lang="pt-BR">Exames</span><span lang="en">Exams</span></figcaption></figure>
+    <figure><div class="phone"><img data-shot="water" alt="" width="600" height="1298" loading="lazy"></div><figcaption><span lang="pt-BR">Água</span><span lang="en">Water</span></figcaption></figure>
+    <figure><div class="phone"><img data-shot="week" alt="" width="600" height="1298" loading="lazy"></div><figcaption><span lang="pt-BR">Sua semana</span><span lang="en">Your week</span></figcaption></figure>
+    <figure><div class="phone"><img data-shot="report" alt="" width="600" height="1298" loading="lazy"></div><figcaption><span lang="pt-BR">Relatório</span><span lang="en">Report</span></figcaption></figure>
     <figure><div class="phone"><img data-shot="health" alt="" width="600" height="1298" loading="lazy"></div><figcaption><span lang="pt-BR">Saúde</span><span lang="en">Health</span></figcaption></figure>
   </div>
 </div></section>
@@ -419,7 +384,7 @@ footer a{color:var(--text-2)}
 
 <footer><div class="wrap">
   <span>openGym</span>
-  <span><a href="https://github.com/nandovisc/openGym">GitHub</a> · <a href="https://open-gym-tau.vercel.app">openGym</a></span>
+  <span><a href="changelog.html"><span lang="pt-BR">Novidades</span><span lang="en">Changelog</span></a> · <a href="https://github.com/nandovisc/openGym">GitHub</a> · <a href="https://open-gym-tau.vercel.app">openGym</a></span>
 </div></footer>
 
 <script>

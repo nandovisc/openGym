@@ -65,6 +65,8 @@ on the Vercel project that publishes this folder
 Every deploy of the app, newest first: each pull request merged into `main`, with the ones
 merged into a stacked branch since the deploy before it listed under it (`changelog-core.mjs`,
 shared by the page and the build script). The page reads the GitHub API at view time;
-`changelog.json` is the copy `scripts/changelog.mjs` writes at build time (the Vercel project's
+`changelog-pt.json` holds the Portuguese title and notes of the pull
+requests written in English, so the page reads in one language; `changelog.json` is the copy
+`scripts/changelog.mjs` writes at build time (the Vercel project's
 build command, run on every push to `main`), shown when GitHub cannot be reached. The two pages
 share `health.css`.

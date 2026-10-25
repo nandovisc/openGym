@@ -17,7 +17,7 @@ import { bwSheet, startFlow } from '../sheets.jsx'
 import { addFoodSheet } from './Food.jsx'
 import { HabitRow, useMedHabits, useNow } from './Habits.jsx'
 import { drink, mlText, useWaterMigration } from './Water.jsx'
-import { WeekCard } from './WeekReport.jsx'
+import { PatternsCard, WeekCard } from './WeekReport.jsx'
 import { dayTotal, glassOf, goalOf as waterGoal } from '../lib/water.js'
 import Icon from '../components/Icon.jsx'
 import LineChart from '../components/LineChart.jsx'
@@ -30,8 +30,8 @@ const list = v => (Array.isArray(v) ? v : [])
 
 // Today (Home with the modules beside training on): the day across them, each card with the one
 // thing to do about it — start the workout, add food, mark a habit, take a dose, weigh in.
-export const CARDS = ['training', 'food', 'water', 'habits', 'meds', 'sleep', 'weight', 'exams']
-const CARD_LABEL = { training: 'Today’s workout', food: 'Nutrition', water: 'Water', habits: 'Habits to do', meds: 'Medications', sleep: 'Sleep', weight: 'Body weight', exams: 'Medical exams' }
+export const CARDS = ['training', 'food', 'water', 'habits', 'meds', 'sleep', 'weight', 'week', 'patterns', 'exams']
+const CARD_LABEL = { training: 'Today’s workout', food: 'Nutrition', water: 'Water', habits: 'Habits to do', meds: 'Medications', sleep: 'Sleep', weight: 'Body weight', week: 'Your week', patterns: 'Patterns', exams: 'Medical exams' }
 const CARD_MODULE = { food: 'food', water: 'water', habits: 'habits', meds: 'meds', sleep: 'sleep', exams: 'exams' }
 
 /** The meal of the hour, for adding food from Today or the ＋ button. */
@@ -47,8 +47,8 @@ export function slotByHour(date = new Date()) {
  */
 export function cardOrder(S, hour = new Date().getHours()) {
   const own = list(S.homeCards?.order).filter(k => CARDS.includes(k))
-  const auto = hour < 11 ? ['sleep', 'weight', 'meds', 'water', 'training', 'food', 'habits', 'exams']
-    : hour >= 18 ? ['habits', 'food', 'water', 'meds', 'training', 'sleep', 'weight', 'exams'] : CARDS
+  const auto = hour < 11 ? ['sleep', 'weight', 'meds', 'water', 'training', 'food', 'habits', 'week', 'patterns', 'exams']
+    : hour >= 18 ? ['habits', 'food', 'water', 'meds', 'training', 'sleep', 'weight', 'week', 'patterns', 'exams'] : CARDS
   const order = own.length ? [...own, ...CARDS.filter(k => !own.includes(k))] : auto
   const hidden = new Set(list(S.homeCards?.hidden))
   return order.filter(k => !hidden.has(k) && (!CARD_MODULE[k] || moduleOn(S, CARD_MODULE[k])))
@@ -218,6 +218,8 @@ export default function Today() {
     meds: () => <MedsCard key="meds" S={S} nav={nav} />,
     sleep: () => <SleepCard key="sleep" S={S} nav={nav} />,
     weight: () => (S.showWeightCard !== false ? <WeightCard key="weight" S={S} /> : null),
+    week: () => <WeekCard key="week" S={S} nav={nav} />,
+    patterns: () => <PatternsCard key="patterns" S={S} />,
     exams: () => <ExamsCard key="exams" S={S} nav={nav} />
   }
   return <div className="narrow">
@@ -233,7 +235,6 @@ export default function Today() {
         {sw > 0 && <span className="today-chip">{t('{0} week streak', sw)}</span>}
       </div>
     </div>
-    <WeekCard S={S} nav={nav} />
     {cardOrder(S).map(k => render[k]())}
     <button className="linkbtn today-custom" onClick={() => ui().openSheet(close => <Customize close={close} />)}>{t('Customize Today')}</button>
   </div>

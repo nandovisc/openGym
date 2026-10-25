@@ -2358,3 +2358,6 @@ a.btn{text-decoration:none;box-sizing:border-box}
   .report-page{border-radius:0;padding:0;margin:0}
   .report-sec{break-inside:avoid-page}
 }
+/* Today's "Your week" card: one chip a module */
+.week-chips{display:flex;flex-wrap:wrap;gap:6px 12px}
+.week-chip{display:inline-flex;align-items:center;gap:5px;font-weight:600;font-size:15px}

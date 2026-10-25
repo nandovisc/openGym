@@ -66,15 +66,31 @@ export default function WeekReport() {
   </div>
 }
 
-/** Today's card the first day of the week: the week just over in a line, to open in full. */
+/**
+ * Today's card: the week in a line — the one just over on its first day, this one so far on the
+ * others — to open in full (Health → Your week).
+ */
 export function WeekCard({ S, nav }) {
   const today = todayISO()
-  if (weekOf(today, S.weekStart) !== today) return null
-  const { week } = lastWeeks(S, today)
+  const start = weekOf(today, S.weekStart)
+  const first = start === today
+  const week = first ? lastWeeks(S, today).week : healthWeek(S, start, today)
   const rows = week ? lines(week, null, S) : []
-  if (!rows.length) return null
   return <div className="card today-card tappable" onClick={() => nav('/health/week')}>
     <div className="row between today-head"><span className="today-title">{t('Your week')}</span><Icon name="chevronRight" className="chev" /></div>
-    <div className="small">{rows.slice(0, 4).map(r => `${r.title} ${r.value}`).join(' · ')}</div>
+    {rows.length ? <>
+      <div className="small dim" style={{ marginBottom: 4 }}>{first ? t('The week just over') : t('This week so far')}</div>
+      <div className="week-chips">{rows.map(r => <span key={r.title} className="week-chip"><Icon name={r.icon} style={{ color: r.tint }} />{r.value}</span>)}</div>
+    </> : <div className="small dim">{t('Sleep, training, weight, doses, water and habits, against the week before')}</div>}
+  </div>
+}
+
+/** Today's card of the patterns across the modules, the two strongest; none, no card. */
+export function PatternsCard({ S }) {
+  const today = todayISO()
+  if (!insights(S, today).length) return null
+  return <div className="card today-card">
+    <div className="row between today-head"><span className="today-title">{t('Patterns')}</span></div>
+    <Patterns S={S} today={today} limit={2} />
   </div>
 }

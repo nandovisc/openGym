@@ -2927,4 +2927,7 @@ export default {
   'At 15:00 and 19:00, when you are under 70% of the pace': 'Às 15h e às 19h, quando estiver abaixo de 70% do ritmo',
   'Last night not synced': 'Noite não sincronizada',
   'At 11:00, when the sleep Shortcut usually sends it and has not': 'Às 11h, quando o Atalho do sono costuma enviar e não enviou',
+  // Your week and Patterns as cards on Today (views/WeekReport.jsx)
+  'The week just over': 'A semana que terminou',
+  'This week so far': 'Esta semana até agora',
 }

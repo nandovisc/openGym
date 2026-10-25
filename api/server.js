@@ -18,7 +18,9 @@ import * as coachJobs from './coach/jobs.js';
 import { coachRoutes } from './coach/routes.js';
 import { startCadence } from './coach/cadence.js';
 import { startWarmup } from './coach/warmup.js';
-import { dayReminderPush, groupReminderPush, habitReminderPush, medReminderPush, nudgePush, restTimerPush, testPush, weeklyRecapPush } from './push-messages.js';
+import { dayReminderPush, groupReminderPush, habitReminderPush, healthRecapPush, medReminderPush, nudgePush, restTimerPush, smartPush, testPush, weeklyRecapPush } from './push-messages.js';
+import { smartDue } from './smart-nudges.js';
+import { hasNews, lastWeeks, moduleOn as moduleOnServer } from './health-week.js';
 import { groupsDue, habitsDue, weekSummary } from './habits.js';
 import { doseId, medsDue } from './meds.js';
 import { ExamReadError, examReaderConfig, readExam } from './exam-reader.js';
@@ -610,10 +612,28 @@ function habitTick(user, S, now) {
   const recapAt = /^([01]\d|2[0-3]):[0-5]\d$/.test(S.habitPrefs?.recapAt || '') ? S.habitPrefs.recapAt : '09:00';
   if (S.habitPrefs?.recap !== false && now.weekday === ws && minutesLate(recapAt, now) >= 0 && minutesLate(recapAt, now) <= REMINDER_WINDOW_MIN && user.habitRecap !== now.date) {
     const day = n => new Date(Date.parse(now.date + 'T12:00:00Z') - n * 86400000).toISOString().slice(0, 10);
-    const summary = weekSummary(S, day(7), day(1));
     user.habitRecap = now.date;
     saveDb();
-    if (summary.total) { console.log('habit recap firing', user.id); pushLater(user.id, weeklyRecapPush(S.lang, summary)); }
+    // With a module beside training on, the week across them (health-week.js); else the habits'.
+    const health = ['food', 'sleep', 'meds', 'water'].some(k => moduleOnServer(S, k)) ? lastWeeks(S, now.date) : null;
+    if (health && hasNews(health.week)) { console.log('health recap firing', user.id); pushLater(user.id, healthRecapPush(S.lang, health)); }
+    else {
+      const summary = weekSummary(S, day(7), day(1));
+      if (summary.total) { console.log('habit recap firing', user.id); pushLater(user.id, weeklyRecapPush(S.lang, summary)); }
+    }
+  }
+}
+// Smart reminders (smart-nudges.js): from what the person usually does, each switched on by
+// itself, once a key a day (user.smartSent), on the zone saved with them.
+function smartTick(user, S, now, tz) {
+  const sent = user.smartSent?.date === now.date ? [...(user.smartSent.keys || [])] : [];
+  for (const n of smartDue(S, now, { tz, windowMin: REMINDER_WINDOW_MIN, sleepLast: user.sleepToken?.last || null })) {
+    if (sent.includes(n.key)) continue;
+    sent.push(n.key);
+    user.smartSent = { date: now.date, keys: sent };
+    console.log('smart reminder firing', user.id, n.kind);
+    saveDb();
+    pushLater(user.id, smartPush(S.lang, n));
   }
 }
 // A push decided inside a request. The single process sends it at once. The serverless one sends
@@ -634,6 +654,12 @@ async function reminderTick() {
       if (S?.medReminder?.on) {
         const medNow = userNow(S.medReminder.tz || 'UTC');
         if (medNow) medTick(user, S, medNow);
+      }
+      const smart = S?.smartReminders;
+      if (smart && (smart.dose || smart.weight || smart.water || smart.sleep)) {
+        const tz = smart.tz || S.habitPrefs?.tz || S.medReminder?.tz || 'UTC';
+        const smartNow = userNow(tz);
+        if (smartNow) smartTick(user, S, smartNow, tz);
       }
       if (S?.habitPrefs?.on && Array.isArray(S.habits) && S.habits.length) {
         const habitNow = userNow(S.habitPrefs.tz || 'UTC');

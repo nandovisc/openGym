@@ -112,6 +112,8 @@ export const DEF = {
   // preferences — reminders (tz stamped on boot), when the day starts, vacations, filters.
   // Water (lib/water.js): each glass or bottle drunk, and the goal (null: 35 ml per kg weighed).
   water: [], waterPrefs: { goalMl: null, glassMl: 250 },
+  // Smart reminders (api/smart-nudges.js): from what the person usually does, each off until set.
+  smartReminders: { dose: false, weight: false, water: false, sleep: false, tz: null },
   habits: [], habitLog: [], habitGroups: [], habitPrefs: { on: false, tz: null, dayStartsAt: '00:00', vacations: [], hideDone: false, hideFailed: false, hideSkipped: false, hideStreaks: false },
   queue: null,   // a planner's floating week (lib/queue.js) — via the API, or by this rotation feature (below)
   // The in-app rotation's reusable definition — { id, sequence, label } (lib/rotation.js). Never
@@ -1971,6 +1973,10 @@ export const useStore = create((set, get) => {
           // The habits' reminders keep the zone of the phone that last opened the app, too.
           if (get().S.habitPrefs?.on && get().S.habitPrefs.tz !== tz) {
             get().update(s => { s.habitPrefs = { ...s.habitPrefs, tz } })
+          }
+          const smart = get().S.smartReminders
+          if (smart && (smart.dose || smart.weight || smart.water || smart.sleep) && smart.tz !== tz) {
+            get().update(s => { s.smartReminders = { ...s.smartReminders, tz } })
           }
         }
         // Closed with the sign-in's question still open: asked again once the app is up (see the

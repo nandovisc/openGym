@@ -1212,6 +1212,16 @@ function PushCard({ S, update, toast }) {
         </Row>
       )}
     </Section>
+    {/* From what you usually do, not a fixed time (api/smart-nudges.js): each on by itself. */}
+    {on && <Section title={t('Smart reminders')} footer={t('They follow what you usually do, and come at most once a day each.')}>
+      {[['dose', 'pill', 'var(--teal)', 'A dose not marked yet', 'An hour after the time you usually mark it'],
+        ['weight', 'scale', 'var(--blue)', 'A weigh-in you skipped', 'After twice your usual gap, at the hour you usually weigh in'],
+        ['water', 'drop', 'var(--blue)', 'Water behind', 'At 15:00 and 19:00, when you are under 70% of the pace'],
+        ['sleep', 'moon', 'var(--indigo)', 'Last night not synced', 'At 11:00, when the sleep Shortcut usually sends it and has not']].map(([k, icon, tint, title, sub]) =>
+        <Row key={k} icon={icon} iconTint={tint} title={t(title)} subtitle={t(sub)}>
+          <Switch checked={!!S.smartReminders?.[k]} onChange={() => update(s => { s.smartReminders = { ...(s.smartReminders || DEF.smartReminders), [k]: !s.smartReminders?.[k], tz: localTZ() } })} />
+        </Row>)}
+    </Section>}
     {on && <div style={{ marginTop: -12, marginBottom: 22 }}><Button size="sm" icon="bell" onClick={test}>{t('Send test notification')}</Button></div>}
   </>
 }

@@ -2909,4 +2909,15 @@ export default {
   'Medications, exams, weight, sleep and food in one page to print': 'Medications, exams, weight, sleep and food in one page to print',
   '1 month': '1 month',
   '{0} months': '{0} months',
+  // Smart reminders (Settings → Reminders, api/smart-nudges.js)
+  'Smart reminders': 'Smart reminders',
+  'They follow what you usually do, and come at most once a day each.': 'They follow what you usually do, and come at most once a day each.',
+  'A dose not marked yet': 'A dose not marked yet',
+  'An hour after the time you usually mark it': 'An hour after the time you usually mark it',
+  'A weigh-in you skipped': 'A weigh-in you skipped',
+  'After twice your usual gap, at the hour you usually weigh in': 'After twice your usual gap, at the hour you usually weigh in',
+  'Water behind': 'Water behind',
+  'At 15:00 and 19:00, when you are under 70% of the pace': 'At 15:00 and 19:00, when you are under 70% of the pace',
+  'Last night not synced': 'Last night not synced',
+  'At 11:00, when the sleep Shortcut usually sends it and has not': 'At 11:00, when the sleep Shortcut usually sends it and has not',
 }

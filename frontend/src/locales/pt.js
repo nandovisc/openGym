@@ -2916,4 +2916,15 @@ export default {
   'Medications, exams, weight, sleep and food in one page to print': 'Remédios, exames, peso, sono e alimentação numa página para imprimir',
   '1 month': '1 mês',
   '{0} months': '{0} meses',
+  // Smart reminders (Settings → Reminders, api/smart-nudges.js)
+  'Smart reminders': 'Lembretes inteligentes',
+  'They follow what you usually do, and come at most once a day each.': 'Eles seguem o que você costuma fazer, e cada um chega no máximo uma vez por dia.',
+  'A dose not marked yet': 'Dose ainda não marcada',
+  'An hour after the time you usually mark it': 'Uma hora depois do horário em que você costuma marcar',
+  'A weigh-in you skipped': 'Pesagem esquecida',
+  'After twice your usual gap, at the hour you usually weigh in': 'Depois do dobro do seu intervalo habitual, no horário em que costuma se pesar',
+  'Water behind': 'Água atrasada',
+  'At 15:00 and 19:00, when you are under 70% of the pace': 'Às 15h e às 19h, quando estiver abaixo de 70% do ritmo',
+  'Last night not synced': 'Noite não sincronizada',
+  'At 11:00, when the sleep Shortcut usually sends it and has not': 'Às 11h, quando o Atalho do sono costuma enviar e não enviou',
 }

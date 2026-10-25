@@ -82,6 +82,11 @@ export default function Health() {
       <span><b>{t('Your week')}</b><span className="small dim">{t('Sleep, training, weight, doses, water and habits, against the week before')}</span></span>
       <Icon name="chevronRight" className="chev" />
     </button>
+    <button className="card tappable health-week" onClick={() => nav('/health/report')} style={{ marginTop: 12 }}>
+      <span className="lrow-i" style={{ '--tint': 'var(--red)' }}><Icon name="doc" /></span>
+      <span><b>{t('Report for an appointment')}</b><span className="small dim">{t('Medications, exams, weight, sleep and food in one page to print')}</span></span>
+      <Icon name="chevronRight" className="chev" />
+    </button>
     <div className="card" style={{ marginTop: 12 }}>
       <div className="muted small" style={{ marginBottom: 8 }}>{t('Patterns')}</div>
       <Patterns S={S} today={today} limit={3} />

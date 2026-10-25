@@ -2335,3 +2335,26 @@ a.btn{text-decoration:none;box-sizing:border-box}
 .patterns{display:flex;flex-direction:column;gap:12px}
 .pattern{display:flex;gap:10px;align-items:flex-start;line-height:1.4}
 .pattern>svg{color:var(--purple);flex:none;margin-top:2px}
+/* The report for an appointment (views/HealthReport.jsx): a page on screen, paper when printed */
+.report-picks{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin:14px 0}
+.report-page{background:#fff;color:#111;border-radius:var(--r-card);padding:22px;margin-top:12px;line-height:1.45}
+.report-page .small,.report-page .muted{color:#555}
+.report-head{border-bottom:2px solid #111;padding-bottom:10px;margin-bottom:14px}
+.report-head h2{margin:0 0 4px;font-size:22px}
+.report-sec{margin:0 0 18px;break-inside:avoid}
+.report-sec h3{font-size:15px;margin:0 0 8px;padding-bottom:4px;border-bottom:1px solid #ccc;text-transform:uppercase;letter-spacing:.04em}
+.report-table{width:100%;border-collapse:collapse;font-size:13px}
+.report-table th,.report-table td{text-align:start;padding:5px 6px;border-bottom:1px solid #e3e3e3;vertical-align:top}
+.report-table th{font-weight:600;color:#444}
+.report-table tr.out td{color:#b00020;font-weight:600}
+.report-chart{margin:8px 0;--label:#111;--label-2:#555;--label-3:#888;--sep:#ddd}
+.report-notes{min-height:90px;border:1px solid #ccc;border-radius:6px;padding:8px;white-space:pre-wrap}
+.print-only{display:none}
+@media print{
+  body,html{background:#fff !important}
+  #tabbar,.no-print,.conn-bar{display:none !important}
+  .print-only{display:block}
+  .narrow{max-width:none;padding:0}
+  .report-page{border-radius:0;padding:0;margin:0}
+  .report-sec{break-inside:avoid-page}
+}

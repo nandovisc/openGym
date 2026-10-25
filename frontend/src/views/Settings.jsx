@@ -716,7 +716,7 @@ export default function Settings({ page = null, find = null, via = null }) {
     modules: () => {
       const set = (k, v) => update(s => { s.modules = { ...(s.modules || {}), [k]: v } })
       const rows = [['habits', 'checkCircle', 'var(--green)', 'Habits', 'A tab of its own'], ['food', 'flame', 'var(--orange)', 'Nutrition', 'A card on Today and a tile in Health'],
-        ['sleep', 'moon', 'var(--indigo)', 'Sleep', null], ['meds', 'pill', 'var(--teal)', 'Medications', null], ['exams', 'doc', 'var(--red)', 'Medical exams', null]]
+        ['sleep', 'moon', 'var(--indigo)', 'Sleep', null], ['meds', 'pill', 'var(--teal)', 'Medications', null], ['exams', 'doc', 'var(--red)', 'Medical exams', null], ['water', 'drop', 'var(--blue)', 'Water', null]]
       return <>
         <Section footer={t('Switching a module off only hides it: its data stays. With all of them off, the app is the training app it was: the tab bar and Home it always had.')}>
           {rows.map(([k, icon, tint, title, sub]) => <Row key={k} icon={icon} iconTint={tint} title={t(title)} subtitle={sub ? t(sub) : undefined}>

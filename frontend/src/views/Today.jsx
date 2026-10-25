@@ -16,6 +16,8 @@ import { t, dateLocale } from '../lib/i18n.js'
 import { bwSheet, startFlow } from '../sheets.jsx'
 import { addFoodSheet } from './Food.jsx'
 import { HabitRow, useMedHabits, useNow } from './Habits.jsx'
+import { drink, mlText, useWaterMigration } from './Water.jsx'
+import { dayTotal, glassOf, goalOf as waterGoal } from '../lib/water.js'
 import Icon from '../components/Icon.jsx'
 import LineChart from '../components/LineChart.jsx'
 import { useConnectionTrouble } from '../components/SyncBanner.jsx'
@@ -27,9 +29,9 @@ const list = v => (Array.isArray(v) ? v : [])
 
 // Today (Home with the modules beside training on): the day across them, each card with the one
 // thing to do about it — start the workout, add food, mark a habit, take a dose, weigh in.
-export const CARDS = ['training', 'food', 'habits', 'meds', 'sleep', 'weight', 'exams']
-const CARD_LABEL = { training: 'Today’s workout', food: 'Nutrition', habits: 'Habits to do', meds: 'Medications', sleep: 'Sleep', weight: 'Body weight', exams: 'Medical exams' }
-const CARD_MODULE = { food: 'food', habits: 'habits', meds: 'meds', sleep: 'sleep', exams: 'exams' }
+export const CARDS = ['training', 'food', 'water', 'habits', 'meds', 'sleep', 'weight', 'exams']
+const CARD_LABEL = { training: 'Today’s workout', food: 'Nutrition', water: 'Water', habits: 'Habits to do', meds: 'Medications', sleep: 'Sleep', weight: 'Body weight', exams: 'Medical exams' }
+const CARD_MODULE = { food: 'food', water: 'water', habits: 'habits', meds: 'meds', sleep: 'sleep', exams: 'exams' }
 
 /** The meal of the hour, for adding food from Today or the ＋ button. */
 export function slotByHour(date = new Date()) {
@@ -44,8 +46,8 @@ export function slotByHour(date = new Date()) {
  */
 export function cardOrder(S, hour = new Date().getHours()) {
   const own = list(S.homeCards?.order).filter(k => CARDS.includes(k))
-  const auto = hour < 11 ? ['sleep', 'weight', 'meds', 'training', 'food', 'habits', 'exams']
-    : hour >= 18 ? ['habits', 'food', 'meds', 'training', 'sleep', 'weight', 'exams'] : CARDS
+  const auto = hour < 11 ? ['sleep', 'weight', 'meds', 'water', 'training', 'food', 'habits', 'exams']
+    : hour >= 18 ? ['habits', 'food', 'water', 'meds', 'training', 'sleep', 'weight', 'exams'] : CARDS
   const order = own.length ? [...own, ...CARDS.filter(k => !own.includes(k))] : auto
   const hidden = new Set(list(S.homeCards?.hidden))
   return order.filter(k => !hidden.has(k) && (!CARD_MODULE[k] || moduleOn(S, CARD_MODULE[k])))
@@ -143,6 +145,15 @@ function SleepCard({ S, nav }) {
   </Card>
 }
 
+function WaterCard({ S, nav }) {
+  const total = dayTotal(S, todayISO()), goal = waterGoal(S), glass = glassOf(S)
+  return <Card title={t('Water')} onClick={() => nav('/health/water')}
+    action={<Button size="xs" icon="drop" onClick={e => { e.stopPropagation(); drink(glass) }}>+{mlText(glass)}</Button>}>
+    <div className="today-big">{mlText(total)} <span className="small dim">/ {mlText(goal)}</span></div>
+    <div className="today-track"><div style={{ width: Math.min(100, goal ? (total / goal) * 100 : 0) + '%', background: 'var(--blue)' }} /></div>
+  </Card>
+}
+
 function WeightCard({ S }) {
   const bw = lastBW(S)
   const week = S.bodyweight.filter(b => b.d >= new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10))
@@ -191,6 +202,7 @@ export default function Today() {
   const nav = useNavigate()
   const S = useStore(s => s.S)
   useMedHabits()
+  useWaterMigration()
   const user = useStore(s => s.user)
   const trouble = useConnectionTrouble()
   const hToday = todayOf(S)
@@ -200,6 +212,7 @@ export default function Today() {
   const render = {
     training: () => <TrainingCard key="training" S={S} nav={nav} />,
     food: () => <FoodCard key="food" S={S} nav={nav} />,
+    water: () => <WaterCard key="water" S={S} nav={nav} />,
     habits: () => <HabitsCard key="habits" S={S} nav={nav} />,
     meds: () => <MedsCard key="meds" S={S} nav={nav} />,
     sleep: () => <SleepCard key="sleep" S={S} nav={nav} />,

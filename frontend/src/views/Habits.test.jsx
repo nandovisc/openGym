@@ -49,7 +49,7 @@ describe('the day', () => {
 
   it('adds to an amount, runs a timer, logs a slip', () => {
     withState({ habits: [
-      habit({ id: 'w', kind: 'quantity', name: 'Água', goal: { value: 2000, unit: 'ml' } }),
+      habit({ id: 'w', kind: 'quantity', name: 'Suco verde', goal: { value: 2000, unit: 'ml' } }),
       habit({ id: 't', kind: 'timer', name: 'Ler', goal: { value: 30, unit: 'min' }, timer: { stopAtGoal: true } }),
       habit({ id: 'a', kind: 'avoid', name: 'Açúcar' })
     ] })

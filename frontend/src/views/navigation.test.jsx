@@ -25,9 +25,9 @@ describe('navigation by modules', () => {
   it('Health shows a tile for each module on', () => {
     withModules({})
     const all = [...render(<Health />).querySelectorAll('.health-tile b')].map(b => b.textContent)
-    expect(all).toEqual(['Nutrition', 'Sleep', 'Medications', 'Medical exams', 'Body weight', 'Body measurements'])
+    expect(all).toEqual(['Nutrition', 'Sleep', 'Water', 'Medications', 'Medical exams', 'Body weight', 'Body measurements'])
     withModules({ food: false, exams: false })
-    expect([...render(<Health />).querySelectorAll('.health-tile b')].map(b => b.textContent)).toEqual(['Sleep', 'Medications', 'Body weight', 'Body measurements'])
+    expect([...render(<Health />).querySelectorAll('.health-tile b')].map(b => b.textContent)).toEqual(['Sleep', 'Water', 'Medications', 'Body weight', 'Body measurements'])
   })
 
   it('the Training tab has its own tabs, which training-only does not need', () => {

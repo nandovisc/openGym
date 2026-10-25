@@ -2322,3 +2322,10 @@ a.btn{text-decoration:none;box-sizing:border-box}
 .login-label{font-size:13px;color:var(--label-2);margin:0 0 8px;font-weight:600}
 .login-help{margin:8px 4px 0;line-height:1.45}
 .login-code{margin:22px auto 0;color:var(--label-2);text-decoration:underline;text-underline-offset:3px;font-size:13px}
+/* Water (views/Water.jsx): the day's ring and the buttons that add a drink */
+.water-ring{--p:0;width:168px;height:168px;margin:6px auto 0;border-radius:50%;display:grid;place-items:center;
+  background:conic-gradient(var(--blue) calc(var(--p) * 360deg), var(--surface-3) 0)}
+.water-ring>div{width:136px;height:136px;border-radius:50%;background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+.water-ring b{font-size:24px;font-weight:700;letter-spacing:-.02em}
+.water-add{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.water-add>:last-child{grid-column:1 / -1}

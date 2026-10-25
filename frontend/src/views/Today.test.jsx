@@ -30,8 +30,9 @@ describe('Today', () => {
     expect(cardOrder({}, 8).slice(0, 3)).toEqual(['sleep', 'weight', 'meds'])
     expect(cardOrder({}, 20).slice(0, 2)).toEqual(['habits', 'food'])
     expect(cardOrder({}, 14)[0]).toBe('training')
-    expect(cardOrder({ homeCards: { order: ['weight', 'food'], hidden: ['exams'] } }, 8)).toEqual(['weight', 'food', 'training', 'habits', 'meds', 'sleep'])
-    expect(cardOrder({ modules: { food: false, sleep: false } }, 14)).toEqual(['training', 'habits', 'meds', 'weight', 'exams'])
+    expect(cardOrder({ homeCards: { order: ['weight', 'food'], hidden: ['exams'] } }, 8)).toEqual(['weight', 'food', 'training', 'water', 'habits', 'meds', 'sleep'])
+    expect(cardOrder({ modules: { food: false, sleep: false } }, 14)).toEqual(['training', 'water', 'habits', 'meds', 'weight', 'exams'])
+    expect(cardOrder({ modules: { food: false, sleep: false, habits: false, meds: false, exams: false } }, 14)).toEqual(['training', 'weight'])
     expect([slotByHour(new Date('2026-10-22T08:00')), slotByHour(new Date('2026-10-22T12:00')), slotByHour(new Date('2026-10-22T17:00')), slotByHour(new Date('2026-10-22T20:00'))]).toEqual(['breakfast', 'lunch', 'snack', 'dinner'])
   })
 
@@ -64,7 +65,7 @@ describe('the ＋ button', () => {
     quickAddSheet(() => {})
     const sheet = topSheet()
     const items = [...sheet.querySelectorAll('.qa-item b')].map(b => b.textContent)
-    expect(items).toEqual(['Meal', 'Water / habit', 'Weigh-in', 'Task'])
+    expect(items).toEqual(['Meal', 'Water · +250 ml', 'Habit', 'Weigh-in', 'Task'])
     expect(sheet.textContent).toContain('Start workout')
   })
   it('a tap opens Log; a press held half a second starts the workout', () => {

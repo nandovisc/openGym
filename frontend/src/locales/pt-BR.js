@@ -2015,6 +2015,23 @@ export const PT_BR_OVERRIDES = {
   'First time here?': 'Primeira vez aqui?',
   'Create an account': 'Criar uma conta',
   'Already use openGym on another device? Sign in with a code': 'Já usa o openGym em outro aparelho? Entre com um código',
+  // Water (views/Water.jsx, lib/water.js)
+  '+{0} · {1} of {2} today': '+{0} · {1} de {2} hoje',
+  'Your water habit now counts what you log in Water': 'Seu hábito de água agora conta o que você registra em Água',
+  'of {0}': 'de {0}',
+  'Another amount': 'Outra quantidade',
+  'Amount in ml': 'Quantidade em ml',
+  'Water goal': 'Meta de água',
+  'Left empty, the goal is 35 ml per kg of your last weigh-in: {0} now.': 'Em branco, a meta é 35 ml por kg da sua última pesagem: {0} agora.',
+  'Daily goal (ml)': 'Meta diária (ml)',
+  'Your glass (ml)': 'Seu copo (ml)',
+  'Water': 'Água',
+  '{0} days in a row': '{0} dias seguidos',
+  'Glass': 'Copo',
+  'Bottle': 'Garrafa',
+  'Average, 30 days': 'Média, 30 dias',
+  '{0} of 30 days on goal': '{0} de 30 dias na meta',
+  'Done when the water you log in Water reaches your daily goal.': 'Concluído quando a água que você registra em Água chega à meta do dia.',
 }
 
 export default { ...pt, ...PT_BR_OVERRIDES }

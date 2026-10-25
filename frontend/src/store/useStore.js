@@ -110,6 +110,8 @@ export const DEF = {
   savedMeals: [],
   // Habits (lib/habits.js): the habits and tasks, a day's mark of each, their groups, and the
   // preferences — reminders (tz stamped on boot), when the day starts, vacations, filters.
+  // Water (lib/water.js): each glass or bottle drunk, and the goal (null: 35 ml per kg weighed).
+  water: [], waterPrefs: { goalMl: null, glassMl: 250 },
   habits: [], habitLog: [], habitGroups: [], habitPrefs: { on: false, tz: null, dayStartsAt: '00:00', vacations: [], hideDone: false, hideFailed: false, hideSkipped: false, hideStreaks: false },
   queue: null,   // a planner's floating week (lib/queue.js) — via the API, or by this rotation feature (below)
   // The in-app rotation's reusable definition — { id, sequence, label } (lib/rotation.js). Never

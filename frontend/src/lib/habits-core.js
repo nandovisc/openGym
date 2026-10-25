@@ -24,7 +24,7 @@ const weekdayOf = d => new Date(d + 'T12:00:00Z').getUTCDay()
 const dayOfMonth = d => +d.slice(8, 10)
 
 export const logId = (habitId, d) => `${habitId}|${d}`
-export const SOURCES = ['workout', 'weight', 'meds', 'meals', 'sleep', 'photo']
+export const SOURCES = ['workout', 'weight', 'meds', 'meals', 'sleep', 'photo', 'water']
 export const MEAL_SLOTS = ['breakfast', 'lunch', 'dinner', 'snack']
 
 /** The schedule of `habit` in force on day `d`: the last version starting on or before it. */
@@ -66,6 +66,14 @@ function dosesOfDay(S, d, medId) {
     }
   }
   return { total, done }
+}
+function waterGoal(S) {
+  const set = Number(S.waterPrefs?.goalMl)
+  if (set > 0) return Math.round(set)
+  const bw = list(S.bodyweight).filter(e => Number(e?.w) > 0).at(-1)
+  if (!bw) return 2000
+  const kg = S.unit === 'lb' ? Number(bw.w) * 0.45359237 : Number(bw.w)
+  return Math.max(1000, Math.round(kg * 35 / 50) * 50)
 }
 // A bedtime after noon is that evening; before noon, the small hours after it.
 const bedLine = local => { const m = minutesOf(String(local).slice(11, 16)); return m < 720 ? m + 1440 : m; }
@@ -109,6 +117,13 @@ export function autoValue(habit, d, S) {
     const want = slots.length ? slots : ['breakfast', 'lunch', 'dinner']
     const have = want.filter(slot => meals.some(m => m.slot === slot))
     return { value: have.length, goal: want.length, done: have.length >= want.length, detail: have.join(',') }
+  }
+  // Water (lib/water.js): the day's drinks against the goal — the one set, else 35 ml per kg of
+  // the last weigh-in rounded to 50 ml, else 2,000 ml.
+  if (a.source === 'water') {
+    const ml = list(S.water).filter(x => x?.d === d).reduce((n, x) => n + (Math.round(Number(x.ml)) || 0), 0)
+    const goal = waterGoal(S)
+    return { value: ml, goal, done: ml >= goal, detail: `${ml}/${goal}` }
   }
   if (a.source === 'sleep') {
     const n = list(S.sleep).find(x => x?.d === d)

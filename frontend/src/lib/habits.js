@@ -346,6 +346,9 @@ export function suggestedHabits(S, today, names = {}) {
   if (last(pDays, 28).length && !have.has('photo')) add('photo', { schedule: { type: 'perWeek', times: 1 } }, since(pDays))
   const mDays = [...new Set(list(S.meals).filter(m => list(m?.items).length).map(m => m.d))]
   if (last(mDays, 14).length >= 3 && !have.has('meals')) add('meals', { auto: { mode: 'slots', slots: ['breakfast', 'lunch', 'dinner'] } }, since(mDays))
+  // Water logged on most days lately: the goal, every day.
+  const waDays = [...new Set(list(S.water).map(e => e?.d))]
+  if (last(waDays, 14).length >= 3 && !have.has('water')) add('water', {}, since(waDays))
   const sDays = list(S.sleep).map(n => n?.d)
   if (last(sDays, 14).length >= 3 && !have.has('sleep')) add('sleep', { auto: { mode: 'goal' } }, since(sDays))
   // One id per source: two phones making them before they sync make the same habit, not two.

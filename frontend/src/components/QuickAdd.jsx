@@ -12,6 +12,8 @@ import { addFoodSheet } from '../views/Food.jsx'
 import { nightSheet } from '../views/Sleep.jsx'
 import { HabitRow, habitFormSheet } from '../views/Habits.jsx'
 import { slotByHour } from '../views/Today.jsx'
+import { drink, mlText } from '../views/Water.jsx'
+import { dayTotal, glassOf, goalOf as waterGoal } from '../lib/water.js'
 import Icon from './Icon.jsx'
 import { Button } from './ui.jsx'
 
@@ -87,7 +89,8 @@ function QuickAdd({ close, onStartWorkout }) {
     </button>
     <div className="qa-grid">
       {moduleOn(S, 'food') && <Item icon="flame" tint="var(--orange)" title={t('Meal')} sub={t(SLOT_LABEL[slot])} onClick={go(() => addFoodSheet(today, slot))} />}
-      {moduleOn(S, 'habits') && <Item icon="checkCircle" tint="var(--green)" title={t('Water / habit')} sub={t('Mark what you did')} onClick={go(() => ui().openSheet(c => <PendingHabits close={c} />))} />}
+      {moduleOn(S, 'water') && <Item icon="drop" tint="var(--blue)" title={t('Water') + ' · +' + mlText(glassOf(S))} sub={t('{0} of {1} today', mlText(dayTotal(S, today)), mlText(waterGoal(S)))} onClick={go(() => drink(glassOf(S)))} />}
+      {moduleOn(S, 'habits') && <Item icon="checkCircle" tint="var(--green)" title={t('Habit')} sub={t('Mark what you did')} onClick={go(() => ui().openSheet(c => <PendingHabits close={c} />))} />}
       <Item icon="scale" tint="var(--blue)" title={t('Weigh-in')} sub={bw ? `${fmtNum(bw.w)} ${S.unit}` : undefined} onClick={go(() => bwSheet())} />
       {moduleOn(S, 'meds') && list(S.meds).length > 0 && <Item icon="pill" tint="var(--teal)" title={t('Dose taken')} sub={next ? `${next.med.name} · ${next.time}` : t('All doses taken today')} onClick={go(() => ui().openSheet(c => <DosesToday close={c} />))} />}
       {moduleOn(S, 'sleep') && <Item icon="moon" tint="var(--indigo)" title={t('Night of sleep')} sub={t('Bed and wake times')} onClick={go(() => nightSheet())} />}

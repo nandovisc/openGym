@@ -4,6 +4,8 @@ import { doseState, dosesOn, hhmmOf } from '../lib/meds.js'
 import { examsByDate, outOfRange } from '../lib/exams.js'
 import { foodToday } from './Food.jsx'
 import { sleepLast } from './Sleep.jsx'
+import { mlText } from './Water.jsx'
+import { dayTotal, goalOf as waterGoal } from '../lib/water.js'
 import { lastBW } from '../lib/history.js'
 import { fmtDate, fmtDur, fmtNum, todayISO } from '../lib/format.js'
 import { bwChartPoint } from '../lib/bodyweight.js'
@@ -62,6 +64,7 @@ export default function Health() {
     <div className="health-grid">
       {on('food') && tile('flame', 'var(--orange)', t('Nutrition'), food.logged ? (food.target ? t('{0} of {1} kcal today', fmtNum(food.kcal), fmtNum(food.target)) : t('{0} kcal today', fmtNum(food.kcal))) : t('Meals, calories and macros'), () => nav('/health/food'))}
       {on('sleep') && tile('moon', 'var(--indigo)', t('Sleep'), sleep ? `${fmtDur(sleep.min * 60000)} · ${sleep.bed} → ${sleep.wake}` : t('No nights yet'), () => nav('/health/sleep'))}
+      {on('water') && tile('drop', 'var(--blue)', t('Water'), t('{0} of {1} today', mlText(dayTotal(S, today)), mlText(waterGoal(S))), () => nav('/health/water'))}
       {on('meds') && tile('pill', 'var(--teal)', t('Medications'), medsSub, () => nav('/health/meds'), meds.late > 0)}
       {on('exams') && tile('doc', 'var(--red)', t('Medical exams'), lastExam ? (outOfRange(lastExam) ? t('{0} out of range', outOfRange(lastExam)) : fmtDate(lastExam.d, true)) : t('No exams yet'), () => nav('/health/exams'), !!(lastExam && outOfRange(lastExam)))}
       {tile('scale', 'var(--blue)', t('Body weight'), bw ? `${fmtNum(bw.w)} ${S.unit} · ${fmtDate(bw.d, true)}` : t('No weigh-ins yet'), weighInsSheet)}

@@ -9,6 +9,7 @@ import {
 } from '../lib/habits.js'
 import { adherence, dosesOn, markDose, unmark } from '../lib/meds.js'
 import { moduleOn } from '../lib/modules.js'
+import { mlText, useWaterMigration } from './Water.jsx'
 import { pushPermission } from '../lib/push.js'
 import { useWakeLock } from '../lib/wakelock.js'
 import { DAYN, fmtDate, fmtNum, localTZ, uid } from '../lib/format.js'
@@ -24,14 +25,14 @@ const toast = message => ui().toast(message)
 const list = v => (Array.isArray(v) ? v : [])
 
 const KIND_LABEL = { check: 'Yes / no', quantity: 'Amount with a goal', timer: 'Time with a timer', avoid: 'Avoid (bad habit)', auto: 'Automatic (from the app)', task: 'One-off task' }
-const SOURCE_LABEL = { workout: 'Workout', weight: 'Weigh-in', meds: 'Medications', meals: 'Meals', sleep: 'Sleep', photo: 'Progress photo' }
+const SOURCE_LABEL = { workout: 'Workout', weight: 'Weigh-in', meds: 'Medications', meals: 'Meals', sleep: 'Sleep', photo: 'Progress photo', water: 'Water' }
 const SLOT_LABEL = { breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner', snack: 'Snacks' }
 const SCHED_LABEL = { daily: 'Every day', weekdays: 'Days of the week', monthdays: 'Days of the month', perWeek: 'Times a week' }
 const STATE_LABEL = { done: 'Done', partial: 'In progress', missed: 'Missed', failed: 'Failed', skipped: 'Skipped', pending: 'To do', off: 'Not today' }
 const COLORS = ['#30d158', '#0a84ff', '#ff9f0a', '#ff453a', '#bf5af2', '#64d2ff', '#ffd60a', '#ff375f']
 const ICONS = ['✅', '💧', '📖', '🧘', '🏃', '🏋️', '⚖️', '💊', '🍽️', '😴', '🚭', '🍬', '📵', '🦷', '🌿', '✍️']
 const WEEK = [0, 1, 2, 3, 4, 5, 6]
-const iconOf = h => h.icon || { check: '✅', quantity: '💧', timer: '⏱️', avoid: '🚫', task: '📝', auto: { workout: '🏋️', weight: '⚖️', meds: '💊', meals: '🍽️', sleep: '😴', photo: '📸' }[h.auto?.source] || '🔄' }[h.kind]
+const iconOf = h => h.icon || { check: '✅', quantity: '💧', timer: '⏱️', avoid: '🚫', task: '📝', auto: { workout: '🏋️', weight: '⚖️', meds: '💊', meals: '🍽️', sleep: '😴', photo: '📸', water: '💧' }[h.auto?.source] || '🔄' }[h.kind]
 const unitText = u => (u ? t(u) : '')
 const valueText = (v, h) => (h.kind === 'timer' ? `${fmtNum(Math.floor(v))} min` : `${fmtNum(Math.round(v * 10) / 10)} ${unitText(h.goal?.unit)}`.trim())
 const stepOf = h => (h.goal?.unit === 'ml' ? 250 : h.goal?.unit === 'g' ? 50 : h.goal?.unit === 'steps' ? 1000 : h.goal?.value >= 20 ? Math.round(h.goal.value / 8) : 1)
@@ -176,6 +177,7 @@ function autoText(h, st) {
   if (st.state === 'off') return `${src} · ${t('Nothing due today')}`
   if (h.auto?.source === 'workout') return [src, st.detail || null].filter(Boolean).join(' · ')
   if (h.auto?.source === 'weight') return st.detail ? `${src} · ${fmtNum(+st.detail)} kg` : src
+  if (h.auto?.source === 'water') return `${src} · ${mlText(st.value)} / ${mlText(st.goal)}`
   if (h.auto?.source === 'meds') return `${src} · ${t('{0} of {1} doses', st.value, st.goal)}`
   if (h.auto?.source === 'meals') return h.auto.mode === 'target' ? `${src} · ${fmtNum(st.value)} / ${fmtNum(st.goal)} kcal` : `${src} · ${t('{0} of {1} meals', st.value, st.goal)}`
   if (h.auto?.source === 'sleep') return h.auto.mode === 'bedBy' ? `${src} · ${t('in bed by {0}', h.auto.bedBy)}${st.detail ? ' · ' + st.detail : ''}` : `${src} · ${fmtNum(Math.floor(st.value / 60))}h${String(st.value % 60).padStart(2, '0')} / ${fmtNum(st.goal / 60)}h`
@@ -221,7 +223,7 @@ function useDragOrder(ids, onDone) {
   return { state, start }
 }
 
-const SOURCE_NAME = () => ({ meds: t('Medications'), workout: t('Workout'), weight: t('Weigh-in'), meals: t('Meals'), sleep: t('Sleep'), photo: t('Progress photo') })
+const SOURCE_NAME = () => ({ meds: t('Medications'), workout: t('Workout'), weight: t('Weigh-in'), meals: t('Meals'), sleep: t('Sleep'), photo: t('Progress photo'), water: t('Water') })
 const addHabits = hs => update(s => { s.habits = [...list(s.habits).filter(x => !hs.some(h => h.id === x.id)), ...hs] })
 
 /**
@@ -380,6 +382,7 @@ export default function Habits() {
   const [tab, setTab] = useState(() => (/recap=1/.test(loc.search) ? 'stats' : 'today'))
   const today = todayOf(S)
   useMedHabits()
+  useWaterMigration()
   // The first visit: the habits the app's data asks for are made at once, already marked by it.
   useEffect(() => {
     const st = useStore.getState().S
@@ -532,7 +535,7 @@ function HabitForm({ id, preset, close }) {
       <div className="sect-b"><SelectRow title={t('Type')} sheetTitle={t('Type')} value={k} onChange={v => set('kind', v)} options={KINDS.map(x => ({ value: x, label: t(KIND_LABEL[x]) }))} /></div>
       {k === 'auto' && <>
         <div className="sect-b"><SelectRow title={t('Comes from')} sheetTitle={t('Comes from')} value={f.auto.source} onChange={v => set('auto', { ...f.auto, source: v, mode: '' })} options={SOURCES.map(x => ({ value: x, label: t(SOURCE_LABEL[x]) }))} /></div>
-        <div className="small dim">{t({ workout: 'Done on a day with a finished workout.', weight: 'Done on a day with a weigh-in.', meds: 'Done when every dose of the day is taken. Days without a dose do not count.', meals: 'Done when the meals you choose are logged, or when the day is within your calorie target.', sleep: 'Done when the night reaches your sleep goal, or when you were in bed by a time.', photo: 'Done on a day with a progress photo, kept with the weigh-in or a workout. Set it to once a week for a weekly reminder.' }[f.auto.source])}</div>
+        <div className="small dim">{t({ workout: 'Done on a day with a finished workout.', weight: 'Done on a day with a weigh-in.', meds: 'Done when every dose of the day is taken. Days without a dose do not count.', meals: 'Done when the meals you choose are logged, or when the day is within your calorie target.', sleep: 'Done when the night reaches your sleep goal, or when you were in bed by a time.', photo: 'Done on a day with a progress photo, kept with the weigh-in or a workout. Set it to once a week for a weekly reminder.', water: 'Done when the water you log in Water reaches your daily goal.' }[f.auto.source])}</div>
         {f.auto.source === 'meals' && <>
           <Segmented value={f.auto.mode === 'target' ? 'target' : 'slots'} onChange={v => set('auto', { ...f.auto, mode: v })} options={[{ value: 'slots', label: t('Meals logged') }, { value: 'target', label: t('Calorie target') }]} />
           {f.auto.mode !== 'target' && <DayChips values={f.auto.slots} options={MEAL_SLOTS} labels={MEAL_SLOTS.map(x => t(SLOT_LABEL[x]))} onChange={v => set('auto', { ...f.auto, slots: v })} />}

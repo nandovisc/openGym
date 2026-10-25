@@ -46,6 +46,7 @@ import CoachChat from './views/CoachChat.jsx'
 import Measurements from './views/Measurements.jsx'
 import Health from './views/Health.jsx'
 import Meds from './views/Meds.jsx'
+import Water from './views/Water.jsx'
 import Exams from './views/Exams.jsx'
 import Food from './views/Food.jsx'
 import Sleep from './views/Sleep.jsx'
@@ -230,6 +231,7 @@ function Shell() {
               <Route path="/health/exams" element={<Exams />} />
               <Route path="/health/food" element={<Food />} />
               <Route path="/health/sleep" element={<Sleep />} />
+              <Route path="/health/water" element={<Water />} />
               <Route path="/health/habits" element={<Habits />} />
               <Route path="/habits" element={<Habits />} />
               <Route path="/training" element={<Training />} />

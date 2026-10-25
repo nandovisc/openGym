@@ -2982,4 +2982,7 @@ export default {
   'At 15:00 and 19:00, when you are under 70% of the pace': 'At 15:00 and 19:00, when you are under 70% of the pace',
   'Last night not synced': 'Last night not synced',
   'At 11:00, when the sleep Shortcut usually sends it and has not': 'At 11:00, when the sleep Shortcut usually sends it and has not',
+  // Your week and Patterns as cards on Today (views/WeekReport.jsx)
+  'The week just over': 'The week just over',
+  'This week so far': 'This week so far',
 }

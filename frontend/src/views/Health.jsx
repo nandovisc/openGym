@@ -5,7 +5,6 @@ import { examsByDate, outOfRange } from '../lib/exams.js'
 import { foodToday } from './Food.jsx'
 import { sleepLast } from './Sleep.jsx'
 import { mlText } from './Water.jsx'
-import { Patterns } from './WeekReport.jsx'
 import { dayTotal, goalOf as waterGoal } from '../lib/water.js'
 import { lastBW } from '../lib/history.js'
 import { fmtDate, fmtDur, fmtNum, todayISO } from '../lib/format.js'
@@ -76,20 +75,10 @@ export default function Health() {
       {weights.length > 1 && <div className="chart" style={{ marginTop: 8 }}><LineChart points={weights.map(bwChartPoint)} h={120} unit={S.unit} goal={S.targetW} /></div>}
       {progress.map((x, i) => <div key={i} className="small" style={{ marginTop: 6 }}>{x}</div>)}
     </div>}
-    {/* The week across the modules, and what goes together (views/WeekReport.jsx). */}
-    <button className="card tappable health-week" onClick={() => nav('/health/week')} style={{ marginTop: 12 }}>
-      <span className="lrow-i" style={{ '--tint': 'var(--purple)' }}><Icon name="calendar" /></span>
-      <span><b>{t('Your week')}</b><span className="small dim">{t('Sleep, training, weight, doses, water and habits, against the week before')}</span></span>
-      <Icon name="chevronRight" className="chev" />
-    </button>
     <button className="card tappable health-week" onClick={() => nav('/health/report')} style={{ marginTop: 12 }}>
       <span className="lrow-i" style={{ '--tint': 'var(--red)' }}><Icon name="doc" /></span>
       <span><b>{t('Report for an appointment')}</b><span className="small dim">{t('Medications, exams, weight, sleep and food in one page to print')}</span></span>
       <Icon name="chevronRight" className="chev" />
     </button>
-    <div className="card" style={{ marginTop: 12 }}>
-      <div className="muted small" style={{ marginBottom: 8 }}>{t('Patterns')}</div>
-      <Patterns S={S} today={today} limit={3} />
-    </div>
   </div>
 }

@@ -60,7 +60,7 @@ summary{cursor:pointer;color:var(--acc);font-weight:600;font-size:15px}
     <h1 lang="pt-BR">Cada atualização, deploy a deploy</h1>
     <h1 lang="en">Every update, deploy by deploy</h1>
     <p lang="pt-BR">Cada item é uma versão publicada do app, da mais nova para a mais antiga, com as notas de cada mudança.</p>
-    <p lang="en">Each item is a published version of the app, newest first, with the notes of each change. <span class="pt-only">The notes are written in Portuguese.</span></p>
+    <p lang="en">Each item is a published version of the app, newest first, with the notes of each change. <span class="pt-only">The notes are in Portuguese.</span></p>
   </div>
   <ol class="log" id="log" aria-live="polite"></ol>
   <p class="status" id="status"><span lang="pt-BR">Carregando…</span><span lang="en">Loading…</span></p>
@@ -72,7 +72,7 @@ summary{cursor:pointer;color:var(--acc);font-weight:600;font-size:15px}
 </div></footer>
 
 <script type="module">
-import { deploysOf, fetchMerged, mdToHtml } from './changelog-core.mjs'
+import { deploysOf, fetchMerged, inPortuguese, mdToHtml } from './changelog-core.mjs'
 
 const root = document.documentElement
 const $log = document.getElementById('log'), $status = document.getElementById('status')
@@ -117,13 +117,15 @@ for (const b of document.querySelectorAll('.langs button')) b.addEventListener('
 })
 
 // GitHub first, so a deploy shows up as soon as it is merged; the saved copy when it cannot be read.
+// The pull requests written in English read in Portuguese (changelog-pt.json).
 const timed = (url, opts) => { const c = new AbortController(); setTimeout(() => c.abort(), 6000); return fetch(url, { ...opts, signal: c.signal }) }
+const pt = fetch('changelog-pt.json').then(r => r.json()).catch(() => null)
 try {
-  deploys = deploysOf(await fetchMerged(timed)); source = 'live'
+  deploys = deploysOf(inPortuguese(await fetchMerged(timed), await pt)); source = 'live'
 } catch {
   try {
     const j = await (await fetch('changelog.json', { cache: 'no-cache' })).json()
-    deploys = deploysOf(j.prs); source = j.at
+    deploys = deploysOf(inPortuguese(j.prs, await pt)); source = j.at
   } catch { deploys = [] }
 }
 render()

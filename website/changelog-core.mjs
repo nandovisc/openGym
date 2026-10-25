@@ -35,6 +35,14 @@ export function deploysOf(prs) {
     .reverse()
 }
 
+/**
+ * `prs` with the Portuguese title and notes of the ones written in English (changelog-pt.json,
+ * keyed by number), so the page reads in one language. GitHub keeps the originals.
+ */
+export function inPortuguese(prs, pt) {
+  return (Array.isArray(prs) ? prs : []).map(p => (pt && pt[p.n] ? { ...p, title: pt[p.n].title || p.title, body: pt[p.n].body ?? p.body } : p))
+}
+
 // What a pull request says, without what is only for the reviewer: the tests it ran, the line the
 // tool that wrote it signs with.
 export function trimBody(body) {

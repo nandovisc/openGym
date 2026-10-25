@@ -1,0 +1,59 @@
+{
+ "_": "Títulos e notas em português dos pull requests escritos em inglês (changelog-core.mjs aplica por número). O GitHub fica como está.",
+ "23": {
+  "title": "Hoje e o botão ＋ (navegação, parte 2)",
+  "body": "Parte 2 da navegação escolhida no protótipo, sobre o #22.\n\n**Hoje** (a tela inicial quando algum módulo além do treino está ligado; quem usa só o treino continua com a tela inicial antiga):\n- No topo: anel dos hábitos do dia, treinos da semana e sequência semanal.\n- Cartões, cada um com a sua ação no lugar:\n  - **Treino de hoje:** começar, retomar, treinou ✓ ou o próximo dia de treino;\n  - **Alimentação:** kcal restantes e barras de macros; o ＋ adiciona à refeição da hora;\n  - **Hábitos por fazer:** até 4, marcados ali mesmo;\n  - **Medicamentos:** próxima dose → *Tomei*;\n  - **Sono:** a última noite comparada com a meta, com as fases;\n  - **Peso corporal:** última pesagem, variação em 7 dias, minigráfico e *Pesar*;\n  - **Exames médicos:** só quando o último exame tem valores fora da referência.\n- Ordem pela hora do dia (de manhã sono, peso e doses primeiro; à noite, hábitos e alimentação), a não ser que você defina a sua. **Personalizar Hoje** esconde e reordena os cartões.\n\n**Botão ＋:** um toque abre **Registrar** (começar treino, refeição, água ou hábito, pesagem, dose tomada, noite de sono, tarefa, conforme os módulos ligados). Segurando meio segundo, o treino de hoje começa direto (o antigo ▶). Com um treino em andamento, a barra mostra o botão de retomar."
+ },
+ "22": {
+  "title": "Navegação por módulos: Hoje · Treino · Começar · Hábitos · Saúde (parte 1)",
+  "body": "Parte 1 da navegação escolhida no protótipo (opção A). A parte 2 traz a tela Hoje e o botão ＋ de registro rápido.\n\n- **Barra de abas:** com algum módulo além do treino ligado → **Hoje · Treino · ▶ · Hábitos · Saúde** (com Hábitos desligado, Estatísticas entra no lugar). Com todos os módulos desligados, voltam a barra e a tela inicial originais.\n- **Ajustes → Módulos:** liga e desliga Hábitos, Alimentação, Sono, Medicamentos e Exames. Esconder um módulo mantém os dados. A tela mostra como a barra fica.\n- **Aba Treino:** a antiga tela inicial do treino (semana, treino de hoje, check-in na academia, plano inicial, sequência), com as abas **Semana · Plano · Exercícios · Estatísticas** no topo.\n- **Hábitos** ganha a própria aba. **Saúde:** um bloco por módulo ligado e um cartão \"Progresso · 30 dias\" (gráfico de peso, variação e média de kcal contra a meta)."
+ },
+ "21": {
+  "title": "Hábitos criados a partir do que o app já registra",
+  "body": "A página de Hábitos abria vazia, embora o perfil já tivesse remédio diário, treinos, pesagens, refeições e sono.\n\n- **Sugestões automáticas** a partir dos dados: medicamentos (ativos, com horários), treinos (N vezes por semana, pelas últimas 4 semanas), pesagens (diárias ou N vezes por semana), refeições e sono (com 3 dias ou mais nas últimas 2 semanas). Cada hábito começa no primeiro dia com dados nos últimos 90 dias, então sequências e taxas já aparecem.\n- **Na primeira visita** os hábitos são criados de uma vez, com um aviso dizendo quais. Depois, um cartão \"Do que você já registra\" oferece os novos (Adicionar, Adicionar todos ou Agora não).\n- Dois aparelhos que criam os hábitos antes de sincronizar ficam com um hábito só."
+ },
+ "20": {
+  "title": "Hábitos, parte B: resumo semanal, calendário, lembretes por grupo e pelo horário de costume, ordem e gráficos",
+  "body": "Parte B do módulo de hábitos, sobre o #19.\n\n- **Resumo semanal:** cartão \"Sua semana\" em Estatísticas (taxa, comparação com a semana anterior, o que foi feito todo dia e o que ficou para trás) e uma notificação na primeira manhã da semana, às 9h.\n- **Calendário (.ics):** por hábito ou por grupo, com eventos nos horários dos lembretes, na frequência do hábito e até a data de fim.\n- **Lembrete no horário de costume:** um hábito sem horário próprio pode lembrar no horário em que você costuma marcá-lo.\n- **Lembretes por grupo:** horários por grupo, enviados quando algum hábito do grupo ainda falta, com a opção de silenciar os lembretes de cada hábito.\n- **Arrastar para reordenar** os hábitos, com o dedo ou o mouse.\n- **Gráficos na lista:** os últimos 7 dias em barras, grade ou linha, escolhido por hábito."
+ },
+ "19": {
+  "title": "Saúde: hábitos no estilo do Grit, marcados pelo resto do app (parte A)",
+  "body": "Parte A do módulo de hábitos (o essencial). A parte B (resumo semanal, calendário, lembretes por grupo, reordenar e gráficos) vem em seguida.\n\n**Tipos:** sim ou não · quantidade com meta (toque para somar ou arraste a barra) · cronômetro (segue com o app fechado e para na meta) · evitar (dias sem e registro de recaída) · tarefa avulsa (sai da lista quando feita) · automáticos: treino, pesagem, medicamentos, refeições e sono.\n\n**Agenda:** todo dia, dias da semana, dias do mês ou N vezes por semana; versões da agenda para o passado manter a regra antiga; início e fim; pular, falhou, férias, \"o dia começa às\", filtros, busca, grupos, duplicar, arquivar e exportar.\n\n**Estatísticas:** sequências, taxa de sucesso em 7, 30 e 90 dias, mapa do ano, gráfico com a meta, marcos de 7, 21, 30, 66, 100 e 365 dias, faltas por dia da semana e regularidade por remédio.\n\n**Lembretes:** só quando o hábito ainda não foi feito, enviados pelo servidor."
+ },
+ "18": {
+  "title": "Alimentação: mais alimentos, busca mais tolerante, meus alimentos e refeições salvas",
+  "body": "Buscar \"nugget\" não encontrava nada. Agora:\n\n- **Busca tolerante:** aceita sem acento, no plural e com sinônimos. Os resultados vêm agrupados: meus alimentos (os mais usados primeiro), refeições salvas, TACO, USDA e produtos industrializados.\n- **USDA:** 1.851 alimentos genéricos traduzidos para o português, sem repetir os que a TACO já tem, sempre por 100 g.\n- **Produtos do Open Food Facts** aparecem enquanto você digita, buscados pelo servidor.\n- **Criar alimento** quando nada aparece (porção do rótulo em g ou ml, ou por 100 g), e **Meus alimentos** para editar e apagar, pela ordem de uso.\n- **Refeições salvas:** os pratos das fotos ficam salvos sozinhos e qualquer refeição pode ser salva. Dá para adicionar inteira ou só os alimentos marcados, de ×½ a ×2."
+ },
+ "17": {
+  "title": "Alimentação: campos de número no estilo do resto do app",
+  "body": "No tema escuro, os campos de número de Saúde → Alimentação (metas, registro rápido, quantidades) apareciam como caixas brancas com texto branco. Agora todos seguem o estilo do app."
+ },
+ "16": {
+  "title": "Alimentação: os alimentos estimados pela foto ficam em Meus alimentos",
+  "body": "Quando a IA estima um prato, cada alimento também é salvo nos seus alimentos: por 100 g a partir da estimativa, com os gramas estimados como porção e um ✨ na lista. Eles aparecem em *Recentes e meus alimentos* e na busca. Um nome já salvo (sem contar acentos e maiúsculas) é reaproveitado, sem duplicar nem sobrescrever."
+ },
+ "15": {
+  "title": "Sono: baixar o Atalho pelo app e colar uma linha",
+  "body": "- Botão **Baixar o Atalho** em Saúde → Sono → 🔗.\n- Ao criar o token, o app copia uma linha com o endereço do servidor e o token. O primeiro Texto do Atalho recebe essa linha, então um único arquivo assinado serve para qualquer servidor.\n- Os passos foram reescritos no app e no guia do Atalho do sono."
+ },
+ "14": {
+  "title": "Sono: o tipo do app Saúde no Atalho é \"Sleep\"",
+  "body": "Testado num iPhone em português: em *Encontrar Amostras de Saúde*, a noite é o tipo **Sleep** (o nome continua em inglês); *Alterações do Sono* é um sintoma registrado à mão. O passo a passo no app e no guia agora diz isso."
+ },
+ "13": {
+  "title": "Importação: um export do app Saúde só com sono pode ser importado",
+  "body": "O resumo da importação só liberava o botão quando havia pesagens novas. Um `export.xml` só com os registros de sono mostrava 1.223 noites novas e o botão desativado, **Nada de novo para importar**. Agora as noites novas também contam."
+ },
+ "12": {
+  "title": "Saúde: sono, do app Saúde por um Atalho do iPhone ou à mão",
+  "body": "Etapa 4 da central de saúde: **Saúde → Sono**.\n\n- **Última noite:** horário de dormir e de acordar, tempo dormindo e na cama, barra das fases (profundo, essencial, REM, acordado) e meta (8 h por padrão, ajustável).\n- **Lista de noites**, **registro à mão** (horários, qualidade de 1 a 5, anotação), editar e apagar. Uma noite do app Saúde editada fica marcada e nunca é sobrescrita.\n- **Evolução** em 7, 30 e 90 dias: duração média, horários de dormir e acordar, noites na meta, regularidade e gráfico com a meta.\n- **Sincronização com o app Saúde** por um Atalho do iPhone, com um token pessoal que só envia dados e pode ser revogado. Quando relógio e anel registram a mesma noite, vale o que tem as fases.\n- A importação do `export.xml` agora lê o arquivo em partes e traz as noites também."
+ },
+ "11": {
+  "title": "Alimentação: escolher a foto do prato na galeria também",
+  "body": "A aba Foto ganhou o botão **Da galeria** ao lado de **Foto do prato**. O processo é o mesmo (até 3 fotos, estimativa da IA em segundo plano), mas abre a biblioteca de fotos do celular em vez da câmera."
+ },
+ "10": {
+  "title": "Saúde: diário alimentar com calorias, macros e fotos do prato lidas por IA",
+  "body": "Etapa 3 da central de saúde: **Saúde → Alimentação**.\n\n- Refeições por horário com kcal, proteína, carboidrato e gordura; o dia com o que falta ou passou da meta e barras por macro.\n- Adicionar alimento pela **tabela TACO** (busca enquanto digita, sem acento), pelo **código de barras** (Open Food Facts, câmera ou digitado), por uma **foto do prato** estimada pela IA em segundo plano (nunca sobrescreve o que foi adicionado à mão) ou pelo **registro rápido**.\n- **Metas** sugeridas pela fórmula de Mifflin-St Jeor (proteína 1,8 g/kg, gordura 25%, carboidrato o resto), editáveis.\n- **Evolução** em 7, 30 e 90 dias, com a linha da meta."
+ }
+}

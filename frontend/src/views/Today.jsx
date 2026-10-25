@@ -17,6 +17,7 @@ import { bwSheet, startFlow } from '../sheets.jsx'
 import { addFoodSheet } from './Food.jsx'
 import { HabitRow, useMedHabits, useNow } from './Habits.jsx'
 import { drink, mlText, useWaterMigration } from './Water.jsx'
+import { WeekCard } from './WeekReport.jsx'
 import { dayTotal, glassOf, goalOf as waterGoal } from '../lib/water.js'
 import Icon from '../components/Icon.jsx'
 import LineChart from '../components/LineChart.jsx'
@@ -232,6 +233,7 @@ export default function Today() {
         {sw > 0 && <span className="today-chip">{t('{0} week streak', sw)}</span>}
       </div>
     </div>
+    <WeekCard S={S} nav={nav} />
     {cardOrder(S).map(k => render[k]())}
     <button className="linkbtn today-custom" onClick={() => ui().openSheet(close => <Customize close={close} />)}>{t('Customize Today')}</button>
   </div>

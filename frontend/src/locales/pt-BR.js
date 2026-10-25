@@ -2032,6 +2032,25 @@ export const PT_BR_OVERRIDES = {
   'Average, 30 days': 'Média, 30 dias',
   '{0} of 30 days on goal': '{0} de 30 dias na meta',
   'Done when the water you log in Water reaches your daily goal.': 'Concluído quando a água que você registra em Água chega à meta do dia.',
+  // Your week and the patterns across the modules (views/WeekReport.jsx, lib/insights.js)
+  '{0} vs the week before': '{0} em relação à semana anterior',
+  '{0} this week': '{0} nesta semana',
+  'One weigh-in': 'Uma pesagem',
+  '{0} g protein a day': '{0} g de proteína por dia',
+  'protein under target on {0} of {1} days': 'proteína abaixo da meta em {0} de {1} dias',
+  '{0} of {1} days on goal': '{0} de {1} dias na meta',
+  'Patterns show up here once there are a few weeks of data in two modules.': 'Os padrões aparecem aqui quando houver algumas semanas de dados em dois módulos.',
+  'Nothing logged that week.': 'Nada registrado nessa semana.',
+  'Patterns': 'Padrões',
+  'Sleep, training, weight, doses, water and habits, against the week before': 'Sono, treino, peso, doses, água e hábitos, comparados com a semana anterior',
+  'Over {0} weeks': 'Com base em {0} semanas',
+  'Over {0} days': 'Com base em {0} dias',
+  'After nights under 6 hours, you trained {0}% less that day.': 'Depois de noites com menos de 6 horas, você treinou {0}% menos naquele dia.',
+  'In weeks with 3 or more workouts your weight moved {0} on average, against {1} in weeks with one or none.': 'Nas semanas com 3 ou mais treinos seu peso variou {0} em média, contra {1} nas semanas com um ou nenhum.',
+  'After nights on your sleep goal you did {0}% of your habits, against {1}% after shorter ones.': 'Depois de noites na meta de sono você fez {0}% dos seus hábitos, contra {1}% depois das mais curtas.',
+  'On days you reached your water goal you slept {0} more that night.': 'Nos dias em que bateu a meta de água, você dormiu {0} a mais naquela noite.',
+  'On days you reached your water goal you slept {0} less that night.': 'Nos dias em que bateu a meta de água, você dormiu {0} a menos naquela noite.',
+  'In weeks with protein on target your weight moved {0} on average, against {1} in the others.': 'Nas semanas com proteína na meta seu peso variou {0} em média, contra {1} nas outras.',
 }
 
 export default { ...pt, ...PT_BR_OVERRIDES }

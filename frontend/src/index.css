@@ -2329,3 +2329,9 @@ a.btn{text-decoration:none;box-sizing:border-box}
 .water-ring b{font-size:24px;font-weight:700;letter-spacing:-.02em}
 .water-add{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .water-add>:last-child{grid-column:1 / -1}
+/* Your week (views/WeekReport.jsx) and the patterns across the modules */
+.health-week{display:flex;align-items:center;gap:12px;width:100%;text-align:start;color:inherit;font:inherit;border:0}
+.health-week>span:nth-child(2){flex:1;display:flex;flex-direction:column;gap:2px}
+.patterns{display:flex;flex-direction:column;gap:12px}
+.pattern{display:flex;gap:10px;align-items:flex-start;line-height:1.4}
+.pattern>svg{color:var(--purple);flex:none;margin-top:2px}

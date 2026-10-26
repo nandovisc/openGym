@@ -9,6 +9,7 @@ import Icon from '../components/Icon.jsx'
 import { Button, NumberField, Segmented } from '../components/ui.jsx'
 import { confirmSheet } from '../sheets.jsx'
 import { studentFormSheet } from './StudentRecord.jsx'
+import { trainNowSheet } from './TrainNow.jsx'
 
 // The Personal module, phase 5: a trainer's agenda (lib/agenda.js) — which student's class comes
 // when, by day or by week; each one marked done or cancelled, moved, noted; classes added one at a
@@ -50,6 +51,7 @@ function ClassSheet({ o, close }) {
     </>}
     <label className="rec-field" style={{ marginTop: 10 }}><span className="small dim">{t('Note')}</span>
       <textarea className="input" rows={2} maxLength={500} value={note} onChange={e => setNote(e.target.value)} onBlur={() => note !== (o.note || '') && update(s => { s.sessions = setClass(s.sessions, o, { note }) })} /></label>
+    {rec && rec.status !== 'ended' && o.status !== 'canceled' && <Button variant="plain" icon="play" onClick={() => { close(); trainNowSheet({ studentId: rec.studentId || null, recordId: rec.id, cls: o }) }}>{t('Train now')}</Button>}
     {rec && <Button variant="ghost" icon="person" onClick={() => { close(); nav(rec.studentId ? '/students/' + rec.studentId : '/students/record/' + rec.id) }}>{t('Open student')}</Button>}
     {o.seriesId ? <Button variant="ghost" className="danger" onClick={() => confirmSheet({ title: t('End this weekly class?'), message: t('This class and the ones after it go. The ones before stay as they were.'), confirmText: t('End'), danger: true,
       onConfirm: () => { update(s => { s.sessionSeries = endSeries(s.sessionSeries, o.seriesId, o.d) }); close() } })}>{t('End weekly class from here')}</Button>

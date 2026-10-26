@@ -17,6 +17,7 @@ import { myStudentsSheet } from './Trainer.jsx'
 import { RecordTab, studentFormSheet } from './StudentRecord.jsx'
 import { attachLinks, roster } from '../lib/students.js'
 import { PlanTab } from './StudentPlan.jsx'
+import { CoachOutbox, trainNowSheet } from './TrainNow.jsx'
 
 // The Personal module, phase 2: a trainer's students and, for each, their training as the link
 // shares it (GET /api/trainer/student) — the workouts, how each exercise moves, the plan, the body
@@ -54,6 +55,7 @@ export function StudentsList() {
       <button className="iconbtn" onClick={myStudentsSheet} aria-label={t('Your code for students')}><Icon name="key" /></button>
       <button className="iconbtn" onClick={() => studentFormSheet(null, r => nav('/students/record/' + r.id))} aria-label={t('New student')}><Icon name="plus" /></button>
     </div>
+    <CoachOutbox />
     {rows === null ? <div className="muted small">{t('Loading…')}</div>
       : rows.length ? <div className="list">{rows.map(r => <button key={r.key} className="item student-row" onClick={() => nav(r.link ? '/students/' + r.link.student.id : '/students/record/' + r.record.id)}>
         <span className="lrow-i" style={{ '--tint': r.link ? 'var(--teal)' : 'var(--grey)' }}><Icon name="figureStrength" /></span>
@@ -154,6 +156,8 @@ export function StudentView() {
       <div style={{ flex: 1, marginLeft: 10 }}><h1>{d.student.name}</h1>
         <div className="sub">{[lastText(workouts[0]?.d), t('{0} workouts', workouts.length)].join(' · ')}</div></div>
     </div>
+    <Button variant="primary" icon="play" onClick={() => trainNowSheet({ studentId: d.student.id, recordId: record?.id || null })}>{t('Train now')}</Button>
+    <div style={{ height: 12 }} />
     <Segmented value={tab} onChange={setTab} options={[{ value: 'workouts', label: t('Workouts') }, { value: 'progress', label: t('Progress') }, { value: 'plan', label: t('Plan') }, { value: 'record', label: t('Record') }, ...(body ? [{ value: 'body', label: t('Body') }] : [])]} />
     <div style={{ height: 12 }} />
     {tab === 'workouts' && <WorkoutsTab Ss={Ss} />}

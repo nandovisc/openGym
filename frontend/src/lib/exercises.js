@@ -81,6 +81,7 @@ export function byCategory(list, cat) {
 // Custom (user-created) exercises live in synced state S.customEx (issue #11) and are
 // merged into the id index here so every EXIDX[id] lookup keeps working unchanged.
 let customIds = new Set()
+let ownCustom = [], guestCustom = []
 const BUILTIN = new Set(CATALOGUE)
 export function registerCustom(list) {
   customIds.forEach(id => {
@@ -88,9 +89,19 @@ export function registerCustom(list) {
     const builtIn = CATALOGUE.find(ex => ex.id === id)
     if (builtIn) EXIDX[id] = builtIn
   })
-  const xs = (Array.isArray(list) ? list : []).filter(e => e && e.id != null)
+  const own = (Array.isArray(list) ? list : []).filter(e => e && e.id != null)
+  ownCustom = own
+  // A student's own exercises, while a trainer runs a session with them (lib/trainer-session.js), are
+  // known too; the trainer's own win on a clash.
+  const ids = new Set(own.map(e => e.id))
+  const xs = [...own, ...guestCustom.filter(e => !ids.has(e.id))]
   customIds = new Set(xs.map(e => e.id))
   xs.forEach(e => { EXIDX[e.id] = e })
+}
+/** Another person's custom exercises known alongside the user's own (a trainer's session with a student). */
+export function registerGuestCustom(list) {
+  guestCustom = (Array.isArray(list) ? list : []).filter(e => e && e.id != null)
+  registerCustom(ownCustom)
 }
 
 // Whether an exercise is one of the user's own (#378, #358). Where it lives decides, not the

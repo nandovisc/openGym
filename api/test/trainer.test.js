@@ -10,7 +10,7 @@ import path from 'node:path';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { boundPort } from './helpers.mjs';
-import { archiveFor, cleanCode, dropLinksOf, linkWith, newCode, trainerByCode, planFor, trainingOf, trainingSummary, unlink } from '../trainer.js';
+import { archiveFor, cleanCode, dropLinksOf, linkWith, newCode, trainerByCode, planFor, trainingOf, trainingSummary, unlink, workoutFor } from '../trainer.js';
 
 const API = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SECRET = crypto.randomBytes(32).toString('hex');
@@ -63,6 +63,24 @@ test('a plan: routines new or rewritten and marked, ones taken out leave their d
   assert.deepEqual(out.week, { 1: ['a'] });
   assert.deepEqual(planFor(cur, { routines: [], week: { 2: ['a', 'zz'] } }, t).week, { 2: ['a'] });
   assert.equal(planFor(cur, { routines: [{ id: 'x' }] }, t).error, 'routines');
+});
+
+test('a workout run with the student goes into their history once, marked, in its place', () => {
+  const t = { id: 'pt', name: 'Ricardo' };
+  const cur = { workouts: [{ id: 'a', d: '2026-10-20' }, { id: 'c', d: '2026-10-28' }], exWeights: { '1064': { w: 40, d: '2026-10-20' } } };
+  const w = { id: 'b', d: '2026-10-26', start: 5, name: ' Pernas A ', entries: [{ id: '1064', sets: [{ w: 50, r: 8, done: true }] }], media: [{ hash: 'x' }], _x: 1 };
+  const out = workoutFor(cur, w, { '1064': { w: 50, d: '2026-10-26' }, bad: { w: 'x', d: '2026-10-26' } }, t, 9);
+  assert.equal(out.added, true);
+  assert.deepEqual(out.workouts.map(x => x.id), ['a', 'b', 'c'], 'where its day puts it');
+  const b = out.workouts[1];
+  assert.deepEqual([b.name, b.src, b.trainer, b.media, b._x], ['Pernas A', 'trainer', { id: 'pt', name: 'Ricardo', at: 9 }, undefined, undefined]);
+  assert.deepEqual(out.exWeights, { '1064': { w: 50, d: '2026-10-26' } });
+  assert.equal(cur.workouts.length, 2, 'the profile read is left alone');
+  const again = workoutFor({ ...cur, workouts: out.workouts }, w, {}, t);
+  assert.equal(again.added, false, 'a retry adds nothing');
+  assert.equal(again.workouts.length, 3);
+  assert.equal(workoutFor(cur, { id: 'x', d: 'today', entries: [] }, {}, t).error, 'workout');
+  assert.equal(workoutFor(cur, { id: 'x', d: '2026-10-26', entries: [{ id: 1, sets: [] }] }, {}, t).error, 'workout');
 });
 
 test('a link that ends leaves the trainer a copy of the training up to then', () => {
@@ -152,6 +170,19 @@ test('admin makes a trainer; the student links with the code and either side end
   assert.deepEqual(st2.week, { 1: ['r'] });
   assert.ok(st2.deleted?.routines?.r2 > 0, 'its removal on record, so no phone brings it back');
   assert.equal((await call('pt', 'PUT', '/api/trainer/student/plan', { id: 'boss', routines: [] })).status, 404, 'not his student');
+  // He trains her on his phone: the workout lands in her history, marked, with her best load; sent
+  // again (his outbox retrying), nothing more.
+  const live = { id: 'live1', d: '2026-10-26', start: 1, end: 2, name: 'Pernas A', routineIds: ['r'], entries: [{ id: '1064', sets: [{ w: 60, r: 8, done: true }] }] };
+  const sent = await call('pt', 'POST', '/api/trainer/student/workout', { id: 'mari', workout: live, best: { '1064': { w: 60, d: '2026-10-26' } } });
+  assert.deepEqual(sent.body, { ok: true, added: true });
+  const st3 = (await call('mari', 'GET', '/api/data')).body.state;
+  const got = st3.workouts.find(w => w.id === 'live1');
+  assert.deepEqual([got.src, got.trainer.name], ['trainer', 'Ricardo']);
+  assert.deepEqual(st3.exWeights['1064'], { w: 60, d: '2026-10-26' });
+  assert.deepEqual((await call('pt', 'POST', '/api/trainer/student/workout', { id: 'mari', workout: live })).body, { ok: true, added: false });
+  assert.equal((await call('pt', 'POST', '/api/trainer/student/workout', { id: 'boss', workout: live })).status, 404, 'not his student');
+  assert.equal((await call('mari', 'POST', '/api/trainer/student/workout', { id: 'mari', workout: live })).status, 403, 'not a trainer');
+  assert.equal((await call('pt', 'POST', '/api/trainer/student/workout', { id: 'mari', workout: { id: 'x' } })).status, 400);
   assert.deepEqual((await call('mari', 'POST', '/api/trainer/scope', { id: made.body.link.id, body: true })).body.scope, { body: true });
   assert.equal((await call('pt', 'POST', '/api/trainer/scope', { id: made.body.link.id, body: false })).status, 404, 'the scope is the student’s to change');
   assert.deepEqual((await call('mari', 'GET', '/api/trainer/mine')).body.trainers.map(x => [x.trainer.name, x.scope.body]), [['Ricardo', true]]);
@@ -167,9 +198,9 @@ test('admin makes a trainer; the student links with the code and either side end
   const ptState = (await call('pt', 'GET', '/api/data')).body.state;
   const rec = ptState.students.find(r => r.studentId === 'mari');
   assert.equal(rec.status, 'ended');
-  assert.deepEqual(rec.history.workouts.map(w => w.name), ['Pernas'], 'her training stays with him too');
+  assert.deepEqual(rec.history.workouts.map(w => w.name), ['Pernas', 'Pernas A'], 'her training stays with him too');
   assert.equal(rec.history.meals, undefined);
-  assert.deepEqual(((await call('mari', 'GET', '/api/data')).body.state).workouts.map(w => w.name), ['Pernas'], 'and with her');
+  assert.deepEqual(((await call('mari', 'GET', '/api/data')).body.state).workouts.map(w => w.name), ['Pernas', 'Pernas A'], 'and with her');
 
   // Linked again, then the role is taken away: the link goes with it.
   await call('mari', 'POST', '/api/trainer/link', { code });

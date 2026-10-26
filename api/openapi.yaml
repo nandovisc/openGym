@@ -501,6 +501,23 @@ paths:
         '403': { description: Not a trainer. }
         '404': { description: Not a student of this trainer. }
         '503': { description: "The student's profile could not be read." }
+  /api/trainer/student/workout:
+    post:
+      tags: [trainer]
+      operationId: trainerStudentWorkout
+      summary: A workout a trainer ran with a student, into the student's history
+      description: |
+        `{ id, workout, best }`: one finished workout (an id, a day, its entries) and the best loads
+        it set (`{ exerciseId: { w, d } }`). Marked with the trainer; an id the student has already
+        adds nothing, so a retry is safe. Only through a link of the trainer's. Stamped as an edit
+        the student's phone merges; a push tells the student. Audited.
+      responses:
+        '200': { description: '`{ ok, added }`: false when the workout was there already.' }
+        '400': { description: Not one workout with an id, a day and its entries. }
+        '401': { description: Not signed in. }
+        '403': { description: Not a trainer. }
+        '404': { description: Not a student of this trainer. }
+        '503': { description: "The student's profile could not be read." }
   /api/trainer/mine/classes:
     get:
       tags: [trainer]

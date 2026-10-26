@@ -2396,3 +2396,6 @@ a.btn{text-decoration:none;box-sizing:border-box}
 .agenda-move label{display:flex;flex-direction:column;gap:3px}
 .agenda-days{margin-top:10px;flex-wrap:wrap}
 .tag.ok{color:var(--acc)} .tag.bad{color:var(--red)}
+
+/* A session run with a student (the Personal module, lib/trainer-session.js): whose it is, under the header. */
+.coach-band { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; padding: 8px 12px; border-radius: 12px; background: color-mix(in srgb, var(--acc) 14%, transparent); color: var(--acc); font-size: .85rem; font-weight: 600 }

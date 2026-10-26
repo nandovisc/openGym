@@ -18,10 +18,10 @@ import * as coachJobs from './coach/jobs.js';
 import { coachRoutes } from './coach/routes.js';
 import { startCadence } from './coach/cadence.js';
 import { startWarmup } from './coach/warmup.js';
-import { classReminderPush, dayReminderPush, groupReminderPush, habitReminderPush, healthRecapPush, medReminderPush, nudgePush, restTimerPush, smartPush, testPush, trainerPlanPush, weeklyRecapPush } from './push-messages.js';
+import { classReminderPush, dayReminderPush, groupReminderPush, habitReminderPush, healthRecapPush, medReminderPush, nudgePush, restTimerPush, smartPush, testPush, trainerPlanPush, trainerWorkoutPush, weeklyRecapPush } from './push-messages.js';
 import { smartDue } from './smart-nudges.js';
 import { agendaDue, occurrences as classesOf, recordOf } from './agenda.js';
-import { CODE_DAYS, dropLinksOf, linkWith, newCode, studentsOf, trainerByCode, trainersOf, archiveFor, planFor, trainingOf, trainingSummary, unlink } from './trainer.js';
+import { CODE_DAYS, dropLinksOf, linkWith, newCode, studentsOf, trainerByCode, trainersOf, archiveFor, planFor, trainingOf, trainingSummary, unlink, workoutFor } from './trainer.js';
 import { hasNews, lastWeeks, moduleOn as moduleOnServer } from './health-week.js';
 import { groupsDue, habitsDue, weekSummary } from './habits.js';
 import { doseId, medsDue } from './meds.js';
@@ -2394,6 +2394,31 @@ const trainerRoutes = {
     if (names.length || (body.removed || []).length) pushLater(student.id, trainerPlanPush(cur?.lang, user.name, names));
     audit(req, 'trainer.plan', { user, target: student, msg: `${(body.routines || []).length} routine(s), ${(body.removed || []).length} removed${body.week !== undefined ? ', week' : ''}` });
     json(res, 200, { ok: true, routines: plan.routines.length });
+  },
+  // A workout a trainer ran with a student from their own phone (trainer.js workoutFor), into the
+  // student's history: marked with the trainer, the best loads it set with it. Written as the plan
+  // is, stamped here, so the student's phones merge it like a workout from another device of
+  // theirs; the same workout sent twice (a retry from the trainer's outbox) adds nothing. A push
+  // tells the student. Audited.
+  'POST /api/trainer/student/workout': async (req, res) => {
+    const user = readSession(req);
+    if (!user) return json(res, 401, { error: 'not signed in' });
+    if (!user.trainer) return json(res, 403, { error: 'not a trainer' });
+    const body = await readBody(req);
+    const link = db.trainerLinks.find(l => l.trainerId === user.id && l.clientId === body.id);
+    const student = link && db.users.find(u => u.id === body.id);
+    if (!student) return json(res, 404, { error: 'not your student' });
+    const cur = await loadStateStrict(student.id);
+    if (cur === UNREADABLE) return json(res, 503, { error: 'state unreadable' });
+    const out = workoutFor(cur, body.workout, body.best, user);
+    if (out.error) return json(res, 400, { error: 'workout: one workout with an id, a day and its entries', code: out.error });
+    if (out.added) {
+      const done = await commitState(student, cur, { ...(cur || {}), workouts: out.workouts, exWeights: out.exWeights }, { overRead: true, stamped: false });
+      if (!done) return json(res, 400, { error: 'invalid state' });
+      pushLater(student.id, trainerWorkoutPush(cur?.lang, user.name, String(body.workout.name || '').slice(0, 60) || 'Treino'));
+      audit(req, 'trainer.workout', { user, target: student, msg: `${body.workout.entries.length} exercise(s), ${body.workout.d}` });
+    }
+    json(res, 200, { ok: true, added: out.added });
   },
   // Either side ends a link: the access goes with it.
   'POST /api/trainer/unlink': async (req, res) => {

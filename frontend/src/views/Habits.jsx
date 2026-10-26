@@ -26,7 +26,7 @@ const list = v => (Array.isArray(v) ? v : [])
 
 const KIND_LABEL = { check: 'Yes / no', quantity: 'Amount with a goal', timer: 'Time with a timer', avoid: 'Avoid (bad habit)', auto: 'Automatic (from the app)', task: 'One-off task' }
 const SOURCE_LABEL = { workout: 'Workout', weight: 'Weigh-in', meds: 'Medications', meals: 'Meals', sleep: 'Sleep', photo: 'Progress photo', water: 'Water' }
-const SLOT_LABEL = { breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner', snack: 'Snacks' }
+const SLOT_LABEL = { breakfast: 'Breakfast', morningSnack: 'Morning snack', lunch: 'Lunch', snack: 'Afternoon snack', dinner: 'Dinner', supper: 'Supper' }
 const SCHED_LABEL = { daily: 'Every day', weekdays: 'Days of the week', monthdays: 'Days of the month', perWeek: 'Times a week' }
 const STATE_LABEL = { done: 'Done', partial: 'In progress', missed: 'Missed', failed: 'Failed', skipped: 'Skipped', pending: 'To do', off: 'Not today' }
 const COLORS = ['#30d158', '#0a84ff', '#ff9f0a', '#ff453a', '#bf5af2', '#64d2ff', '#ffd60a', '#ff375f']

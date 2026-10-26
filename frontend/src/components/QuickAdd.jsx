@@ -20,7 +20,7 @@ import { Button } from './ui.jsx'
 const ui = () => useUI.getState()
 const update = fn => useStore.getState().update(fn)
 const list = v => (Array.isArray(v) ? v : [])
-const SLOT_LABEL = { breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner', snack: 'Snacks' }
+const SLOT_LABEL = { breakfast: 'Breakfast', morningSnack: 'Morning snack', lunch: 'Lunch', snack: 'Afternoon snack', dinner: 'Dinner', supper: 'Supper' }
 
 // The ＋ in the middle of the tab bar (the navigation with modules on, components/TabBar.jsx):
 // a tap opens "Log" — a workout, a meal, a habit, a weigh-in, a dose, a night, a task — a press

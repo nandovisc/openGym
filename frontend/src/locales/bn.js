@@ -3009,4 +3009,8 @@ export default {
   // Your week and Patterns as cards on Today (views/WeekReport.jsx)
   'The week just over': 'The week just over',
   'This week so far': 'This week so far',
+  // The meals of the day (lib/nutrition.js SLOTS)
+  'Morning snack': 'Morning snack',
+  'Afternoon snack': 'Afternoon snack',
+  'Supper': 'Supper',
 }

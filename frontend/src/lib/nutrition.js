@@ -1,7 +1,7 @@
 // Nutrition: what was eaten, against daily targets (Health → Food, views/Food.jsx). Framework-free.
 //
 //   S.meals [{ id, d, slot, time, items: [Item], photo?: MediaRef, ai?, created }]
-//     slot: breakfast | lunch | dinner | snack. photo: the plate, kept by the media store
+//     slot: breakfast | morningSnack | lunch | snack (the afternoon one) | dinner | supper. photo: the plate, kept by the media store
 //     (lib/media-refs.js walks it). ai: when its items were estimated from the photo.
 //   Item { id, name, grams, kcal, p, c, f, src, ref }
 //     p/c/f: grams of protein, carbohydrate and fat in this amount. src: taco | usda | off | mine |
@@ -15,7 +15,7 @@
 import { uid } from './format.js'
 import { SYNONYMS } from './food-synonyms.js'
 
-export const SLOTS = ['breakfast', 'lunch', 'dinner', 'snack']
+export const SLOTS = ['breakfast', 'morningSnack', 'lunch', 'snack', 'dinner', 'supper']
 export const ACTIVITY = { sedentary: 1.2, light: 1.375, moderate: 1.55, active: 1.725, very: 1.9 }
 export const OBJECTIVE = { lose: -0.2, maintain: 0, gain: 0.1 }
 const list = v => (Array.isArray(v) ? v : [])

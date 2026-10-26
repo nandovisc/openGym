@@ -25,7 +25,7 @@ const dayOfMonth = d => +d.slice(8, 10)
 
 export const logId = (habitId, d) => `${habitId}|${d}`
 export const SOURCES = ['workout', 'weight', 'meds', 'meals', 'sleep', 'photo', 'water']
-export const MEAL_SLOTS = ['breakfast', 'lunch', 'dinner', 'snack']
+export const MEAL_SLOTS = ['breakfast', 'morningSnack', 'lunch', 'snack', 'dinner', 'supper']
 
 /** The schedule of `habit` in force on day `d`: the last version starting on or before it. */
 export function scheduleFor(habit, d) {

@@ -2091,6 +2091,10 @@ export const PT_BR_OVERRIDES = {
   // Your week and Patterns as cards on Today (views/WeekReport.jsx)
   'The week just over': 'A semana que terminou',
   'This week so far': 'Esta semana até agora',
+  // The meals of the day (lib/nutrition.js SLOTS)
+  'Morning snack': 'Lanche da manhã',
+  'Afternoon snack': 'Lanche da tarde',
+  'Supper': 'Ceia',
 }
 
 export default { ...pt, ...PT_BR_OVERRIDES }

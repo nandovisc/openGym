@@ -20,6 +20,7 @@ import { startCadence } from './coach/cadence.js';
 import { startWarmup } from './coach/warmup.js';
 import { dayReminderPush, groupReminderPush, habitReminderPush, healthRecapPush, medReminderPush, nudgePush, restTimerPush, smartPush, testPush, weeklyRecapPush } from './push-messages.js';
 import { smartDue } from './smart-nudges.js';
+import { CODE_DAYS, dropLinksOf, linkWith, newCode, studentsOf, trainerByCode, trainersOf, unlink } from './trainer.js';
 import { hasNews, lastWeeks, moduleOn as moduleOnServer } from './health-week.js';
 import { groupsDue, habitsDue, weekSummary } from './habits.js';
 import { doseId, medsDue } from './meds.js';
@@ -186,6 +187,7 @@ if (!SERVERLESS) {
   db.subs = db.subs || [];
   db.invites = db.invites || [];
   db.deviceLinks = db.deviceLinks || [];   // unused one-time device links, hashed (device-link.js)
+  db.trainerLinks = db.trainerLinks || []; // a trainer and a student (trainer.js)
 }
 const isAdmin = user => !!user && (user.admin === true || ADMIN_UIDS.includes(user.id));
 // 0600: db.json holds passkey credential material. It used to be covered by a blanket 0700 on
@@ -1263,7 +1265,7 @@ function loginTarget(body) {
 }
 const acctKey = u => 'acct:' + u.id;
 const passkeyCount = u => db.creds.filter(c => c.userId === u.id).length;
-const publicUser = u => ({ id: u.id, name: u.name, admin: isAdmin(u) });
+const publicUser = u => ({ id: u.id, name: u.name, admin: isAdmin(u), ...(u.trainer ? { trainer: true } : {}) });
 const POLICY_ERRORS = {
   'too-short': `the password needs at least ${MIN_LENGTH} characters`,
   'too-long': `the password can have at most ${MAX_LENGTH} characters`,
@@ -2247,6 +2249,81 @@ const sleepRoutes = {
   }
 };
 
+/* ---------- the Personal module: a trainer and their students (trainer.js) ---------- */
+// The student makes the link, with the trainer's code, seeing what they share; either side ends
+// it. Phase 1: the link itself. What the trainer may read and write through it comes next.
+const TRAINER_TRIES = createWindow({ max: 10, windowMs: 3600000 });
+const trainerRoutes = {
+  // The trainer's code, to hand to a student: the live one (or none), or a new one.
+  'GET /api/trainer/code': async (req, res) => {
+    const user = readSession(req);
+    if (!user) return json(res, 401, { error: 'not signed in' });
+    if (!user.trainer) return json(res, 403, { error: 'not a trainer' });
+    const c = user.trainerCode;
+    json(res, 200, c && c.exp > Date.now() ? { code: c.code, exp: c.exp } : { code: null });
+  },
+  'POST /api/trainer/code': async (req, res) => {
+    const user = readSession(req);
+    if (!user) return json(res, 401, { error: 'not signed in' });
+    if (!user.trainer) return json(res, 403, { error: 'not a trainer' });
+    user.trainerCode = { code: newCode(), exp: Date.now() + CODE_DAYS * 86400000 };
+    saveDb();
+    audit(req, 'trainer.code', { user });
+    json(res, 200, { code: user.trainerCode.code, exp: user.trainerCode.exp });
+  },
+  'GET /api/trainer/students': async (req, res) => {
+    const user = readSession(req);
+    if (!user) return json(res, 401, { error: 'not signed in' });
+    if (!user.trainer) return json(res, 403, { error: 'not a trainer' });
+    json(res, 200, { students: studentsOf(db.trainerLinks, db.users, user) });
+  },
+  // A student's side: their trainers, a link made with a code, the scope of one changed.
+  'GET /api/trainer/mine': async (req, res) => {
+    const user = readSession(req);
+    if (!user) return json(res, 401, { error: 'not signed in' });
+    json(res, 200, { trainers: trainersOf(db.trainerLinks, db.users, user) });
+  },
+  'POST /api/trainer/link': async (req, res) => {
+    const user = readSession(req);
+    if (!user) return json(res, 401, { error: 'not signed in' });
+    const wait = TRAINER_TRIES.take(user.id);
+    if (wait) return json(res, 429, { error: 'too many tries, try again later', code: 'locked', retryAfter: wait }, { 'Retry-After': String(wait) });
+    const body = await readBody(req);
+    const trainer = trainerByCode(db.users, body.code);
+    if (!trainer) { audit(req, 'trainer.link', { ok: false, user, msg: 'bad code' }); return json(res, 400, { error: 'This code is not valid, or it has expired.', code: 'bad-code' }); }
+    const out = linkWith(db.trainerLinks, trainer, user, { body: !!body.body });
+    if (out.error) return json(res, 400, { error: 'You cannot be your own student.', code: 'self' });
+    db.trainerLinks = out.links;
+    saveDb();
+    audit(req, 'trainer.link', { user, target: trainer });
+    json(res, 200, { ok: true, link: { id: out.link.id, trainer: { id: trainer.id, name: trainer.name }, scope: out.link.scope, created: out.link.created } });
+  },
+  'POST /api/trainer/scope': async (req, res) => {
+    const user = readSession(req);
+    if (!user) return json(res, 401, { error: 'not signed in' });
+    const body = await readBody(req);
+    const link = db.trainerLinks.find(l => l.id === body.id && l.clientId === user.id);
+    if (!link) return json(res, 404, { error: 'no such link' });
+    link.scope = { ...(link.scope || {}), body: !!body.body };
+    saveDb();
+    audit(req, 'trainer.scope', { user, msg: link.scope.body ? 'body on' : 'body off' });
+    json(res, 200, { ok: true, scope: link.scope });
+  },
+  // Either side ends a link: the access goes with it.
+  'POST /api/trainer/unlink': async (req, res) => {
+    const user = readSession(req);
+    if (!user) return json(res, 401, { error: 'not signed in' });
+    const body = await readBody(req);
+    const out = unlink(db.trainerLinks, body.id, user);
+    if (!out.link) return json(res, 404, { error: 'no such link' });
+    db.trainerLinks = out.links;
+    saveDb();
+    const other = db.users.find(u => u.id === (out.link.trainerId === user.id ? out.link.clientId : out.link.trainerId));
+    audit(req, 'trainer.unlink', { user, ...(other ? { target: other } : {}) });
+    json(res, 200, { ok: true });
+  }
+};
+
 /* ---------- scheduled work, serverless ---------- */
 // What the timers of the single process do, done when something calls this route: on Vercel a
 // pg_cron job in the database itself, through pg_net (api/store/supabase-cron.sql). Bearer
@@ -2435,7 +2512,7 @@ const routes = {
     if (!s) return json(res, 401, { error: 'not signed in' });
     const { user } = s;
     const renew = s.bearer && s.exp - Date.now() < SESSION_DAYS * 86400000 / 2;
-    json(res, 200, { user: { id: user.id, name: user.name, admin: isAdmin(user) }, ...(renew ? { token: makeSession(user) } : {}) });
+    json(res, 200, { user: publicUser(user), ...(renew ? { token: makeSession(user) } : {}) });
   },
 
   'POST /api/register/options': async (req, res) => {
@@ -2848,7 +2925,7 @@ const routes = {
       const last = workouts[workouts.length - 1];
       return {
         id: u.id, name: u.name, created: u.created || null,
-        disabled: !!u.disabled, admin: isAdmin(u), invitedBy: u.invitedBy || null,
+        disabled: !!u.disabled, admin: isAdmin(u), trainer: !!u.trainer, invitedBy: u.invitedBy || null,
         workouts: workouts.length,
         lastWorkout: last ? last.d : null,
         lastSync: lastSyncOf(u, S),
@@ -2871,7 +2948,9 @@ const routes = {
     const S = (await loadState(u.id)) || {};
     json(res, 200, {
       user: {
-        id: u.id, name: u.name, created: u.created || null, disabled: !!u.disabled, admin: isAdmin(u), invitedBy: u.invitedBy || null,
+        id: u.id, name: u.name, created: u.created || null, disabled: !!u.disabled, admin: isAdmin(u), trainer: !!u.trainer, invitedBy: u.invitedBy || null,
+        students: u.trainer ? studentsOf(db.trainerLinks, db.users, u).map(x => x.student.name) : [],
+        trainers: trainersOf(db.trainerLinks, db.users, u).map(x => x.trainer.name),
         // Only on an instance with password sign-in: whether they have one, and until when an
         // unused reset code is good.
         ...(PASSWORD_LOGIN ? { password: hasPassword(u), email: u.email || null, resetUntil: u.pwReset?.exp > Date.now() ? u.pwReset.exp : null } : {})
@@ -2918,6 +2997,20 @@ const routes = {
     json(res, 200, { ok: true, added: added.length, skipped: ws.length - added.length, customEx: newEx.length });
   },
 
+  // The Personal role (trainer.js): a trainer sees, and later plans, the training of the students
+  // who linked to them. Taken away, their links go too.
+  'POST /api/admin/user/trainer': async (req, res) => {
+    const admin = requireAdmin(req, res); if (!admin) return;
+    const body = await readBody(req);
+    const u = db.users.find(x => x.id === body.id);
+    if (!u) return json(res, 404, { error: 'no such user' });
+    if (body.trainer) u.trainer = true;
+    else { delete u.trainer; delete u.trainerCode; db.trainerLinks = dropLinksOf(db.trainerLinks, u.id, 'trainer'); }
+    saveDb();
+    audit(req, body.trainer ? 'admin.user.trainer' : 'admin.user.untrainer', { user: admin, target: u });
+    json(res, 200, { ok: true, id: u.id, trainer: !!u.trainer });
+  },
+
   'POST /api/admin/user/disable': async (req, res) => {
     const admin = requireAdmin(req, res); if (!admin) return;
     const body = await readBody(req);
@@ -2951,6 +3044,7 @@ const routes = {
     db.creds = (db.creds || []).filter(c => c.userId !== u.id);
     db.subs = (db.subs || []).filter(x => x.userId !== u.id);
     dropDeviceLinks(db, u.id);
+    db.trainerLinks = dropLinksOf(db.trainerLinks, u.id);
     presence.delete(u.id);
     // The training history and any Coach credential of theirs, both outside db.json.
     if (SERVERLESS) tx.deleteState(u.id);
@@ -3065,6 +3159,7 @@ const routes = {
   ...(EXAM_AI.key ? examRoutes : {}),
   ...(MEAL_AI.key ? mealRoutes : {}),
   ...sleepRoutes,
+  ...trainerRoutes,
   ...foodRoutes,
 
   /* ---------- scheduled work (serverless only) ---------- */

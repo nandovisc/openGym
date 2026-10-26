@@ -2361,3 +2361,6 @@ a.btn{text-decoration:none;box-sizing:border-box}
 /* Today's "Your week" card: one chip a module */
 .week-chips{display:flex;flex-wrap:wrap;gap:6px 12px}
 .week-chip{display:inline-flex;align-items:center;gap:5px;font-weight:600;font-size:15px}
+/* The Personal module (views/Trainer.jsx): what a link shares, and the trainer's code */
+.trainer-share{margin:4px 0 10px;padding-inline-start:18px;line-height:1.5}
+.trainer-code code{font-size:20px;font-weight:700;letter-spacing:.12em}

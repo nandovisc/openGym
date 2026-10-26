@@ -99,6 +99,11 @@ function UserDetail({ id, onChanged, close }) {
       })
     })
   }
+  // The Personal role (api/trainer.js): a trainer hands students a code; the students who link
+  // with it share their training. Taken away, every link of theirs goes.
+  const setTrainer = trainer => api('/api/admin/user/trainer', { method: 'POST', body: JSON.stringify({ id: u.id, trainer }) })
+    .then(() => { toast(trainer ? 'Now a personal trainer' : 'No longer a personal trainer'); onChanged(); api('/api/admin/user?id=' + encodeURIComponent(id)).then(setD) })
+    .catch(e => toast(e.message))
   // Password sign-in (#118): the server only sends `password` when the instance offers it. The
   // code comes back once, is shown once, and is never stored anywhere but as a hash.
   const pwInstance = typeof u.password === 'boolean'
@@ -115,6 +120,7 @@ function UserDetail({ id, onChanged, close }) {
     <h3 className="capitalize">{u.name}</h3>
     <div className="row" style={{ gap: 6, flexWrap: 'wrap', margin: '8px 0 12px' }}>
       {u.admin && <span className="adm-pill acc">admin</span>}
+      {u.trainer && <span className="adm-pill acc">personal</span>}
       {u.disabled && <span className="adm-pill bad">disabled</span>}
       {u.invitedBy && <span className="adm-pill">invite {u.invitedBy}</span>}
       {u.password && <span className="adm-pill">password</span>}
@@ -130,6 +136,15 @@ function UserDetail({ id, onChanged, close }) {
       <div className="tile"><div className="l">Routines</div><div className="v" style={{ fontSize: '1.1rem' }}>{d.routines.length}</div></div>
       <div className="tile"><div className="l">Last sync</div><div className="v" style={{ fontSize: '.95rem' }}>{rel(d.lastSync)}</div></div>
     </div>
+    <button className={'btn ' + (u.trainer ? '' : 'primary')} style={{ margin: '12px 0 4px' }}
+      onClick={() => u.trainer
+        ? confirmSheet({ title: 'Take the personal trainer role from ' + u.name + '?', message: 'Their code stops working and every student link of theirs ends. Nobody’s data changes.', confirmText: 'Take it away', danger: true, onConfirm: () => setTrainer(false) })
+        : setTrainer(true)}>
+      {u.trainer ? 'Remove personal trainer role' : 'Make personal trainer'}</button>
+    <div className="adm-hint">{u.trainer
+      ? (u.students?.length ? 'Students: ' + u.students.join(', ') + '.' : 'No students yet. They link with the code the trainer hands them.')
+      : 'A personal trainer hands students a code; a student who links with it shares their training (never their health data). They still train with their own account.'}</div>
+    {u.trainers?.length > 0 && <div className="adm-hint">Trainer: {u.trainers.join(', ')}.</div>}
     {!u.admin && <>
       <button className={'btn ' + (u.disabled ? 'primary' : 'danger')} style={{ margin: '12px 0 4px' }}
         onClick={() => u.disabled ? setDisabled(false)
@@ -354,7 +369,7 @@ export default function Admin() {
       <div className="adm-lead">Everyone with a profile on this instance. Tap one to see their activity, to disable the account (nothing is deleted) or to delete it with all their data for good.</div>
       <div className="list">
         {(users || []).map(u => <div key={u.id} className="item" onClick={() => openUser(u.id)} style={u.disabled ? { opacity: .55 } : null}>
-          <div className="grow"><div className="tt">{u.live && <Icon name="dot" style={{ fontSize: 9, color: 'var(--green)', display: 'inline-block', marginInlineEnd: 5 }} />}{u.name} {u.admin && <span className="adm-pill acc" style={{ marginInlineStart: 4 }}>admin</span>}{u.disabled && <span className="adm-pill bad" style={{ marginInlineStart: 4 }}>disabled</span>}</div>
+          <div className="grow"><div className="tt">{u.live && <Icon name="dot" style={{ fontSize: 9, color: 'var(--green)', display: 'inline-block', marginInlineEnd: 5 }} />}{u.name} {u.admin && <span className="adm-pill acc" style={{ marginInlineStart: 4 }}>admin</span>}{u.trainer && <span className="adm-pill acc" style={{ marginInlineStart: 4 }}>personal</span>}{u.disabled && <span className="adm-pill bad" style={{ marginInlineStart: 4 }}>disabled</span>}</div>
             <div className="ss">{u.live ? 'training now · ' + u.live.name : u.workouts + ' workouts' + (u.lastWorkout ? ' · last ' + fmtDate(u.lastWorkout) : '') + ' · last sync ' + rel(u.lastSync)}</div>
             {u.email && <div className="ss" title="sign-in e-mail">{u.email}</div>}</div>
           {u.hasPush && <Icon name="bell" title="push notifications on" style={{ fontSize: 15, color: 'var(--label-3)' }} />}<Icon name="chevronRight" className="chev" />

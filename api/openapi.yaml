@@ -157,6 +157,10 @@ tags:
     description: >-
       AI Coach: plans, reviews and debriefs. Every route here answers 503 unless the
       instance has the Coach switched on and a provider connected.
+  - name: trainer
+    description: >-
+      The Personal module: a trainer's code, the students who linked to them with it, and the
+      links either side can end. Only training is ever shared, never the health modules.
 
 security:
   - cookieAuth: []
@@ -439,6 +443,74 @@ paths:
         '401': { description: No token, or not a valid one (`sleep-token`). }
         '429': { description: Too many posts this hour (`locked`). }
         '503': { description: The profile could not be read. }
+  /api/trainer/code:
+    get:
+      tags: [trainer]
+      operationId: trainerCode
+      summary: The trainer's live code for students
+      responses:
+        '200': { description: '`{ code, exp }`, or `{ code: null }` without a live one.' }
+        '401': { description: Not signed in. }
+        '403': { description: Not a trainer. }
+    post:
+      tags: [trainer]
+      operationId: trainerNewCode
+      summary: A new code for students, a week long
+      description: Replaces the one before. Any number of students can use it until it expires. Audited.
+      responses:
+        '200': { description: '`{ code, exp }`.' }
+        '401': { description: Not signed in. }
+        '403': { description: Not a trainer. }
+  /api/trainer/students:
+    get:
+      tags: [trainer]
+      operationId: trainerStudents
+      summary: The trainer's students
+      responses:
+        '200': { description: '`{ students: [{ id, student: { id, name, disabled }, scope: { body }, created }] }`.' }
+        '401': { description: Not signed in. }
+        '403': { description: Not a trainer. }
+  /api/trainer/mine:
+    get:
+      tags: [trainer]
+      operationId: trainerMine
+      summary: The signed-in person's trainers
+      responses:
+        '200': { description: '`{ trainers: [{ id, trainer: { id, name }, scope: { body }, created }] }`.' }
+        '401': { description: Not signed in. }
+  /api/trainer/link:
+    post:
+      tags: [trainer]
+      operationId: trainerLink
+      summary: Become a trainer's student with their code
+      description: |
+        `{ code, body }`. The student makes the link, choosing whether weigh-ins and measurements
+        are shared too (`body`). Ten tries an hour. Audited.
+      responses:
+        '200': { description: '`{ ok, link: { id, trainer, scope, created } }`.' }
+        '400': { description: 'A code that is not valid or has expired (`bad-code`), or the trainer themself (`self`).' }
+        '401': { description: Not signed in. }
+        '429': { description: Too many tries (`locked`). }
+  /api/trainer/scope:
+    post:
+      tags: [trainer]
+      operationId: trainerScope
+      summary: "A student's choice of what a link shares"
+      description: '`{ id, body }`: weigh-ins and measurements shared or not. Audited.'
+      responses:
+        '200': { description: '`{ ok, scope }`.' }
+        '401': { description: Not signed in. }
+        '404': { description: No such link of this student. }
+  /api/trainer/unlink:
+    post:
+      tags: [trainer]
+      operationId: trainerUnlink
+      summary: End a link, from either side
+      description: '`{ id }`. The access goes at once. Audited.'
+      responses:
+        '200': { description: '`{ ok }`.' }
+        '401': { description: Not signed in. }
+        '404': { description: No such link of this person. }
   /api/config:
     get:
       tags: [meta]
@@ -2433,6 +2505,18 @@ paths:
         '403': { description: Not an admin. }
         '404': { description: No such user. }
         '503': { description: The profile could not be read. }
+  /api/admin/user/trainer:
+    post:
+      tags: [admin]
+      operationId: adminUserTrainer
+      summary: 'Admin: give or take the Personal role'
+      description: |
+        `{ id, trainer }`. A trainer can hand students a code and, through the links they make,
+        see their training. Taken away, the trainer's code and every link of theirs go. Audited.
+      responses:
+        '200': { description: '`{ ok, id, trainer }`.' }
+        '403': { description: Not an admin. }
+        '404': { description: No such user. }
   /api/admin/user/disable:
     post:
       tags: [admin]

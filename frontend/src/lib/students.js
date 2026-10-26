@@ -7,7 +7,7 @@
 //                 billing: { kind, amount, dueDay, classes }, studentId, history, created, _ts }]
 //     status: active | paused | invited (no account linked yet) | ended (the link ended)
 //     billing.kind: monthly | package | single; amount in the trainer's currency; dueDay 1..28
-//       for a monthly fee; classes how many a package holds.
+//       for a monthly fee; classes how many a package holds; since the month it started.
 //     history: { workouts, customEx, unit, until } — the student's training up to the day a link
 //       ended (copied by the server, api/server.js POST /api/trainer/unlink), read-only.
 import { uid } from './format.js'
@@ -18,6 +18,7 @@ const longText = (v, max) => String(v ?? '').replace(/\r/g, '').trim().slice(0, 
 const DAY_RE = /^\d{4}-\d{2}-\d{2}$/
 export const STATUSES = ['active', 'paused', 'invited', 'ended']
 export const BILLING = ['monthly', 'package', 'single']
+const localMonth = ms => { const d = new Date(ms); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}` }
 
 /** A record as stored, from the form; { error } without a name. Keeps id and history of `prev`. */
 export function normalizeStudent(input, { prev = null, now = Date.now() } = {}) {
@@ -37,7 +38,10 @@ export function normalizeStudent(input, { prev = null, now = Date.now() } = {}) 
     restrictions: longText(input?.restrictions, 1000),
     start: DAY_RE.test(input?.start || '') ? input.start : prev?.start || null,
     status: STATUSES.includes(input?.status) ? input.status : prev?.status || (prev?.studentId ? 'active' : 'invited'),
-    billing: kind ? { kind, amount, ...(kind === 'monthly' ? { dueDay: Math.min(28, Math.max(1, Math.round(Number(b.dueDay) || 5))) } : {}), ...(kind === 'package' ? { classes: Math.max(1, Math.round(Number(b.classes) || 8)) } : {}) } : null,
+    // since: the month the billing started (lib/finance.js counts what is owed from there), kept
+    // while the kind stays the same.
+    billing: kind ? { kind, amount, ...(kind === 'monthly' ? { dueDay: Math.min(28, Math.max(1, Math.round(Number(b.dueDay) || 5))) } : {}), ...(kind === 'package' ? { classes: Math.max(1, Math.round(Number(b.classes) || 8)) } : {}),
+      since: prev?.billing?.kind === kind && /^\d{4}-\d{2}$/.test(prev.billing.since || '') ? prev.billing.since : localMonth(now) } : null,
     studentId: prev?.studentId || null,
     created: prev?.created || now
   }

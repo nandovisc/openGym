@@ -7,8 +7,11 @@ describe('a trainer’s records of their students', () => {
     const r = normalizeStudent({ name: 'Marília', phone: '(11) 98888-7777 x', goal: 'Hipertrofia', billing: { kind: 'monthly', amount: '350', dueDay: 40, classes: 9 } }, { now: 1 })
     expect(r).toMatchObject({ name: 'Marília', phone: '(11) 98888-7777', status: 'invited', billing: { kind: 'monthly', amount: 350, dueDay: 28 }, studentId: null, created: 1 })
     expect(r.billing.classes).toBeUndefined()
-    const p = normalizeStudent({ name: 'João', billing: { kind: 'package', amount: 600 } })
-    expect(p.billing).toEqual({ kind: 'package', amount: 600, classes: 8 })
+    const p = normalizeStudent({ name: 'João', billing: { kind: 'package', amount: 600 } }, { now: Date.parse('2026-10-26T12:00:00') })
+    expect(p.billing).toEqual({ kind: 'package', amount: 600, classes: 8, since: '2026-10' })
+    // The month the billing started stays while its kind does, and starts again with a new kind.
+    expect(normalizeStudent({ name: 'João', billing: { kind: 'package', amount: 700 } }, { prev: p, now: Date.parse('2027-01-10T12:00:00') }).billing.since).toBe('2026-10')
+    expect(normalizeStudent({ name: 'João', billing: { kind: 'single', amount: 90 } }, { prev: p, now: Date.parse('2027-01-10T12:00:00') }).billing.since).toBe('2027-01')
     const kept = normalizeStudent({ name: 'Marília B.' }, { prev: { ...r, studentId: 'm', history: { until: '2026-10-01' } } })
     expect(kept).toMatchObject({ id: r.id, studentId: 'm', history: { until: '2026-10-01' } })
   })

@@ -125,7 +125,8 @@ export default function Training({ home = false, sections = home ? ALL_SECTIONS 
     </div> : <>
       <div className="hdr"><div style={{ flex: 1 }}><h1>{t('Training')}</h1><div className="sub">{t('Your week of workouts')}</div></div>
         {user?.trainer && <div className="row" style={{ gap: 6 }}><Button size="sm" variant="tinted" icon="calendar" onClick={() => nav('/agenda')}>{t('Agenda')}</Button>
-          <Button size="sm" variant="tinted" icon="star" onClick={() => nav('/students')}>{t('Students')}</Button></div>}</div>
+          <Button size="sm" variant="tinted" icon="star" onClick={() => nav('/students')}>{t('Students')}</Button>
+          <Button size="sm" variant="tinted" icon="chart" onClick={() => nav('/finance')}>{t('Finances')}</Button></div>}</div>
       <TrainingNav />
     </>}
 

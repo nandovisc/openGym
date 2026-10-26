@@ -2887,6 +2887,37 @@ const routes = {
     });
   },
 
+  // Workouts an admin adds to someone's profile (Admin → a user → Add workouts from a file): the
+  // dashboard reads the file with the app's own importer (lib/import-csv.js) and sends what came
+  // out. Only what is new goes in — an id the profile has already is left as it is, so the same
+  // file sent twice adds nothing — each marked as added by an admin, stamped like a device's own
+  // edit, in a revision the person's app picks up on its next poll. Logged in the audit.
+  'POST /api/admin/user/workouts': async (req, res) => {
+    const admin = requireAdmin(req, res); if (!admin) return;
+    const body = await readBody(req);
+    const u = db.users.find(x => x.id === body.id);
+    if (!u) return json(res, 404, { error: 'no such user' });
+    const ws = Array.isArray(body.workouts) ? body.workouts : null;
+    const ok = w => w && typeof w === 'object' && typeof w.id === 'string' && w.id.length <= 80 && /^\d{4}-\d{2}-\d{2}$/.test(w.d || '')
+      && Array.isArray(w.entries) && w.entries.length <= 100 && w.entries.every(e => e && typeof e.id === 'string' && Array.isArray(e.sets) && e.sets.length <= 100);
+    if (!ws || !ws.length || ws.length > 500 || !ws.every(ok)) return json(res, 400, { error: 'workouts: a list of up to 500 workouts, each with an id, a day and its entries' });
+    const custom = (Array.isArray(body.customEx) ? body.customEx : []).filter(c => c && typeof c.id === 'string' && typeof c.name === 'string').slice(0, 200);
+    const cur = await loadStateStrict(u.id);
+    if (cur === UNREADABLE) return json(res, 503, { error: 'state unreadable' });
+    const have = new Set(records(cur?.workouts).map(w => w?.id));
+    const now = Date.now();
+    const added = ws.filter(w => !have.has(w.id)).map(w => stampEntry(null, { ...w, src: 'admin', addedBy: admin.id }, now));
+    const haveEx = new Set(records(cur?.customEx).map(c => c?.id));
+    const newEx = custom.filter(c => !haveEx.has(c.id)).map(c => stampEntry(null, { ...c }, now));
+    if (added.length || newEx.length) {
+      const workouts = [...records(cur?.workouts), ...added].sort((a, b) => (a.d < b.d ? -1 : a.d > b.d ? 1 : (Number(a.start) || 0) - (Number(b.start) || 0)));
+      const done = await commitState(u, cur, { ...(cur || {}), workouts, customEx: [...records(cur?.customEx), ...newEx] }, { overRead: true, stamped: true });
+      if (!done) return json(res, 400, { error: 'invalid state' });
+    }
+    audit(req, 'admin.user.workouts', { user: admin, target: u, msg: `${added.length} workout(s) added, ${ws.length - added.length} already there` });
+    json(res, 200, { ok: true, added: added.length, skipped: ws.length - added.length, customEx: newEx.length });
+  },
+
   'POST /api/admin/user/disable': async (req, res) => {
     const admin = requireAdmin(req, res); if (!admin) return;
     const body = await readBody(req);

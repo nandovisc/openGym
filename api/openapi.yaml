@@ -501,6 +501,15 @@ paths:
         '403': { description: Not a trainer. }
         '404': { description: Not a student of this trainer. }
         '503': { description: "The student's profile could not be read." }
+  /api/trainer/mine/classes:
+    get:
+      tags: [trainer]
+      operationId: trainerMineClasses
+      summary: "The signed-in student's classes of the next two weeks"
+      description: From each of their trainers' agendas, the classes of the trainer's record of this student.
+      responses:
+        '200': { description: '`{ classes: [{ trainer, d, time, dur, status }] }`.' }
+        '401': { description: Not signed in. }
   /api/trainer/mine:
     get:
       tags: [trainer]

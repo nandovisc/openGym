@@ -115,6 +115,9 @@ export const DEF = {
   // A trainer's own record of each student (lib/students.js): contact, goals, health notes,
   // what they pay, and their training kept from a link that ended.
   students: [],
+  // A trainer's classes (lib/agenda.js): series that repeat weekly, and single classes or what
+  // changed of one class of a series (done, cancelled, moved). agendaPrefs: the reminder.
+  sessions: [], sessionSeries: [], agendaPrefs: { remindMin: 30, tz: null },
   // Smart reminders (api/smart-nudges.js): from what the person usually does, each off until set.
   smartReminders: { dose: false, weight: false, water: false, sleep: false, tz: null },
   habits: [], habitLog: [], habitGroups: [], habitPrefs: { on: false, tz: null, dayStartsAt: '00:00', vacations: [], hideDone: false, hideFailed: false, hideSkipped: false, hideStreaks: false },
@@ -1976,6 +1979,10 @@ export const useStore = create((set, get) => {
           // The habits' reminders keep the zone of the phone that last opened the app, too.
           if (get().S.habitPrefs?.on && get().S.habitPrefs.tz !== tz) {
             get().update(s => { s.habitPrefs = { ...s.habitPrefs, tz } })
+          }
+          // A trainer's agenda reminds in the zone of the phone that last opened the app (lib/agenda.js).
+          if (get().S.agendaPrefs?.tz && get().S.agendaPrefs.tz !== tz) {
+            get().update(s => { s.agendaPrefs = { ...s.agendaPrefs, tz } })
           }
           const smart = get().S.smartReminders
           if (smart && (smart.dose || smart.weight || smart.water || smart.sleep) && smart.tz !== tz) {

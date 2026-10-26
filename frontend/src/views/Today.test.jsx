@@ -27,12 +27,12 @@ afterEach(() => { for (const [root, c] of mounted.splice(0)) { act(() => root.un
 
 describe('Today', () => {
   it('orders the cards by the hour, or by the person, and leaves out what is switched off', () => {
-    expect(cardOrder({}, 8).slice(0, 3)).toEqual(['sleep', 'weight', 'meds'])
-    expect(cardOrder({}, 20).slice(0, 2)).toEqual(['habits', 'food'])
-    expect(cardOrder({}, 14)[0]).toBe('training')
-    expect(cardOrder({ homeCards: { order: ['weight', 'food'], hidden: ['exams'] } }, 8)).toEqual(['weight', 'food', 'training', 'water', 'habits', 'meds', 'sleep', 'week', 'patterns'])
-    expect(cardOrder({ modules: { food: false, sleep: false } }, 14)).toEqual(['training', 'water', 'habits', 'meds', 'weight', 'week', 'patterns', 'exams'])
-    expect(cardOrder({ modules: { food: false, sleep: false, habits: false, meds: false, exams: false } }, 14)).toEqual(['training', 'weight', 'week', 'patterns'])
+    expect(cardOrder({}, 8).slice(0, 4)).toEqual(['classes', 'sleep', 'weight', 'meds'])
+    expect(cardOrder({}, 20).slice(0, 3)).toEqual(['classes', 'habits', 'food'])
+    expect(cardOrder({}, 14).slice(0, 2)).toEqual(['classes', 'training'])
+    expect(cardOrder({ homeCards: { order: ['weight', 'food'], hidden: ['exams'] } }, 8)).toEqual(['weight', 'food', 'classes', 'training', 'water', 'habits', 'meds', 'sleep', 'week', 'patterns'])
+    expect(cardOrder({ modules: { food: false, sleep: false } }, 14)).toEqual(['classes', 'training', 'water', 'habits', 'meds', 'weight', 'week', 'patterns', 'exams'])
+    expect(cardOrder({ modules: { food: false, sleep: false, habits: false, meds: false, exams: false } }, 14)).toEqual(['classes', 'training', 'weight', 'week', 'patterns'])
     expect([slotByHour(new Date('2026-10-22T08:00')), slotByHour(new Date('2026-10-22T12:00')), slotByHour(new Date('2026-10-22T17:00')), slotByHour(new Date('2026-10-22T20:00'))]).toEqual(['breakfast', 'lunch', 'snack', 'dinner'])
     expect([slotByHour(new Date('2026-10-22T10:30')), slotByHour(new Date('2026-10-22T22:00'))]).toEqual(['morningSnack', 'supper'])
   })

@@ -18,8 +18,9 @@ import * as coachJobs from './coach/jobs.js';
 import { coachRoutes } from './coach/routes.js';
 import { startCadence } from './coach/cadence.js';
 import { startWarmup } from './coach/warmup.js';
-import { dayReminderPush, groupReminderPush, habitReminderPush, healthRecapPush, medReminderPush, nudgePush, restTimerPush, smartPush, testPush, trainerPlanPush, weeklyRecapPush } from './push-messages.js';
+import { classReminderPush, dayReminderPush, groupReminderPush, habitReminderPush, healthRecapPush, medReminderPush, nudgePush, restTimerPush, smartPush, testPush, trainerPlanPush, weeklyRecapPush } from './push-messages.js';
 import { smartDue } from './smart-nudges.js';
+import { agendaDue, occurrences as classesOf, recordOf } from './agenda.js';
 import { CODE_DAYS, dropLinksOf, linkWith, newCode, studentsOf, trainerByCode, trainersOf, archiveFor, planFor, trainingOf, trainingSummary, unlink } from './trainer.js';
 import { hasNews, lastWeeks, moduleOn as moduleOnServer } from './health-week.js';
 import { groupsDue, habitsDue, weekSummary } from './habits.js';
@@ -638,6 +639,22 @@ function smartTick(user, S, now, tz) {
     pushLater(user.id, smartPush(S.lang, n));
   }
 }
+// A trainer's classes (agenda.js): a push to the trainer, and to the student when they are linked,
+// `remindMin` before each class still on, once a class (user.agendaSent), in the agenda's zone.
+function agendaTick(user, S, now) {
+  const sent = user.agendaSent?.date === now.date ? [...(user.agendaSent.keys || [])] : [];
+  for (const o of agendaDue(S, now, { remindMin: Number(S.agendaPrefs?.remindMin) > 0 ? Number(S.agendaPrefs.remindMin) : 30, windowMin: REMINDER_WINDOW_MIN })) {
+    if (sent.includes(o.id)) continue;
+    sent.push(o.id);
+    user.agendaSent = { date: now.date, keys: sent };
+    saveDb();
+    const rec = recordOf(S, o);
+    pushLater(user.id, classReminderPush(S.lang, rec?.name || '', o.time, 'trainer'));
+    const linked = rec?.studentId && db.trainerLinks.some(l => l.trainerId === user.id && l.clientId === rec.studentId);
+    if (linked) pushLater(rec.studentId, classReminderPush(null, user.name, o.time, 'student'));
+    console.log('class reminder firing', user.id, o.id);
+  }
+}
 // A push decided inside a request. The single process sends it at once. The serverless one sends
 // it only after the decision (lastReminder, lastNudge) has committed, and in a transaction of its
 // own, so a retried tick never sends twice and a dead subscription found by the send is pruned.
@@ -656,6 +673,10 @@ async function reminderTick() {
       if (S?.medReminder?.on) {
         const medNow = userNow(S.medReminder.tz || 'UTC');
         if (medNow) medTick(user, S, medNow);
+      }
+      if (user.trainer && S?.agendaPrefs?.tz && (Array.isArray(S.sessions) || Array.isArray(S.sessionSeries))) {
+        const agendaNow = userNow(S.agendaPrefs.tz);
+        if (agendaNow) agendaTick(user, S, agendaNow);
       }
       const smart = S?.smartReminders;
       if (smart && (smart.dose || smart.weight || smart.water || smart.sleep)) {
@@ -2297,6 +2318,25 @@ const trainerRoutes = {
     if (!student) return json(res, 404, { error: 'not your student' });
     const S = await loadState(student.id);
     json(res, 200, { link: { id: link.id, scope: link.scope || { body: false }, created: link.created, ...(link.ref ? { ref: link.ref } : {}) }, student: { id: student.id, name: student.name }, lastSync: lastSyncOf(student, S || {}), training: trainingOf(S || {}, link.scope) });
+  },
+  // A student's classes of the next two weeks, from each trainer's agenda (agenda.js): the ones of
+  // the trainer's records that are this student's.
+  'GET /api/trainer/mine/classes': async (req, res) => {
+    const user = readSession(req);
+    if (!user) return json(res, 401, { error: 'not signed in' });
+    const from = new Date().toISOString().slice(0, 10), to = new Date(Date.now() + 14 * 86400000).toISOString().slice(0, 10);
+    const classes = [];
+    for (const l of db.trainerLinks.filter(x => x.clientId === user.id)) {
+      const trainer = db.users.find(u => u.id === l.trainerId);
+      if (!trainer) continue;
+      const S = (await loadState(trainer.id)) || {};
+      for (const o of classesOf(S, from, to)) {
+        const rec = recordOf(S, o);
+        if (rec && (rec.studentId === user.id || rec.id === l.ref)) classes.push({ trainer: trainer.name, d: o.d, time: o.time, dur: o.dur, status: o.status });
+      }
+    }
+    classes.sort((a, b) => (a.d + a.time < b.d + b.time ? -1 : 1));
+    json(res, 200, { classes });
   },
   // A student's side: their trainers, a link made with a code, the scope of one changed.
   'GET /api/trainer/mine': async (req, res) => {

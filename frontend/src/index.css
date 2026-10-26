@@ -2382,3 +2382,17 @@ a.btn{text-decoration:none;box-sizing:border-box}
 .rec-notes{margin-top:10px;line-height:1.45}
 .rec-notes p{margin:2px 0 8px;white-space:pre-wrap}
 .login-invite{text-align:start;margin-bottom:18px;border:1px solid var(--acc-line)}
+/* A trainer's agenda (views/Agenda.jsx) */
+.agenda-strip{display:flex;align-items:center;gap:2px;margin:10px 0}
+.agenda-day{flex:1;display:flex;flex-direction:column;align-items:center;gap:1px;padding:6px 0;border-radius:12px;background:none;border:0;color:inherit;font:inherit;cursor:pointer}
+.agenda-day.sel{background:var(--surface-2)}
+.agenda-day.today b{color:var(--acc)}
+.agenda-dots{color:var(--acc);font-size:12px;line-height:1;min-height:12px;letter-spacing:1px}
+.agenda-row{width:100%;text-align:start;color:inherit;font:inherit;gap:12px}
+.agenda-row.canceled .tt{text-decoration:line-through;color:var(--label-2)}
+.agenda-time{display:flex;flex-direction:column;min-width:52px}
+.agenda-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+.agenda-move{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px;margin-bottom:10px}
+.agenda-move label{display:flex;flex-direction:column;gap:3px}
+.agenda-days{margin-top:10px;flex-wrap:wrap}
+.tag.ok{color:var(--acc)} .tag.bad{color:var(--red)}

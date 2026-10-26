@@ -36,8 +36,9 @@ function MyTrainers({ close, invite }) {
   const [code, setCode] = useState(invite?.code || '')
   const [body, setBody] = useState(false)
   const [busy, setBusy] = useState(false)
+  const [classes, setClasses] = useState([])
   const load = () => api('/api/trainer/mine').then(r => setLinks(r.trainers)).catch(e => { setLinks([]); toast(e.message) })
-  useEffect(() => { load() }, [])
+  useEffect(() => { load(); api('/api/trainer/mine/classes').then(r => setClasses(r.classes || [])).catch(() => {}) }, [])
   const link = async () => {
     if (!code.trim()) return
     setBusy(true)
@@ -51,6 +52,10 @@ function MyTrainers({ close, invite }) {
   return <>
     <h3>{t('My personal trainer')}</h3>
     {links === null ? <div className="muted small">{t('Loading…')}</div> : <>
+      {classes.filter(c => c.status === 'scheduled').length > 0 && <div className="card small" style={{ marginBottom: 10 }}>
+        <b>{t('Your next classes')}</b>
+        {classes.filter(c => c.status === 'scheduled').slice(0, 5).map((c, i) => <div key={i} className="row between" style={{ padding: '3px 0' }}><span>{fmtDate(c.d, true)} · {c.time}</span><span className="dim">{t('with {0}', c.trainer)}</span></div>)}
+      </div>}
       {links.map(l => <div key={l.id} className="card" style={{ marginBottom: 10 }}>
         <div className="row between"><b>{l.trainer.name}</b><span className="small dim">{t('since {0}', fmtDate(dayOf(l.created), true))}</span></div>
         <SharedList body={l.scope?.body} />

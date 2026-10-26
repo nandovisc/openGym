@@ -2996,6 +2996,8 @@ const routes = {
       user: {
         id: u.id, name: u.name, created: u.created || null, disabled: !!u.disabled, admin: isAdmin(u), trainer: !!u.trainer, invitedBy: u.invitedBy || null,
         students: u.trainer ? studentsOf(db.trainerLinks, db.users, u).map(x => x.student.name) : [],
+        // A trainer's live code for students, for the admin to hand on (none: expired or never made).
+        ...(u.trainer ? { trainerCode: u.trainerCode?.exp > Date.now() ? { code: u.trainerCode.code, exp: u.trainerCode.exp } : null } : {}),
         trainers: trainersOf(db.trainerLinks, db.users, u).map(x => x.trainer.name),
         // Only on an instance with password sign-in: whether they have one, and until when an
         // unused reset code is good.
@@ -3055,6 +3057,20 @@ const routes = {
     saveDb();
     audit(req, body.trainer ? 'admin.user.trainer' : 'admin.user.untrainer', { user: admin, target: u });
     json(res, 200, { ok: true, id: u.id, trainer: !!u.trainer });
+  },
+
+  // A new code for a trainer's students, made by the admin (the trainer can make one too): the
+  // one before stops working. Audited.
+  'POST /api/admin/user/trainer-code': async (req, res) => {
+    const admin = requireAdmin(req, res); if (!admin) return;
+    const body = await readBody(req);
+    const u = db.users.find(x => x.id === body.id);
+    if (!u) return json(res, 404, { error: 'no such user' });
+    if (!u.trainer) return json(res, 400, { error: 'not a personal trainer' });
+    u.trainerCode = { code: newCode(), exp: Date.now() + CODE_DAYS * 86400000 };
+    saveDb();
+    audit(req, 'admin.trainer.code', { user: admin, target: u });
+    json(res, 200, { code: u.trainerCode.code, exp: u.trainerCode.exp });
   },
 
   'POST /api/admin/user/disable': async (req, res) => {

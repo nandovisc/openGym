@@ -153,3 +153,6 @@
 
 /* a finished step's summary reads as a receipt, not a control */
 .adm-step.done>summary .adm-step-t span{color:var(--acc)}
+/* A trainer's code for students, in the user sheet */
+.adm-code{margin:12px 0 4px;padding:10px 12px;border-radius:var(--r);background:var(--surface-2)}
+.adm-code code{font-size:18px;font-weight:700;letter-spacing:.12em}

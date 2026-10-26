@@ -8,6 +8,7 @@ import { auditCat, auditLine, fmtWhen } from '../lib/audit.js'
 import { workoutVolume, setsDone } from '../lib/history.js'
 import { confirmSheet } from '../sheets.jsx'
 import { parseWorkoutCSV } from '../lib/import-csv.js'
+import { copyText } from '../lib/clipboard.js'
 import Icon from '../components/Icon.jsx'
 import { Button } from '../components/ui.jsx'
 import AdminCoach from './AdminCoach.jsx'
@@ -104,6 +105,10 @@ function UserDetail({ id, onChanged, close }) {
   const setTrainer = trainer => api('/api/admin/user/trainer', { method: 'POST', body: JSON.stringify({ id: u.id, trainer }) })
     .then(() => { toast(trainer ? 'Now a personal trainer' : 'No longer a personal trainer'); onChanged(); api('/api/admin/user?id=' + encodeURIComponent(id)).then(setD) })
     .catch(e => toast(e.message))
+  // The trainer's live code for students, to hand on — or a new one made here.
+  const newTrainerCode = () => api('/api/admin/user/trainer-code', { method: 'POST', body: JSON.stringify({ id: u.id }) })
+    .then(async r => { setD(x => ({ ...x, user: { ...x.user, trainerCode: r } })); toast(await copyText(r.code) ? 'New code copied' : 'New code made') })
+    .catch(e => toast(e.message))
   // Password sign-in (#118): the server only sends `password` when the instance offers it. The
   // code comes back once, is shown once, and is never stored anywhere but as a hash.
   const pwInstance = typeof u.password === 'boolean'
@@ -145,6 +150,15 @@ function UserDetail({ id, onChanged, close }) {
       ? (u.students?.length ? 'Students: ' + u.students.join(', ') + '.' : 'No students yet. They link with the code the trainer hands them.')
       : 'A personal trainer hands students a code; a student who links with it shares their training (never their health data). They still train with their own account.'}</div>
     {u.trainers?.length > 0 && <div className="adm-hint">Trainer: {u.trainers.join(', ')}.</div>}
+    {u.trainer && <div className="adm-code">
+      <div className="small dim">Code for students</div>
+      {u.trainerCode ? <div className="row between">
+        <code>{u.trainerCode.code}</code>
+        <button className="iconbtn" aria-label="Copy" onClick={async () => toast(await copyText(u.trainerCode.code) ? 'Copied' : 'Could not copy')}><Icon name="copy" /></button>
+      </div> : <div className="small">None live: the trainer has not made one yet, or it expired.</div>}
+      {u.trainerCode && <div className="adm-hint">Valid until {new Date(u.trainerCode.exp).toLocaleDateString()}. Any number of students can use it; they enter it in Settings → My personal trainer.</div>}
+      <button className="btn" style={{ margin: '8px 0 4px' }} onClick={newTrainerCode}>{u.trainerCode ? 'Make a new code' : 'Make a code'}</button>
+    </div>}
     {!u.admin && <>
       <button className={'btn ' + (u.disabled ? 'primary' : 'danger')} style={{ margin: '12px 0 4px' }}
         onClick={() => u.disabled ? setDisabled(false)

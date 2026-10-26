@@ -2548,6 +2548,17 @@ paths:
         '200': { description: '`{ ok, id, trainer }`.' }
         '403': { description: Not an admin. }
         '404': { description: No such user. }
+  /api/admin/user/trainer-code:
+    post:
+      tags: [admin]
+      operationId: adminTrainerCode
+      summary: "Admin: a new code for a trainer's students"
+      description: '`{ id }`. Replaces the trainer''s code; a week long. `GET /api/admin/user` shows the live one. Audited.'
+      responses:
+        '200': { description: '`{ code, exp }`.' }
+        '400': { description: Not a personal trainer. }
+        '403': { description: Not an admin. }
+        '404': { description: No such user. }
   /api/admin/user/disable:
     post:
       tags: [admin]

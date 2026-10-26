@@ -59,6 +59,7 @@ const LABELS = {
   'admin.user.workouts': 'Added workouts to an account',
   'admin.user.trainer': 'Made an account a personal trainer',
   'admin.user.untrainer': 'Took the personal trainer role away',
+  'admin.trainer.code': "Made a new code for a trainer's students",
   // The Personal module (api/trainer.js): codes, links made with them, their scope, their end.
   'trainer.code': 'A trainer made a new code for students',
   'trainer.link': 'A student linked to a trainer',

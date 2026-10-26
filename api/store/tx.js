@@ -30,7 +30,7 @@ export class ConflictError extends Error {
 }
 
 const MAP_KEYS = ['challenges', 'pairings', 'presence'];
-const DB_LISTS = ['users', 'creds', 'subs', 'invites', 'deviceLinks'];
+const DB_LISTS = ['users', 'creds', 'subs', 'invites', 'deviceLinks', 'trainerLinks'];
 
 export function createTx(remote, { maxAttempts = 10, log = console } = {}) {
   const als = new AsyncLocalStorage();

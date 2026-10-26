@@ -134,7 +134,8 @@ const TAGS = {
   // A tag missing from this map renders nowhere at all, silently, so every tag in the
   // spec needs a line here.
   coach: { title: 'AI Coach', side: 'Plans, reviews, debriefs' },
-  admin: { title: 'Admin', side: 'Users, invites, audit log, Coach' }
+  admin: { title: 'Admin', side: 'Users, invites, audit log, Coach' },
+  trainer: { title: 'Personal', side: 'A trainer and their students' }
 }
 
 // "Admin: list all users" → "List all users": the section heading and the ADMIN

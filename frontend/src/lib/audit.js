@@ -57,6 +57,13 @@ const LABELS = {
   'admin.user.enable': 'Re-enabled an account',
   'admin.user.delete': 'Deleted an account',
   'admin.user.workouts': 'Added workouts to an account',
+  'admin.user.trainer': 'Made an account a personal trainer',
+  'admin.user.untrainer': 'Took the personal trainer role away',
+  // The Personal module (api/trainer.js): codes, links made with them, their scope, their end.
+  'trainer.code': 'A trainer made a new code for students',
+  'trainer.link': 'A student linked to a trainer',
+  'trainer.scope': 'A student changed what they share with a trainer',
+  'trainer.unlink': 'A trainer link ended',
   'admin.password.reset': 'Issued a password reset code',
   'admin.invite.create': 'Created an invite code',
   'admin.invite.revoke': 'Revoked an invite code',

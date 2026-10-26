@@ -2405,6 +2405,34 @@ paths:
               schema: { $ref: '#/components/schemas/Error' }
               example: { error: "no such user" }
 
+  /api/admin/user/workouts:
+    post:
+      tags: [admin]
+      operationId: adminUserWorkouts
+      summary: 'Admin: add workouts to a user'
+      description: |
+        Workouts the dashboard read from a file (Strong, Hevy or FitNotes CSV) with the app's own
+        importer, put into the user's profile. Only ids the profile does not have go in, so the
+        same file sent twice adds nothing; each is marked `src: admin` and `addedBy`, and the
+        custom exercises the file needed come along. A new revision the user's app picks up on
+        its next poll. Audited.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [id, workouts]
+              properties:
+                id: { type: string }
+                workouts: { type: array, items: { type: object }, maxItems: 500 }
+                customEx: { type: array, items: { type: object } }
+      responses:
+        '200': { description: '`{ ok, added, skipped, customEx }`.' }
+        '400': { description: Not a list of workouts. }
+        '403': { description: Not an admin. }
+        '404': { description: No such user. }
+        '503': { description: The profile could not be read. }
   /api/admin/user/disable:
     post:
       tags: [admin]

@@ -7,6 +7,7 @@ import { fmtDate, fmtNum, fmtVol, fmtDur } from '../lib/format.js'
 import { auditCat, auditLine, fmtWhen } from '../lib/audit.js'
 import { workoutVolume, setsDone } from '../lib/history.js'
 import { confirmSheet } from '../sheets.jsx'
+import { parseWorkoutCSV } from '../lib/import-csv.js'
 import Icon from '../components/Icon.jsx'
 import { Button } from '../components/ui.jsx'
 import AdminCoach from './AdminCoach.jsx'
@@ -76,6 +77,28 @@ function UserDetail({ id, onChanged, close }) {
       .then(() => { toast(disabled ? 'User disabled' : 'User enabled'); onChanged(); close() })
       .catch(e => toast(e.message))
   }
+  // Workouts sent by someone who logged them elsewhere (a note, another app's export): read here
+  // with the app's own importer, shown, and only then put into their profile by the server.
+  const addFromFile = e => {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    file.text().then(text => {
+      let out
+      try { out = parseWorkoutCSV(text, { unit: d.unit || 'kg' }) } catch (err) { toast(err.message || 'Could not read the file'); return }
+      const ws = out?.workouts || []
+      if (!ws.length) { toast('No workouts in that file'); return }
+      confirmSheet({
+        title: `Add ${ws.length === 1 ? '1 workout' : ws.length + ' workouts'} to ${u.name}?`,
+        message: <div style={{ whiteSpace: 'pre-line' }}>{ws.slice(0, 6).map(w => `${fmtDate(w.d, true)} · ${w.name || 'Workout'} · ${w.entries.length} exercises, ${setsDone(w)} sets`).join('\n')
+          + (ws.length > 6 ? `\n…and ${ws.length - 6} more` : '') + '\n\nThey show up in their history on their next sync. A workout already there is left as it is.'}</div>,
+        confirmText: 'Add',
+        onConfirm: () => api('/api/admin/user/workouts', { method: 'POST', body: JSON.stringify({ id: u.id, workouts: ws, customEx: out.customEx || [] }) })
+          .then(r => { toast(r.added ? `${r.added} added${r.skipped ? `, ${r.skipped} already there` : ''}` : 'Already there, nothing added'); onChanged(); api('/api/admin/user?id=' + encodeURIComponent(id)).then(setD) })
+          .catch(err => toast(err.message))
+      })
+    })
+  }
   // Password sign-in (#118): the server only sends `password` when the instance offers it. The
   // code comes back once, is shown once, and is never stored anywhere but as a hash.
   const pwInstance = typeof u.password === 'boolean'
@@ -131,6 +154,9 @@ function UserDetail({ id, onChanged, close }) {
           }),
         })}>Delete account</button>
       <button className="btn" style={{ marginBottom: 4 }} onClick={exportUser}>Download their data</button>
+      <label className="btn" style={{ margin: '14px 0 4px' }}>Add workouts from a file
+        <input type="file" accept=".csv,text/csv" style={{ display: 'none' }} onChange={addFromFile} /></label>
+      <div className="adm-hint">A CSV from Strong, Hevy or FitNotes, or one written in that shape: the workouts are shown before anything is added.</div>
       <div className="adm-hint">Deleting removes the account and every trace of its training history from this server.</div>
       {pwInstance && <>
         <button className="btn" style={{ margin: '14px 0 4px' }} onClick={resetPassword}>Reset password</button>

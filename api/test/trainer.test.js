@@ -86,6 +86,14 @@ test('admin makes a trainer; the student links with the code and either side end
   assert.deepEqual((await call('boss', 'POST', '/api/admin/user/trainer', { id: 'pt', trainer: true })).body, { ok: true, id: 'pt', trainer: true });
   assert.equal((await call('pt', 'GET', '/api/me')).body.user.trainer, true);
 
+  // The admin sees no code before one is made, then makes one and sees it.
+  assert.equal((await call('boss', 'GET', '/api/admin/user?id=pt')).body.user.trainerCode, null);
+  const byAdmin = (await call('boss', 'POST', '/api/admin/user/trainer-code', { id: 'pt' })).body;
+  assert.match(byAdmin.code, /^PT-/);
+  assert.equal((await call('boss', 'GET', '/api/admin/user?id=pt')).body.user.trainerCode.code, byAdmin.code);
+  assert.equal((await call('pt', 'GET', '/api/trainer/code')).body.code, byAdmin.code, 'the trainer sees the same code');
+  assert.equal((await call('boss', 'POST', '/api/admin/user/trainer-code', { id: 'mari' })).status, 400, 'not a trainer');
+  assert.equal((await call('pt', 'POST', '/api/admin/user/trainer-code', { id: 'pt' })).status, 403, 'only an admin');
   const { code } = (await call('pt', 'POST', '/api/trainer/code')).body;
   assert.equal((await call('pt', 'GET', '/api/trainer/code')).body.code, code);
   assert.equal((await call('mari', 'POST', '/api/trainer/link', { code: 'PT-WRONG123' })).body.code, 'bad-code');

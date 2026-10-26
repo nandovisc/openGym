@@ -4,6 +4,7 @@ import { useStore } from './store/useStore.js'
 import { useUI } from './store/useUI.js'
 import { bindUI } from './components/ui.jsx'
 import { setWeightDecimals } from './lib/format.js'
+import { sendCoachOutbox } from './lib/trainer-session.js'
 import { accentValue, applyAccent } from './lib/accent.js'
 import { setLang, useLang, baseLang } from './lib/i18n.js'
 import { effectiveLang } from './lib/default-lang.js'
@@ -192,6 +193,9 @@ function Shell() {
   // bottom edge in its place. Its header's ⌄ goes back to the app, where the tab bar's Resume
   // brings it back.
   const inWorkout = loc.pathname === '/workout' && !!S.active
+  // Workouts a trainer finished with a student and could not send then (no signal at the gym)
+  // go as soon as the app is open again (lib/trainer-session.js).
+  useEffect(() => { if (user?.trainer) sendCoachOutbox().catch(() => {}) }, [user?.trainer])
   useEffect(() => {
     document.body.classList.toggle('no-tabbar', inWorkout)
     return () => document.body.classList.remove('no-tabbar')

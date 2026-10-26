@@ -1,7 +1,7 @@
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
 import { useStore } from './store/useStore.js'
 import { useUI } from './store/useUI.js'
-import { EXDB, EXIDX, BODYPARTS, isCardio, isBodyweightEq, allExercises, equipmentOf, byCategory, smOf, searchExercises, similarExercises, exOr, isAssisted, betterWeight, beatsWeight, isCustomEx } from './lib/exercises.js'
+import { EXDB, EXIDX, BODYPARTS, isCardio, isBodyweightEq, allExercises, equipmentOf, byCategory, smOf, searchExercises, similarExercises, exOr, isAssisted, betterWeight, beatsWeight, isCustomEx, registerGuestCustom } from './lib/exercises.js'
 import { activeProfile, exAvailable, ALL_EQUIPMENT, newProfile, profileEquipment, ACC_V } from './lib/equipment.js'
 import { fmtDate, fmtDateRange, fmtNum, fmtPlate, exerciseNameText, fmtVol, fmtDur, durPart, todayISO, isoOf, uid, exCount, routineCount, setsWorkCount, DAYN, DAYS, weekOrder, weekStartOf, weekDayOffset, MONTHS_LONG, ACCENTS } from './lib/format.js'
 import { lastEntryFor, bestWeightFor, bestWeightForEntry, buildSets, effectiveRoutineIds, workoutDay, workoutVolume, setsDone, setsDoneActive, setUnitsTotal, lastBW, sessionSections, setLabel, defaultConfig, cleanupSg, modeOf, effortOf, EFFORT, capEffort, stepEffort, isBw, isPerSide, sideReps, workSetsDone, applyIntensifierPlan, MAX_PLANNED_WARMUPS, NOTE_MAX } from './lib/history.js'
@@ -58,6 +58,8 @@ import { workoutFit, fitFileName } from './lib/fit-export.js'
 import { joinSessionNoProg } from './lib/session-noprog.js'
 import { buildCombinedEntries, deriveSessionName } from './lib/session-merge.js'
 import { workoutsOn, backfillStart, backfillEnd, completeBackfill, historyAsOf, sessionHistory } from './lib/backfill.js'
+import { coachRecords, coachView, queueCoach, readOutbox, sendCoachOutbox, setCoachTraining } from './lib/trainer-session.js'
+import { setClass } from './lib/agenda.js'
 import { moveWorkout, sameWorkout, startTimeOf, durationMinOf, setWorkoutDuration, rebuildPrHistory, MAX_DURATION_MIN, endsInFuture } from './lib/workout-date.js'
 import { editCompletedSession, editLeftEmpty, editedRecord, editChangesNothing } from './lib/session-edit.js'
 import { stampWorkout } from './lib/sync-merge.js'
@@ -2836,6 +2838,33 @@ export function beginWorkout(routineIds, bw) {
   navToWorkout()
 }
 
+// A workout run with a student on the trainer's phone (the Personal module, lib/trainer-session.js): one
+// of the student's routines (or none, freestyle), built from the student's history, and marked
+// `coach` so the finish sends it to them. `cls`, the agenda class it was started from, is marked
+// done at the finish. No weigh-in: the student's last weight when they share it.
+export function beginCoachWorkout({ student, training, routine = null, recordId = null, cls = null }) {
+  if (S().active) { toast(t('Finish the current workout first.')); return false }
+  setCoachTraining(student.id, training)
+  registerGuestCustom(training?.customEx)
+  const H = coachView(S(), training)
+  const entries = routine ? buildSessionEntries(H, routine).map(e => ({ ...e, rid: routine.id })) : []
+  const bws = (training?.bodyweight || []).filter(b => Number(b?.w) > 0)
+  update(s => {
+    s.active = {
+      id: uid(), d: todayISO(), start: Date.now(),
+      routineIds: routine ? [routine.id] : [],
+      name: routine ? routine.name : t('Freestyle'),
+      bw: bws.length ? Number(bws.at(-1).w) : null, cur: 0, entries,
+      workoutView: s.workoutView || 'cards',
+      coach: { id: student.id, name: student.name, ...(recordId ? { recordId } : {}),
+        ...(cls ? { cls: { id: cls.id, recordId: cls.recordId, d: cls.d, time: cls.time, dur: cls.dur, status: cls.status, note: cls.note || '', ...(cls.seriesId ? { seriesId: cls.seriesId } : {}) } } : {}) },
+    }
+  })
+  useUI.getState().stopRest()
+  navToWorkout()
+  return true
+}
+
 // "Repeat today" (#58): a saved workout's exercises as a new freestyle session dated today, each
 // seeded from what that workout logged (lib/session-repeat.js). The weigh-in asks first, the
 // way starting any workout does.
@@ -3374,6 +3403,65 @@ function FinishSummary({ w, prs, e1prs = [], close }) {
     <Button variant="primary" onClick={() => closeThenNav(close, '/home')}>{t('Nice!')}</Button>
   </div>
 }
+// The finish of a session run with a student: the workout goes to their history (through this
+// device's outbox, so no signal at the gym loses it), never into the trainer's; the agenda class
+// it came from is marked done.
+function doFinishCoachWorkout(A) {
+  const H = sessionHistory(S())
+  const { prs, best } = coachRecords(H, A.entries, A.d)
+  const w = buildCompletedWorkout(A, {
+    end: sessionEnd(A),
+    prs,
+    snapshotFor: e => isCustomEx(EXIDX[e.id]) ? exerciseMuscleSnapshot(EXIDX[e.id]) : null,
+  })
+  w.vol = workoutVolume(w)
+  queueCoach({ id: A.coach.id, name: A.coach.name, workout: w, best })
+  update(s => {
+    s.active = null
+    if (A.coach.cls) s.sessions = setClass(s.sessions, A.coach.cls, { status: 'done' })
+  })
+  useUI.getState().stopRest()
+  useUI.getState().stopWork()
+  beep(snd(), 880, 0.15); beep(snd(), 1100, 0.15, 0.18); beep(snd(), 1320, 0.3, 0.36)
+  ui().openSheet(close => <CoachDone w={w} prs={prs} name={A.coach.name} studentId={A.coach.id} close={close} />, { kind: 'center', locked: true })
+}
+function CoachDone({ w, prs, name, studentId, close }) {
+  const st = useStore(s => s.S)
+  // 'sending' until the outbox is tried; then 'sent', 'waiting' (no signal: kept for later) or
+  // 'refused' (the server said no: kept, with the reason, under Students).
+  const [state, setState] = useState('sending')
+  useEffect(() => {
+    let live = true
+    sendCoachOutbox().finally(() => {
+      if (!live) return
+      const left = readOutbox().find(x => x.workout.id === w.id)
+      setState(!left ? 'sent' : left.error ? 'refused' : 'waiting')
+    })
+    return () => { live = false }
+  }, [])
+  const done = () => { registerGuestCustom([]); closeThenNav(close, '/students/' + studentId) }
+  return <div style={{ textAlign: 'center', padding: '8px 0' }}>
+    <div style={{ fontSize: 44, display: 'flex', justifyContent: 'center', color: 'var(--acc)' }}><Icon name="trophy" /></div>
+    <h3 style={{ margin: '8px 0' }}>{t('Workout with {0} complete!', name)}</h3>
+    <div className="tiles" style={{ textAlign: 'start' }}>
+      <div className="tile"><div className="l">{t('Duration')}</div><div className="v" style={{ fontSize: '1.1rem' }}>{fmtDur(w.end - w.start)}</div></div>
+      <div className="tile"><div className="l">{t('Volume')}</div><div className="v" style={{ fontSize: '1.1rem' }}>{fmtVol(w.vol, st.unit)}</div></div>
+      <div className="tile"><div className="l">{t('Sets')}</div><div className="v" style={{ fontSize: '1.1rem' }}>{setsWorkCount(setsDone(w), workSetsDone(w))}</div></div>
+      <div className="tile"><div className="l">{t('PRs')}</div><div className="v" style={{ fontSize: 20 }}>{prs.length || '–'}</div></div>
+    </div>
+    {prs.length > 0 && <div style={{ textAlign: 'start', marginBottom: 12 }}>
+      {prs.map(id => <div key={id} className="small accent row" style={{ gap: 5 }}><Icon name="trophy" style={{ fontSize: 13 }} />{t('New PR:')} <span className={exerciseNameClass(EXIDX[id])}>{EXIDX[id] ? exerciseNameFor(EXIDX[id]) : id}</span></div>)}
+    </div>}
+    <div className={'small' + (state === 'refused' ? ' danger' : ' muted')} style={{ marginBottom: 12 }}>
+      {state === 'sending' ? t('Saving to {0}’s history…', name)
+        : state === 'sent' ? t('Saved to {0}’s history.', name)
+          : state === 'refused' ? t('{0}’s profile did not take it. It is kept under Students.', name)
+            : t('No connection: it is kept on this phone and goes to {0} as soon as there is signal.', name)}
+    </div>
+    <Button variant="primary" onClick={done}>{t('Nice!')}</Button>
+  </div>
+}
+
 export function finishWorkout() {
   if (S().active?.editingWorkoutId) { saveWorkoutEdits(); return }
   const A = S().active
@@ -3408,6 +3496,7 @@ function doFinishWorkout() {
   const st = S()
   const A = st.active
   if (!A) return
+  if (A.coach) { doFinishCoachWorkout(A); return }
   const past = !!A.backfill
   const prs = []
   const e1prs = []

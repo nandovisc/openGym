@@ -29,6 +29,7 @@ const COPY = {
     smartWaterTitle: 'A glass of water? 💧', smartWaterBody: '{0} of {1} so far today.',
     classTrainerTitle: 'Class with {0} at {1}', classStudentTitle: 'Class with {0} at {1}', classBody: 'In half an hour.',
     trainerPlanTitle: '{0} updated your plan', trainerPlanBody: 'New: {0}.', trainerPlanBodyNone: 'Open the app to see it.',
+    trainerWorkoutTitle: '{0} logged your workout', trainerWorkoutBody: '{0} is in your history.',
     smartSleepTitle: 'Last night has not arrived', smartSleepBody: 'Open Shortcuts and run the sleep one, or log the night by hand.',
     meals: { breakfast: 'breakfast', morningSnack: 'morning snack', lunch: 'lunch', snack: 'afternoon snack', dinner: 'dinner', supper: 'supper' },
   },
@@ -59,6 +60,7 @@ const COPY = {
     smartWaterTitle: 'Um copo de água? 💧', smartWaterBody: '{0} de {1} até agora hoje.',
     classTrainerTitle: 'Aula com {0} às {1}', classStudentTitle: 'Aula com {0} às {1}', classBody: 'Daqui a pouco.',
     trainerPlanTitle: '{0} atualizou seu plano', trainerPlanBody: 'Novidades: {0}.', trainerPlanBodyNone: 'Abra o app para ver.',
+    trainerWorkoutTitle: '{0} registrou seu treino', trainerWorkoutBody: '{0} já está no seu histórico.',
     smartSleepTitle: 'A noite de ontem não chegou', smartSleepBody: 'Abra o Atalhos e rode o do sono, ou registre a noite à mão.',
     meals: { breakfast: 'café da manhã', morningSnack: 'lanche da manhã', lunch: 'almoço', snack: 'lanche da tarde', dinner: 'jantar', supper: 'ceia' },
   },
@@ -158,6 +160,13 @@ export function classReminderPush(lang, name, time, who) {
 export function trainerPlanPush(lang, trainer, names) {
   const copy = copyFor(lang);
   return { title: fill(copy.trainerPlanTitle, trainer), body: names.length ? fill(copy.trainerPlanBody, names.slice(0, 3).join(', ')) : copy.trainerPlanBodyNone, tag: 'trainer-plan', url: '#/plan' };
+}
+
+// A trainer ran a workout with the student from their own phone (server.js POST
+// /api/trainer/student/workout): it is in the student's history now.
+export function trainerWorkoutPush(lang, trainer, name) {
+  const copy = copyFor(lang);
+  return { title: fill(copy.trainerWorkoutTitle, trainer), body: fill(copy.trainerWorkoutBody, name), tag: 'trainer-workout', url: '#/history' };
 }
 
 // A smart reminder (smart-nudges.js smartDue), from what the person usually does.

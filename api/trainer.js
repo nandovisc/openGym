@@ -147,3 +147,35 @@ export function archiveFor(records, link, student, S, until, id = crypto.randomB
   else out.push({ id, name: student.name, status: 'ended', studentId: student.id, history, created: now });
   return out;
 }
+
+const DAY = /^\d{4}-\d{2}-\d{2}$/;
+const num = v => Number.isFinite(Number(v)) ? Number(v) : NaN;
+/**
+ * A workout a trainer ran with a student, from the trainer's phone, put into the student's
+ * training: { workouts, exWeights, added, error }. Marked with the trainer (src 'trainer'); an id
+ * the profile has already is left as it is, so a retry of the same send adds nothing. `best`
+ * (exercise id → { w, d }) is what the trainer's app worked out the session set as the student's
+ * best loads, held against what the student had: taken only when it is a number for a day.
+ */
+export function workoutFor(cur, workout, best, trainer, now = Date.now()) {
+  const w = workout;
+  const ok = w && typeof w === 'object' && !Array.isArray(w) && typeof w.id === 'string' && w.id && w.id.length <= 80 && DAY.test(w.d || '')
+    && Array.isArray(w.entries) && w.entries.length <= 100
+    && w.entries.every(e => e && typeof e === 'object' && typeof e.id === 'string' && e.id.length <= 64 && Array.isArray(e.sets) && e.sets.length <= 100);
+  if (!ok) return { error: 'workout' };
+  const workouts = list(cur?.workouts).slice();
+  const exWeights = cur?.exWeights && typeof cur.exWeights === 'object' && !Array.isArray(cur.exWeights) ? { ...cur.exWeights } : {};
+  if (workouts.some(x => x?.id === w.id)) return { workouts, exWeights, added: false, error: null };
+  const strip = Object.fromEntries(Object.entries(w).filter(([k]) => !k.startsWith('_') && k !== 'media'));
+  const next = { ...strip, name: clean(w.name, 80) || 'Treino', src: 'trainer', trainer: { id: trainer.id, name: trainer.name, at: now } };
+  // Where its day and start put it, as History reads the list in order.
+  let i = workouts.length;
+  while (i > 0 && (workouts[i - 1]?.d > next.d || (workouts[i - 1]?.d === next.d && (num(workouts[i - 1]?.start) || 0) > (num(next.start) || 0)))) i--;
+  workouts.splice(i, 0, next);
+  if (best && typeof best === 'object' && !Array.isArray(best)) {
+    for (const [id, b] of Object.entries(best).slice(0, 100)) {
+      if (typeof id === 'string' && id.length <= 64 && b && num(b.w) > 0 && DAY.test(b.d || '')) exWeights[id] = { w: num(b.w), d: b.d };
+    }
+  }
+  return { workouts, exWeights, added: true, error: null };
+}

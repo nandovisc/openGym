@@ -39,6 +39,8 @@ import { routineChangesFromEntry, updateRoutineFromEntry } from '../lib/routines
 import { sessionNoProg, setSessionNoProg, setEntryNoProg, joinSessionNoProg } from '../lib/session-noprog.js'
 import { glyphOf } from '../lib/glyphs.js'
 import { markAllSetsDone, sessionHistory } from '../lib/backfill.js'
+import { coachTrainingOf, setCoachTraining } from '../lib/trainer-session.js'
+import { registerGuestCustom } from '../lib/exercises.js'
 import { bestSetFor } from '../lib/exercise-history.js'
 import { isWarmupRow, isFailureSet, toggleFailure, isDropSet, isRestPauseSet, dropsOf, clustersOf, addDrop, addCluster, removeDropAt, removeClusterAt, setDropAt, setClusterAt, nextDropWeight, nextBurstReps, isSideSet, makeSideSet, setSideField, toggleSide, addSideDrop, removeSideDropAt, setSideDropAt, addSideCluster, removeSideClusterAt, setSideClusterAt, WEIGHT_ORIGIN_MANUAL } from '../lib/workout-model.js'
 import { canMoveActiveWorkoutUnit, moveActiveWorkoutUnit, canMoveActiveWorkoutEntry, moveActiveWorkoutEntry } from '../lib/active-workout-order.js'
@@ -1240,7 +1242,7 @@ function ActiveWorkout() {
   const restWord = v => (Number(v) > 0 ? fmtRest(v) : t('Default ({0})', fmtRest(S.restSec)))
   const routineUpdateFor = idx => {
     const entry = A.entries[idx]
-    const routine = !editing && entry?.rid ? S.routines.find(r => r.id === entry.rid) : null
+    const routine = !editing && !A.coach && entry?.rid ? S.routines.find(r => r.id === entry.rid) : null
     const found = routine ? routineChangesFromEntry(routine, A.entries, idx) : null
     if (!found) return null
     const activeId = A.id
@@ -1927,6 +1929,8 @@ function ActiveWorkout() {
     </div>
     {editing && <p className="muted small">{t('Editing a saved workout. Date and duration stay unchanged.')}</p>}
     {A.backfill && <div className="muted small" style={{ marginBottom: 8 }}>{t('Logging a past workout, so no rest timers.')}</div>}
+    {/* A session run with a student (lib/trainer-session.js): theirs, saved to their history at the finish. */}
+    {A.coach && <div className="coach-band"><Icon name="person" /><span>{t('Training with {0}', A.coach.name)} · {t('saved to their history')}</span></div>}
 
     {A.entries.length ? (listMode ? (
       <div className="workout-list" data-testid="workout-list" ref={listRef}>
@@ -2085,5 +2089,15 @@ function ActiveWorkout() {
 
 export default function Workout() {
   const active = useStore(s => s.S.active)
+  // A session with a student is held against their training, kept in memory only: after a reload
+  // it is read again, and the screen drawn again once it is here.
+  const coachId = active?.coach?.id
+  const [, setLoaded] = useState(0)
+  useEffect(() => {
+    if (!coachId || coachTrainingOf(coachId)) return
+    api('/api/trainer/student?id=' + encodeURIComponent(coachId))
+      .then(d => { setCoachTraining(coachId, d.training); registerGuestCustom(d.training?.customEx); setLoaded(n => n + 1) })
+      .catch(() => {})
+  }, [coachId])
   return active ? <ActiveWorkout /> : <StartChooser />
 }

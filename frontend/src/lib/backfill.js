@@ -4,6 +4,7 @@
 import { bestWeightForEntry } from './history.js'
 import { isSideSet, syncSideAggregate } from './workout-model.js'
 import { mergeWorkoutMedia, stampWorkout } from './sync-merge.js'
+import { coachTrainingOf, coachView } from './trainer-session.js'
 
 export const workoutsOn = (S, iso) => (S.workouts || []).filter(w => w.d === iso)
 
@@ -42,8 +43,10 @@ export function historyAsOf(S, { d, start = 0, replaceId = null, strict = false 
 // saved workout open in the editor is held against what came before it, without itself: read
 // from the whole log, its "Last time" line was itself, or a later session, and the Best chip
 // compared it with lifts made after it (QA 1.3.9).
+// A session run with a student (lib/trainer-session.js) is held against the student's training.
 export const sessionHistory = S => {
   const A = S?.active
+  if (A?.coach) return coachView(S, coachTrainingOf(A.coach.id))
   if (A?.backfill) return historyAsOf(S, { d: A.d, start: A.start, replaceId: A.backfill.replaceId })
   if (A?.editingWorkoutId != null) return historyAsOf(S, { d: A.d, start: A.start, replaceId: A.editingWorkoutId, strict: true })
   return S

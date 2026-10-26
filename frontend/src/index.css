@@ -2375,3 +2375,10 @@ a.btn{text-decoration:none;box-sizing:border-box}
 .plan-ex-fields{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:8px;margin-top:6px}
 .plan-ex-fields label{display:flex;flex-direction:column;gap:3px}
 .plan-day{display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--sep)}
+/* A trainer's record of a student (views/StudentRecord.jsx) */
+.rec-field{display:flex;flex-direction:column;gap:4px;margin-bottom:10px}
+.rec-pay{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.rec-invite{white-space:pre-wrap;line-height:1.45;margin-bottom:10px}
+.rec-notes{margin-top:10px;line-height:1.45}
+.rec-notes p{margin:2px 0 8px;white-space:pre-wrap}
+.login-invite{text-align:start;margin-bottom:18px;border:1px solid var(--acc-line)}

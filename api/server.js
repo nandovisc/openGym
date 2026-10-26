@@ -20,7 +20,7 @@ import { startCadence } from './coach/cadence.js';
 import { startWarmup } from './coach/warmup.js';
 import { dayReminderPush, groupReminderPush, habitReminderPush, healthRecapPush, medReminderPush, nudgePush, restTimerPush, smartPush, testPush, trainerPlanPush, weeklyRecapPush } from './push-messages.js';
 import { smartDue } from './smart-nudges.js';
-import { CODE_DAYS, dropLinksOf, linkWith, newCode, studentsOf, trainerByCode, trainersOf, planFor, trainingOf, trainingSummary, unlink } from './trainer.js';
+import { CODE_DAYS, dropLinksOf, linkWith, newCode, studentsOf, trainerByCode, trainersOf, archiveFor, planFor, trainingOf, trainingSummary, unlink } from './trainer.js';
 import { hasNews, lastWeeks, moduleOn as moduleOnServer } from './health-week.js';
 import { groupsDue, habitsDue, weekSummary } from './habits.js';
 import { doseId, medsDue } from './meds.js';
@@ -2296,7 +2296,7 @@ const trainerRoutes = {
     const student = link && db.users.find(u => u.id === id);
     if (!student) return json(res, 404, { error: 'not your student' });
     const S = await loadState(student.id);
-    json(res, 200, { link: { id: link.id, scope: link.scope || { body: false }, created: link.created }, student: { id: student.id, name: student.name }, lastSync: lastSyncOf(student, S || {}), training: trainingOf(S || {}, link.scope) });
+    json(res, 200, { link: { id: link.id, scope: link.scope || { body: false }, created: link.created, ...(link.ref ? { ref: link.ref } : {}) }, student: { id: student.id, name: student.name }, lastSync: lastSyncOf(student, S || {}), training: trainingOf(S || {}, link.scope) });
   },
   // A student's side: their trainers, a link made with a code, the scope of one changed.
   'GET /api/trainer/mine': async (req, res) => {
@@ -2312,7 +2312,7 @@ const trainerRoutes = {
     const body = await readBody(req);
     const trainer = trainerByCode(db.users, body.code);
     if (!trainer) { audit(req, 'trainer.link', { ok: false, user, msg: 'bad code' }); return json(res, 400, { error: 'This code is not valid, or it has expired.', code: 'bad-code' }); }
-    const out = linkWith(db.trainerLinks, trainer, user, { body: !!body.body });
+    const out = linkWith(db.trainerLinks, trainer, user, { body: !!body.body, ref: body.ref });
     if (out.error) return json(res, 400, { error: 'You cannot be your own student.', code: 'self' });
     db.trainerLinks = out.links;
     saveDb();
@@ -2362,6 +2362,18 @@ const trainerRoutes = {
     const body = await readBody(req);
     const out = unlink(db.trainerLinks, body.id, user);
     if (!out.link) return json(res, 404, { error: 'no such link' });
+    // The training up to today stays with the trainer too (trainer.js archiveFor): copied into
+    // their record of the student before the link goes. Written as an app that keeps no stamps
+    // writes, so the trainer's phones merge it.
+    const trainer = db.users.find(u => u.id === out.link.trainerId);
+    const studentUser = db.users.find(u => u.id === out.link.clientId);
+    if (trainer && studentUser) {
+      const [tState, sState] = [await loadStateStrict(trainer.id), await loadState(studentUser.id)];
+      if (tState !== UNREADABLE) {
+        const records = archiveFor(tState?.students, out.link, studentUser, sState, new Date().toISOString().slice(0, 10));
+        await commitState(trainer, tState, { ...(tState || {}), students: records }, { overRead: true, stamped: false });
+      }
+    }
     db.trainerLinks = out.links;
     saveDb();
     const other = db.users.find(u => u.id === (out.link.trainerId === user.id ? out.link.clientId : out.link.trainerId));

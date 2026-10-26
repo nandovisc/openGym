@@ -10,7 +10,7 @@ import path from 'node:path';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { boundPort } from './helpers.mjs';
-import { cleanCode, dropLinksOf, linkWith, newCode, trainerByCode, planFor, trainingOf, trainingSummary, unlink } from '../trainer.js';
+import { archiveFor, cleanCode, dropLinksOf, linkWith, newCode, trainerByCode, planFor, trainingOf, trainingSummary, unlink } from '../trainer.js';
 
 const API = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SECRET = crypto.randomBytes(32).toString('hex');
@@ -65,6 +65,17 @@ test('a plan: routines new or rewritten and marked, ones taken out leave their d
   assert.equal(planFor(cur, { routines: [{ id: 'x' }] }, t).error, 'routines');
 });
 
+test('a link that ends leaves the trainer a copy of the training up to then', () => {
+  const S = { unit: 'kg', workouts: [{ id: 'w', d: '2026-10-20', media: [{ hash: 'x' }] }], meals: [{ id: 'm' }] };
+  const link = { ref: 'r1', clientId: 'mari' }, student = { id: 'mari', name: 'Marília' };
+  const kept = archiveFor([{ id: 'r1', name: 'Marília', phone: '11', status: 'active' }], link, student, S, '2026-10-26');
+  assert.deepEqual(kept[0], { id: 'r1', name: 'Marília', phone: '11', status: 'ended', studentId: 'mari', history: { workouts: [{ id: 'w', d: '2026-10-20' }], customEx: [], unit: 'kg', until: '2026-10-26' } });
+  const made = archiveFor([], { clientId: 'mari' }, student, S, '2026-10-26', 'new', 5);
+  assert.deepEqual([made[0].id, made[0].name, made[0].status, made[0].created], ['new', 'Marília', 'ended', 5]);
+  assert.equal(linkWith([], { id: 't' }, { id: 's' }, { ref: 'r1' }).link.ref, 'r1');
+  assert.equal(linkWith([], { id: 't' }, { id: 's' }, { ref: '../x' }).link.ref, undefined);
+});
+
 test('admin makes a trainer; the student links with the code and either side ends it', async t => {
   const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gym-trainer-'));
   fs.writeFileSync(path.join(dataDir, 'secret'), SECRET, { mode: 0o600 });
@@ -99,11 +110,11 @@ test('admin makes a trainer; the student links with the code and either side end
   assert.equal((await call('mari', 'POST', '/api/trainer/link', { code: 'PT-WRONG123' })).body.code, 'bad-code');
   assert.equal((await call('pt', 'POST', '/api/trainer/link', { code })).body.code, 'self');
 
-  const made = await call('mari', 'POST', '/api/trainer/link', { code, body: false });
+  const made = await call('mari', 'POST', '/api/trainer/link', { code, body: false, ref: 'rec-mari' });
   assert.equal(made.status, 200, JSON.stringify(made.body));
   assert.deepEqual(made.body.link.trainer, { id: 'pt', name: 'Ricardo' });
   const students = (await call('pt', 'GET', '/api/trainer/students')).body.students;
-  assert.deepEqual(students.map(s => [s.student.name, s.scope.body]), [['Marília', false]]);
+  assert.deepEqual(students.map(s => [s.student.name, s.scope.body, s.ref]), [['Marília', false, 'rec-mari']]);
   // Her training, as her trainer reads it: workouts and routines, nothing of her health.
   await call('mari', 'PUT', '/api/data', { state: { unit: 'kg', routines: [{ id: 'r', name: 'Pernas', ex: [] }], workouts: [{ id: 'w1', d: '2026-10-23', name: 'Pernas', entries: [], media: [] }], meals: [{ id: 'm1', d: '2026-10-23', items: [] }], bodyweight: [{ d: '2026-10-23', w: 61, t: 1 }] }, stamped: true });
   const read = await call('pt', 'GET', '/api/trainer/student?id=mari');
@@ -142,6 +153,12 @@ test('admin makes a trainer; the student links with the code and either side end
   assert.deepEqual((await call('pt', 'POST', '/api/trainer/unlink', { id: made.body.link.id })).body, { ok: true });
   assert.deepEqual((await call('mari', 'GET', '/api/trainer/mine')).body.trainers, []);
   assert.equal((await call('pt', 'GET', '/api/trainer/student?id=mari')).status, 404, 'the access went with the link');
+  const ptState = (await call('pt', 'GET', '/api/data')).body.state;
+  const rec = ptState.students.find(r => r.studentId === 'mari');
+  assert.equal(rec.status, 'ended');
+  assert.deepEqual(rec.history.workouts.map(w => w.name), ['Pernas'], 'her training stays with him too');
+  assert.equal(rec.history.meals, undefined);
+  assert.deepEqual(((await call('mari', 'GET', '/api/data')).body.state).workouts.map(w => w.name), ['Pernas'], 'and with her');
 
   // Linked again, then the role is taken away: the link goes with it.
   await call('mari', 'POST', '/api/trainer/link', { code });

@@ -515,8 +515,9 @@ paths:
       operationId: trainerLink
       summary: Become a trainer's student with their code
       description: |
-        `{ code, body }`. The student makes the link, choosing whether weigh-ins and measurements
-        are shared too (`body`). Ten tries an hour. Audited.
+        `{ code, body, ref }`. The student makes the link, choosing whether weigh-ins and measurements
+        are shared too (`body`); `ref` is the trainer's record of them an invite link carried. Ten
+        tries an hour. Audited.
       responses:
         '200': { description: '`{ ok, link: { id, trainer, scope, created } }`.' }
         '400': { description: 'A code that is not valid or has expired (`bad-code`), or the trainer themself (`self`).' }
@@ -537,7 +538,7 @@ paths:
       tags: [trainer]
       operationId: trainerUnlink
       summary: End a link, from either side
-      description: '`{ id }`. The access goes at once. Audited.'
+      description: '`{ id }`. The access goes at once; the training up to today is copied into the trainer''s record of the student (`students[].history`), as the student agreed. Audited.'
       responses:
         '200': { description: '`{ ok }`.' }
         '401': { description: Not signed in. }

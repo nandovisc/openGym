@@ -31,11 +31,14 @@ export function trainerByCode(users, code, now = Date.now()) {
  * `links` with the link of `trainer` and `client` made (or its scope changed, when there is one):
  * { links, link, error }. error: 'self' (a trainer is not their own student).
  */
-export function linkWith(links, trainer, client, { body = false, now = Date.now() } = {}) {
+export function linkWith(links, trainer, client, { body = false, ref = null, now = Date.now() } = {}) {
   if (trainer.id === client.id) return { links: list(links), link: null, error: 'self' };
   const out = list(links).slice();
   const i = out.findIndex(l => l?.trainerId === trainer.id && l.clientId === client.id);
-  const link = i >= 0 ? { ...out[i], scope: { body: !!body } } : { id: crypto.randomBytes(8).toString('hex'), trainerId: trainer.id, clientId: client.id, scope: { body: !!body }, created: now };
+  // `ref`: the trainer's record of this student the invite carried (lib/students.js), so the
+  // trainer's app puts the two together.
+  const r = typeof ref === 'string' && /^[\w-]{1,64}$/.test(ref) ? { ref } : {};
+  const link = i >= 0 ? { ...out[i], ...r, scope: { body: !!body } } : { id: crypto.randomBytes(8).toString('hex'), trainerId: trainer.id, clientId: client.id, ...r, scope: { body: !!body }, created: now };
   if (i >= 0) out[i] = link; else out.push(link);
   return { links: out, link, error: null };
 }
@@ -54,7 +57,7 @@ export const dropLinksOf = (links, uid, side = 'both') =>
 export function studentsOf(links, users, trainer) {
   const by = new Map(list(users).map(u => [u.id, u]));
   return list(links).filter(l => l?.trainerId === trainer.id && by.has(l.clientId))
-    .map(l => ({ id: l.id, student: { id: l.clientId, name: by.get(l.clientId).name, disabled: !!by.get(l.clientId).disabled }, scope: l.scope || { body: false }, created: l.created }));
+    .map(l => ({ id: l.id, student: { id: l.clientId, name: by.get(l.clientId).name, disabled: !!by.get(l.clientId).disabled }, scope: l.scope || { body: false }, created: l.created, ...(l.ref ? { ref: l.ref } : {}) }));
 }
 
 /** The trainers of `client`, as the student sees them. */
@@ -127,4 +130,20 @@ export function planFor(cur, { routines = [], removed = [], week } = {}, trainer
     for (const [d, v] of Object.entries(cur.week)) { const left = [].concat(v).filter(id => !gone.has(id)); if (left.length) nextWeek[d] = left; }
   }
   return { routines: out, ...(nextWeek ? { week: nextWeek } : {}), error: null };
+}
+
+/**
+ * The trainer's records (S.students) with what a link that ended leaves them: the record of that
+ * student (by the invite's `ref`, else by the student's id; one made when there is none) marked
+ * ended and given the student's training up to `until` — read-only, the trainer's to keep, as the
+ * student agreed when linking. The student keeps their own, untouched.
+ */
+export function archiveFor(records, link, student, S, until, id = crypto.randomBytes(8).toString('hex'), now = Date.now()) {
+  const t = trainingOf(S || {});
+  const history = { workouts: t.workouts, customEx: t.customEx, unit: t.unit || 'kg', until };
+  const out = list(records).slice();
+  const i = out.findIndex(r => r && (r.id === link.ref || r.studentId === student.id));
+  if (i >= 0) out[i] = { ...out[i], status: 'ended', studentId: student.id, history };
+  else out.push({ id, name: student.name, status: 'ended', studentId: student.id, history, created: now });
+  return out;
 }

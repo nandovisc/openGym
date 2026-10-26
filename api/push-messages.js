@@ -28,7 +28,7 @@ const COPY = {
     smartWeightTitle: 'Time to weigh in', smartWeightBody: 'No weigh-in for {0} days.',
     smartWaterTitle: 'A glass of water? 💧', smartWaterBody: '{0} of {1} so far today.',
     smartSleepTitle: 'Last night has not arrived', smartSleepBody: 'Open Shortcuts and run the sleep one, or log the night by hand.',
-    meals: { breakfast: 'breakfast', lunch: 'lunch', dinner: 'dinner', snack: 'snacks' },
+    meals: { breakfast: 'breakfast', morningSnack: 'morning snack', lunch: 'lunch', snack: 'afternoon snack', dinner: 'dinner', supper: 'supper' },
   },
   'pt-BR': {
     restTitle: 'Descanso terminado 💪',
@@ -56,7 +56,7 @@ const COPY = {
     smartWeightTitle: 'Hora de se pesar', smartWeightBody: 'Sem pesagem há {0} dias.',
     smartWaterTitle: 'Um copo de água? 💧', smartWaterBody: '{0} de {1} até agora hoje.',
     smartSleepTitle: 'A noite de ontem não chegou', smartSleepBody: 'Abra o Atalhos e rode o do sono, ou registre a noite à mão.',
-    meals: { breakfast: 'café da manhã', lunch: 'almoço', dinner: 'jantar', snack: 'lanches' },
+    meals: { breakfast: 'café da manhã', morningSnack: 'lanche da manhã', lunch: 'almoço', snack: 'lanche da tarde', dinner: 'jantar', supper: 'ceia' },
   },
 };
 

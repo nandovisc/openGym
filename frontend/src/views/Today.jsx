@@ -37,7 +37,9 @@ const CARD_MODULE = { food: 'food', water: 'water', habits: 'habits', meds: 'med
 /** The meal of the hour, for adding food from Today or the ＋ button. */
 export function slotByHour(date = new Date()) {
   const m = date.getHours() * 60 + date.getMinutes()
-  return m < 630 ? 'breakfast' : m < 900 ? 'lunch' : m < 1110 ? 'snack' : 'dinner'
+  // Breakfast until 9:30, the morning snack until 11:30, lunch until 15:00, the afternoon snack
+  // until 18:30, dinner until 21:30, then supper.
+  return m < 570 ? 'breakfast' : m < 690 ? 'morningSnack' : m < 900 ? 'lunch' : m < 1110 ? 'snack' : m < 1290 ? 'dinner' : 'supper'
 }
 
 /**

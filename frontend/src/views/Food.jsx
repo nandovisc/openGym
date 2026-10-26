@@ -26,7 +26,7 @@ const update = fn => useStore.getState().update(fn)
 const ui = () => useUI.getState()
 const toast = message => ui().toast(message)
 
-const SLOT_LABEL = { breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner', snack: 'Snacks' }
+const SLOT_LABEL = { breakfast: 'Breakfast', morningSnack: 'Morning snack', lunch: 'Lunch', snack: 'Afternoon snack', dinner: 'Dinner', supper: 'Supper' }
 const ACTIVITY_LABEL = { sedentary: 'Sedentary', light: 'Lightly active', moderate: 'Moderately active', active: 'Very active', very: 'Extremely active' }
 const OBJECTIVE_LABEL = { lose: 'Lose weight', maintain: 'Keep my weight', gain: 'Gain weight' }
 const kcalText = n => `${fmtNum(Math.round(n || 0))} kcal`

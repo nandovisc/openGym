@@ -1,5 +1,7 @@
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useStore } from '../store/useStore.js'
+import { api } from '../lib/api.js'
 import { useUI } from '../store/useUI.js'
 import { effectiveRoutines, effectiveRoutineIds, nextTrainingDay, streakWeeks, lastBW } from '../lib/history.js'
 import { weekTally } from '../lib/queue.js'
@@ -18,6 +20,8 @@ import { addFoodSheet } from './Food.jsx'
 import { HabitRow, useMedHabits, useNow } from './Habits.jsx'
 import { drink, mlText, useWaterMigration } from './Water.jsx'
 import { PatternsCard, WeekCard } from './WeekReport.jsx'
+import { ClassRow } from './Agenda.jsx'
+import { occurrences } from '../lib/agenda.js'
 import { dayTotal, glassOf, goalOf as waterGoal } from '../lib/water.js'
 import Icon from '../components/Icon.jsx'
 import LineChart from '../components/LineChart.jsx'
@@ -30,8 +34,8 @@ const list = v => (Array.isArray(v) ? v : [])
 
 // Today (Home with the modules beside training on): the day across them, each card with the one
 // thing to do about it — start the workout, add food, mark a habit, take a dose, weigh in.
-export const CARDS = ['training', 'food', 'water', 'habits', 'meds', 'sleep', 'weight', 'week', 'patterns', 'exams']
-const CARD_LABEL = { training: 'Today’s workout', food: 'Nutrition', water: 'Water', habits: 'Habits to do', meds: 'Medications', sleep: 'Sleep', weight: 'Body weight', week: 'Your week', patterns: 'Patterns', exams: 'Medical exams' }
+export const CARDS = ['classes', 'training', 'food', 'water', 'habits', 'meds', 'sleep', 'weight', 'week', 'patterns', 'exams']
+const CARD_LABEL = { classes: 'Classes today', training: 'Today’s workout', food: 'Nutrition', water: 'Water', habits: 'Habits to do', meds: 'Medications', sleep: 'Sleep', weight: 'Body weight', week: 'Your week', patterns: 'Patterns', exams: 'Medical exams' }
 const CARD_MODULE = { food: 'food', water: 'water', habits: 'habits', meds: 'meds', sleep: 'sleep', exams: 'exams' }
 
 /** The meal of the hour, for adding food from Today or the ＋ button. */
@@ -49,8 +53,8 @@ export function slotByHour(date = new Date()) {
  */
 export function cardOrder(S, hour = new Date().getHours()) {
   const own = list(S.homeCards?.order).filter(k => CARDS.includes(k))
-  const auto = hour < 11 ? ['sleep', 'weight', 'meds', 'water', 'training', 'food', 'habits', 'week', 'patterns', 'exams']
-    : hour >= 18 ? ['habits', 'food', 'water', 'meds', 'training', 'sleep', 'weight', 'week', 'patterns', 'exams'] : CARDS
+  const auto = hour < 11 ? ['classes', 'sleep', 'weight', 'meds', 'water', 'training', 'food', 'habits', 'week', 'patterns', 'exams']
+    : hour >= 18 ? ['classes', 'habits', 'food', 'water', 'meds', 'training', 'sleep', 'weight', 'week', 'patterns', 'exams'] : CARDS
   const order = own.length ? [...own, ...CARDS.filter(k => !own.includes(k))] : auto
   const hidden = new Set(list(S.homeCards?.hidden))
   return order.filter(k => !hidden.has(k) && (!CARD_MODULE[k] || moduleOn(S, CARD_MODULE[k])))
@@ -148,6 +152,35 @@ function SleepCard({ S, nav }) {
   </Card>
 }
 
+// A trainer's classes of the day (views/Agenda.jsx): the ones still to come first, each a tap to
+// mark done; none for anyone who is not a trainer or has no class today.
+function ClassesCard({ S, nav, user }) {
+  if (!user) return null
+  if (!user.trainer) return <StudentClassesCard />
+  const today = todayISO()
+  const occ = occurrences(S, today, today)
+  if (!occ.length) return null
+  const left = occ.filter(o => o.status === 'scheduled')
+  return <Card title={t('Classes today')} action={<button className="linkbtn" onClick={() => nav('/agenda')}>{t('Agenda')}</button>}>
+    <div className="small dim" style={{ marginBottom: 6 }}>{left.length ? t('{0} of {1} still to come', left.length, occ.length) : t('All of today’s classes are done or cancelled')}</div>
+    <div className="list">{(left.length ? left : occ).slice(0, 4).map(o => <ClassRow key={o.id} o={o} S={S} />)}</div>
+  </Card>
+}
+
+// A student's next classes with their trainer (GET /api/trainer/mine/classes): none, no card.
+function StudentClassesCard() {
+  const [classes, setClasses] = useState(null)
+  useEffect(() => { let on = true; api('/api/trainer/mine/classes').then(r => on && setClasses(r.classes || [])).catch(() => on && setClasses([])); return () => { on = false } }, [])
+  const next = (classes || []).filter(c => c.status === 'scheduled').slice(0, 3)
+  if (!next.length) return null
+  const today = todayISO()
+  return <Card title={t('Your next classes')}>
+    {next.map((c, i) => <div key={i} className="row between small" style={{ padding: '4px 0' }}>
+      <span><b>{c.d === today ? t('Today') : fmtDate(c.d, true)}</b> · {c.time}</span><span className="dim">{t('with {0}', c.trainer)}</span>
+    </div>)}
+  </Card>
+}
+
 function WaterCard({ S, nav }) {
   const total = dayTotal(S, todayISO()), goal = waterGoal(S), glass = glassOf(S)
   return <Card title={t('Water')} onClick={() => nav('/health/water')}
@@ -216,6 +249,7 @@ export default function Today() {
     training: () => <TrainingCard key="training" S={S} nav={nav} />,
     food: () => <FoodCard key="food" S={S} nav={nav} />,
     water: () => <WaterCard key="water" S={S} nav={nav} />,
+    classes: () => <ClassesCard key="classes" S={S} nav={nav} user={user} />,
     habits: () => <HabitsCard key="habits" S={S} nav={nav} />,
     meds: () => <MedsCard key="meds" S={S} nav={nav} />,
     sleep: () => <SleepCard key="sleep" S={S} nav={nav} />,

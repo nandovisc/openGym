@@ -135,6 +135,17 @@ test('admin makes a trainer; the student links with the code and either side end
   assert.deepEqual(st.routines.map(r => [r.name, r.trainer?.name]), [['Pernas A', 'Ricardo'], ['Superiores', 'Ricardo']]);
   assert.deepEqual(st.week, { 1: ['r'], 4: ['r2'] });
   assert.ok((await call('mari', 'GET', '/api/data/rev')).body.rev > rev0);
+  // His agenda: a weekly class for her record; she sees the next ones, with his name.
+  const ptDoc = (await call('pt', 'GET', '/api/data')).body;
+  const today = new Date().toISOString().slice(0, 10);
+  const ptPut = await call('pt', 'PUT', '/api/data', { state: { ...(ptDoc.state || {}), students: [{ id: 'rec-mari', name: 'Marília', studentId: 'mari', status: 'active' }],
+    sessionSeries: [{ id: 's1', recordId: 'rec-mari', days: [0, 1, 2, 3, 4, 5, 6], time: '23:59', dur: 60, from: today, until: null }] }, baseRev: ptDoc.rev, stamped: true });
+  assert.equal(ptPut.status, 200, JSON.stringify(ptPut.body));
+  const mine = (await call('mari', 'GET', '/api/trainer/mine/classes')).body.classes;
+  assert.ok(mine.length >= 14, 'every day of the next two weeks');
+  assert.deepEqual(Object.keys(mine[0]).sort(), ['d', 'dur', 'status', 'time', 'trainer']);
+  assert.equal(mine[0].trainer, 'Ricardo');
+  assert.deepEqual((await call('boss', 'GET', '/api/trainer/mine/classes')).body.classes, [], 'no trainer, no classes');
   const removed = await call('pt', 'PUT', '/api/trainer/student/plan', { id: 'mari', removed: ['r2'] });
   assert.equal(removed.body.routines, 1);
   const st2 = ((await call('mari', 'GET', '/api/data')).body.state);

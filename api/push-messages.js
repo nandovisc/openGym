@@ -27,6 +27,7 @@ const COPY = {
     smartDoseTitle: 'Did you take {0}?', smartDoseBody: 'The {1} dose is not marked yet.',
     smartWeightTitle: 'Time to weigh in', smartWeightBody: 'No weigh-in for {0} days.',
     smartWaterTitle: 'A glass of water? 💧', smartWaterBody: '{0} of {1} so far today.',
+    classTrainerTitle: 'Class with {0} at {1}', classStudentTitle: 'Class with {0} at {1}', classBody: 'In half an hour.',
     trainerPlanTitle: '{0} updated your plan', trainerPlanBody: 'New: {0}.', trainerPlanBodyNone: 'Open the app to see it.',
     smartSleepTitle: 'Last night has not arrived', smartSleepBody: 'Open Shortcuts and run the sleep one, or log the night by hand.',
     meals: { breakfast: 'breakfast', morningSnack: 'morning snack', lunch: 'lunch', snack: 'afternoon snack', dinner: 'dinner', supper: 'supper' },
@@ -56,6 +57,7 @@ const COPY = {
     smartDoseTitle: 'Tomou {0}?', smartDoseBody: 'A dose das {1} ainda não foi marcada.',
     smartWeightTitle: 'Hora de se pesar', smartWeightBody: 'Sem pesagem há {0} dias.',
     smartWaterTitle: 'Um copo de água? 💧', smartWaterBody: '{0} de {1} até agora hoje.',
+    classTrainerTitle: 'Aula com {0} às {1}', classStudentTitle: 'Aula com {0} às {1}', classBody: 'Daqui a pouco.',
     trainerPlanTitle: '{0} atualizou seu plano', trainerPlanBody: 'Novidades: {0}.', trainerPlanBodyNone: 'Abra o app para ver.',
     smartSleepTitle: 'A noite de ontem não chegou', smartSleepBody: 'Abra o Atalhos e rode o do sono, ou registre a noite à mão.',
     meals: { breakfast: 'café da manhã', morningSnack: 'lanche da manhã', lunch: 'almoço', snack: 'lanche da tarde', dinner: 'jantar', supper: 'ceia' },
@@ -143,6 +145,13 @@ export function healthRecapPush(lang, { week }) {
   if (week.habits) parts.push(fill(copy.weekHabits, String(Math.round(week.habits.rate * 100))));
   const body = parts.join(' · ');
   return { title: copy.weekTitle, body: body.charAt(0).toUpperCase() + body.slice(1), tag: 'health-week', url: '#/health/week' };
+}
+
+// A class about to start (server.js agendaTick): to the trainer with the student's name, to the
+// student with the trainer's. A student's language is not at hand there, so pt-BR when unknown.
+export function classReminderPush(lang, name, time, who) {
+  const copy = copyFor(lang || 'pt-BR');
+  return { title: fill(who === 'trainer' ? copy.classTrainerTitle : copy.classStudentTitle, name, time), body: copy.classBody, tag: 'class-' + time, url: who === 'trainer' ? '#/agenda' : '#/home' };
 }
 
 // A trainer changed the student's plan (server.js PUT /api/trainer/student/plan).

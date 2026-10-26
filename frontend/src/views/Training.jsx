@@ -124,7 +124,8 @@ export default function Training({ home = false, sections = home ? ALL_SECTIONS 
       <button className="iconbtn" onClick={() => nav('/settings')} aria-label={trouble ? t('Settings') + ', ' + t('Connection problem') : t('Settings')}><Icon name="gear" />{trouble && <span className="tab-dot" aria-hidden="true" />}</button>
     </div> : <>
       <div className="hdr"><div style={{ flex: 1 }}><h1>{t('Training')}</h1><div className="sub">{t('Your week of workouts')}</div></div>
-        {user?.trainer && <Button size="sm" variant="tinted" icon="star" onClick={() => nav('/students')}>{t('Students')}</Button>}</div>
+        {user?.trainer && <div className="row" style={{ gap: 6 }}><Button size="sm" variant="tinted" icon="calendar" onClick={() => nav('/agenda')}>{t('Agenda')}</Button>
+          <Button size="sm" variant="tinted" icon="star" onClick={() => nav('/students')}>{t('Students')}</Button></div>}</div>
       <TrainingNav />
     </>}
 

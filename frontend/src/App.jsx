@@ -51,6 +51,7 @@ import WeekReport from './views/WeekReport.jsx'
 import HealthReport from './views/HealthReport.jsx'
 import { RecordView, StudentsList, StudentView } from './views/Students.jsx'
 import { JoinInvite } from './views/StudentRecord.jsx'
+import Agenda from './views/Agenda.jsx'
 import Exams from './views/Exams.jsx'
 import Food from './views/Food.jsx'
 import Sleep from './views/Sleep.jsx'
@@ -255,6 +256,7 @@ function Shell() {
               <Route path="/students/record/:id" element={user?.trainer ? <RecordView /> : <Navigate to="/home" replace />} />
               <Route path="/students/:id" element={user?.trainer ? <StudentView /> : <Navigate to="/home" replace />} />
               <Route path="/join" element={<JoinInvite />} />
+              <Route path="/agenda" element={user?.trainer ? <Agenda /> : <Navigate to="/home" replace />} />
               <Route path="*" element={<Navigate to="/home" replace />} />
             </Routes>
           )}

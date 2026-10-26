@@ -2364,3 +2364,9 @@ a.btn{text-decoration:none;box-sizing:border-box}
 /* The Personal module (views/Trainer.jsx): what a link shares, and the trainer's code */
 .trainer-share{margin:4px 0 10px;padding-inline-start:18px;line-height:1.5}
 .trainer-code code{font-size:20px;font-weight:700;letter-spacing:.12em}
+/* A trainer's students (views/Students.jsx) */
+.student-row{width:100%;text-align:start;color:inherit;font:inherit}
+.student-ex{padding:8px 0;border-bottom:1px solid var(--sep)}
+.student-ex:last-of-type{border-bottom:0}
+.student-routine{display:flex;flex-direction:column;gap:6px;margin-top:10px}
+.tag.warn{color:var(--orange)}

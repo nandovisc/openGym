@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useStore } from '../store/useStore.js'
 import { useUI } from '../store/useUI.js'
 import { api } from '../lib/api.js'
@@ -105,9 +106,10 @@ export const myStudentsSheet = () => ui().openSheet(close => <MyStudents close={
 /** The rows in Settings → Account: a trainer's students, anyone's trainer. */
 export function TrainerRows() {
   const user = useStore(s => s.user)
+  const nav = useNavigate()
   if (!user) return null
   return <>
-    {user.trainer && <Row icon="star" iconTint="var(--orange)" title={t('My students')} subtitle={t('Your code, and who shares their training with you')} accessory="chevron" onClick={myStudentsSheet} />}
+    {user.trainer && <Row icon="star" iconTint="var(--orange)" title={t('My students')} subtitle={t('Your code, and who shares their training with you')} accessory="chevron" onClick={() => nav('/students')} />}
     <Row icon="link" iconTint="var(--teal)" title={t('My personal trainer')} subtitle={t('Share your training with your trainer')} accessory="chevron" onClick={myTrainersSheet} />
   </>
 }

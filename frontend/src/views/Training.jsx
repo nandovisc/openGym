@@ -123,7 +123,8 @@ export default function Training({ home = false, sections = home ? ALL_SECTIONS 
       <div><h1>{user ? t('Hi {0}', user.name) : 'openGym'}</h1><div className="sub">{today.toLocaleDateString(dateLocale(), { weekday: 'long', day: 'numeric', month: 'long' })}</div></div>
       <button className="iconbtn" onClick={() => nav('/settings')} aria-label={trouble ? t('Settings') + ', ' + t('Connection problem') : t('Settings')}><Icon name="gear" />{trouble && <span className="tab-dot" aria-hidden="true" />}</button>
     </div> : <>
-      <div className="hdr"><div><h1>{t('Training')}</h1><div className="sub">{t('Your week of workouts')}</div></div></div>
+      <div className="hdr"><div style={{ flex: 1 }}><h1>{t('Training')}</h1><div className="sub">{t('Your week of workouts')}</div></div>
+        {user?.trainer && <Button size="sm" variant="tinted" icon="star" onClick={() => nav('/students')}>{t('Students')}</Button>}</div>
       <TrainingNav />
     </>}
 

@@ -20,7 +20,7 @@ import { startCadence } from './coach/cadence.js';
 import { startWarmup } from './coach/warmup.js';
 import { dayReminderPush, groupReminderPush, habitReminderPush, healthRecapPush, medReminderPush, nudgePush, restTimerPush, smartPush, testPush, weeklyRecapPush } from './push-messages.js';
 import { smartDue } from './smart-nudges.js';
-import { CODE_DAYS, dropLinksOf, linkWith, newCode, studentsOf, trainerByCode, trainersOf, unlink } from './trainer.js';
+import { CODE_DAYS, dropLinksOf, linkWith, newCode, studentsOf, trainerByCode, trainersOf, trainingOf, trainingSummary, unlink } from './trainer.js';
 import { hasNews, lastWeeks, moduleOn as moduleOnServer } from './health-week.js';
 import { groupsDue, habitsDue, weekSummary } from './habits.js';
 import { doseId, medsDue } from './meds.js';
@@ -2275,7 +2275,28 @@ const trainerRoutes = {
     const user = readSession(req);
     if (!user) return json(res, 401, { error: 'not signed in' });
     if (!user.trainer) return json(res, 403, { error: 'not a trainer' });
-    json(res, 200, { students: studentsOf(db.trainerLinks, db.users, user) });
+    // With a line of how each trains lately (last workout, last 7 and 28 days): one profile read
+    // each, the price of a list a trainer opens to see who needs a word.
+    const today = new Date().toISOString().slice(0, 10);
+    const students = [];
+    for (const s of studentsOf(db.trainerLinks, db.users, user)) {
+      const S = await loadState(s.student.id);
+      students.push({ ...s, training: trainingSummary(S || {}, today) });
+    }
+    json(res, 200, { students });
+  },
+  // A student's training, for their trainer (trainer.js trainingOf): only through a link of theirs,
+  // only the training — the body too when the student shares it. Read-only; planning is phase 3.
+  'GET /api/trainer/student': async (req, res) => {
+    const user = readSession(req);
+    if (!user) return json(res, 401, { error: 'not signed in' });
+    if (!user.trainer) return json(res, 403, { error: 'not a trainer' });
+    const id = new URL(req.url, 'http://x').searchParams.get('id');
+    const link = db.trainerLinks.find(l => l.trainerId === user.id && l.clientId === id);
+    const student = link && db.users.find(u => u.id === id);
+    if (!student) return json(res, 404, { error: 'not your student' });
+    const S = await loadState(student.id);
+    json(res, 200, { link: { id: link.id, scope: link.scope || { body: false }, created: link.created }, student: { id: student.id, name: student.name }, lastSync: lastSyncOf(student, S || {}), training: trainingOf(S || {}, link.scope) });
   },
   // A student's side: their trainers, a link made with a code, the scope of one changed.
   'GET /api/trainer/mine': async (req, res) => {

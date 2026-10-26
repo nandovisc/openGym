@@ -75,6 +75,11 @@ export default function Login() {
     try { const u = await passkeyLogin(); setUser(u, { adopt: true }); await adoptProfile(askAddDeviceData); useUI.getState().toast(t('Welcome back, {0}', u.name)) }
     catch (e) { if (e.name !== 'NotAllowedError' && e.name !== 'AbortError') useUI.getState().toast(passkeyError(e, t('Sign-in failed'))) }
   }
+  // Opened from a trainer's invite link (#/join?code=…): who invited them, above the ways in. The
+  // link stays the address, so once they are in it opens My personal trainer (views/StudentRecord.jsx).
+  // Read off the address rather than the router: this screen also renders where there is none.
+  const hash = typeof location !== 'undefined' ? location.hash : ''
+  const invited = /^#\/join\?/.test(hash) && new URLSearchParams(hash.slice(hash.indexOf('?'))).get('code')
   const head = <>
     <div style={{ fontSize: 54, display: 'flex', justifyContent: 'center', color: 'var(--acc)' }}><Icon name="dumbbell" /></div>
     <h1 style={{ fontSize: 34, fontWeight: 700, letterSpacing: '-.028em', margin: '10px 0 4px' }}>openGym</h1>
@@ -99,7 +104,8 @@ export default function Login() {
   return (
     <div className="narrow" style={wrap}>
       {head}
-      <div className="muted" style={{ marginBottom: 34 }}>{t('Your workouts. Your weights. Your profile.')}</div>
+      <div className="muted" style={{ marginBottom: invited ? 16 : 34 }}>{t('Your workouts. Your weights. Your profile.')}</div>
+      {invited && <div className="card small login-invite">{t('Your personal trainer invited you. Create an account (or sign in): you join them right after, seeing what you share.')}</div>}
       {webauthnOK() ? <>
         {/* Two clear ways in: an account you already have, with what a passkey is said right under
             it, and a new one. Signing in on another device of yours is the quiet link below. */}

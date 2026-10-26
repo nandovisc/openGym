@@ -112,6 +112,9 @@ export const DEF = {
   // preferences — reminders (tz stamped on boot), when the day starts, vacations, filters.
   // Water (lib/water.js): each glass or bottle drunk, and the goal (null: 35 ml per kg weighed).
   water: [], waterPrefs: { goalMl: null, glassMl: 250 },
+  // A trainer's own record of each student (lib/students.js): contact, goals, health notes,
+  // what they pay, and their training kept from a link that ended.
+  students: [],
   // Smart reminders (api/smart-nudges.js): from what the person usually does, each off until set.
   smartReminders: { dose: false, weight: false, water: false, sleep: false, tz: null },
   habits: [], habitLog: [], habitGroups: [], habitPrefs: { on: false, tz: null, dayStartsAt: '00:00', vacations: [], hideDone: false, hideFailed: false, hideSkipped: false, hideStreaks: false },

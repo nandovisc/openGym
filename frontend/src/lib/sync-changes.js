@@ -37,6 +37,7 @@ const LISTS = {
   k: ['habitLog', e => e?.id],
   g: ['habitGroups', e => e?.id],
   q: ['water', e => e?.id],
+  y: ['students', e => e?.id],
 }
 // Not content: the stamps and the revision say when, not what (`deleted` and `edited` go with a
 // change the lists or the rest already count); the running workout never syncs.

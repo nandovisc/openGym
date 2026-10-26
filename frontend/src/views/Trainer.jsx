@@ -25,12 +25,15 @@ export function SharedList({ body }) {
     <li>{t('Your workouts: exercises, sets, loads and notes (no photos or videos)')}</li>
     {body && <li>{t('Your weigh-ins and body measurements')}</li>}
     <li className="dim">{t('Never: food, sleep, medications, exams, habits or water')}</li>
+    <li className="dim">{t('If the link ends, the trainer keeps a copy of your workouts up to that day')}</li>
   </ul>
 }
 
-function MyTrainers({ close }) {
+function MyTrainers({ close, invite }) {
   const [links, setLinks] = useState(null)
-  const [code, setCode] = useState('')
+  // From an invite link (views/StudentRecord.jsx JoinInvite): the code in, and the trainer's
+  // record of this student, so the trainer's app puts the two together.
+  const [code, setCode] = useState(invite?.code || '')
   const [body, setBody] = useState(false)
   const [busy, setBusy] = useState(false)
   const load = () => api('/api/trainer/mine').then(r => setLinks(r.trainers)).catch(e => { setLinks([]); toast(e.message) })
@@ -38,7 +41,7 @@ function MyTrainers({ close }) {
   const link = async () => {
     if (!code.trim()) return
     setBusy(true)
-    try { const r = await api('/api/trainer/link', { method: 'POST', body: JSON.stringify({ code: code.trim(), body }) }); setCode(''); toast(t('Linked to {0}', r.link.trainer.name)); load() }
+    try { const r = await api('/api/trainer/link', { method: 'POST', body: JSON.stringify({ code: code.trim(), body, ...(invite?.ref ? { ref: invite.ref } : {}) }) }); setCode(''); toast(t('Linked to {0}', r.link.trainer.name)); load() }
     catch (e) { toast(e.message) }
     finally { setBusy(false) }
   }
@@ -66,7 +69,7 @@ function MyTrainers({ close }) {
     <Button variant="ghost" className="dim" onClick={close}>{t('Close')}</Button>
   </>
 }
-export const myTrainersSheet = () => ui().openSheet(close => <MyTrainers close={close} />)
+export const myTrainersSheet = invite => ui().openSheet(close => <MyTrainers close={close} invite={invite?.code ? invite : null} />)
 
 function MyStudents({ close }) {
   const [code, setCode] = useState(undefined)
@@ -92,7 +95,7 @@ function MyStudents({ close }) {
     </div>
     <h4 className="sec" style={{ margin: '16px 2px 8px' }}>{t('Students')}</h4>
     {students === null ? <div className="muted small">{t('Loading…')}</div>
-      : students.length ? <Section>{students.map(l => <Row key={l.id} icon="figureStrength" iconTint="var(--teal)" title={l.student.name}
+      : students.length ? <Section>{students.map(l => <Row key={l.id} icon="person" iconTint="var(--teal)" title={l.student.name}
         subtitle={[t('since {0}', fmtDate(dayOf(l.created), true)), l.scope?.body ? t('shares weigh-ins') : null].filter(Boolean).join(' · ')}>
         <button className="iconbtn" aria-label={t('End link')} onClick={() => end(l)}><Icon name="xmark" /></button>
       </Row>)}</Section>

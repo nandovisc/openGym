@@ -4,7 +4,7 @@ import { useUI } from '../store/useUI.js'
 import { DEF } from '../store/useStore.js'
 import { api } from '../lib/api.js'
 import { EXIDX } from '../lib/exercises.js'
-import { effectiveRoutines, setLabel, setsDone } from '../lib/history.js'
+import { setLabel, setsDone } from '../lib/history.js'
 import { best1RM, e1rmSeries } from '../lib/onerm.js'
 import { hasCompletedWork, isWarmupRow } from '../lib/workout-model.js'
 import { speedUnitOf } from '../lib/speed.js'
@@ -14,6 +14,7 @@ import Icon from '../components/Icon.jsx'
 import LineChart from '../components/LineChart.jsx'
 import { Button, Row, Section, Segmented } from '../components/ui.jsx'
 import { myStudentsSheet } from './Trainer.jsx'
+import { PlanTab } from './StudentPlan.jsx'
 
 // The Personal module, phase 2: a trainer's students and, for each, their training as the link
 // shares it (GET /api/trainer/student) — the workouts, how each exercise moves, the plan, the body
@@ -86,19 +87,14 @@ function ExerciseSheet({ id, Ss, close }) {
   </>
 }
 
-// A routine's exercise as its target reads: "3 × 8–12 · 40 kg".
-function targetText(x, unit) {
-  const reps = x.repsMin && x.repsMax ? `${x.repsMin}–${x.repsMax}` : x.reps ?? (x.sec ? `${x.sec} s` : x.min ? `${x.min} min` : '')
-  return [x.sets ? `${x.sets} × ${reps}` : reps, Number(x.weight) > 0 ? `${fmtNum(x.weight)} ${unit}` : null].filter(Boolean).join(' · ')
-}
-
 /** One student's training: workouts, how each exercise moves, the plan, the body when shared. */
 export function StudentView() {
   const nav = useNavigate()
   const { id } = useParams()
   const [d, setD] = useState(null)
   const [tab, setTab] = useState('workouts')
-  useEffect(() => { api('/api/trainer/student?id=' + encodeURIComponent(id)).then(setD).catch(e => { setD({ error: e.message }) }) }, [id])
+  const load = () => api('/api/trainer/student?id=' + encodeURIComponent(id)).then(setD).catch(e => { setD({ error: e.message }) })
+  useEffect(() => { load() }, [id])
   // The student's training on the defaults the app's own helpers read, in a copy of its own.
   const Ss = useMemo(() => (d?.training ? Object.assign(clone(DEF), d.training) : null), [d])
   if (!d) return <div className="narrow"><div className="muted small" style={{ marginTop: 40 }}>{t('Loading…')}</div></div>
@@ -108,8 +104,6 @@ export function StudentView() {
   const counts = new Map()
   for (const w of workouts) if (w.d >= since) for (const e of w.entries || []) if ((e.sets || []).some(hasCompletedWork)) counts.set(e.id, (counts.get(e.id) || 0) + 1)
   const exercises = [...counts].sort((a, b) => b[1] - a[1]).slice(0, 30)
-  const today = todayISO()
-  const todays = effectiveRoutines(Ss, today)
   const body = d.link?.scope?.body
   const bw = (Ss.bodyweight || []).filter(b => Number(b.w) > 0)
   return <div className="narrow">
@@ -130,13 +124,7 @@ export function StudentView() {
       return <Row key={exId} title={nameIn(Ss)(exId)} subtitle={t('{0} sessions', n)} value={best ? `${fmtNum(Math.round(best.est))} ${Ss.unit}` : undefined} accessory="chevron"
         onClick={() => ui().openSheet(close => <ExerciseSheet id={exId} Ss={Ss} close={close} />)} />
     })}</Section> : <div className="card muted small">{t('No workouts in the last 90 days.')}</div>)}
-    {tab === 'plan' && <>
-      <div className="card small"><b>{t('Today')}:</b> {todays.length ? todays.map(r => r.name).join(' + ') : t('Rest Day')}</div>
-      {(Ss.routines || []).length ? (Ss.routines || []).map(r => <div key={r.id} className="card student-routine">
-        <b>{r.name}</b>
-        {(r.ex || []).map((x, i) => <div key={i} className="row between small"><span>{nameIn(Ss)(x.id)}</span><span className="dim">{targetText(x, Ss.unit)}</span></div>)}
-      </div>) : <div className="card muted small">{t('No routines yet.')}</div>}
-    </>}
+    {tab === 'plan' && <PlanTab studentId={d.student.id} Ss={Ss} nameOf={nameIn(Ss)} reload={load} />}
     {tab === 'body' && body && (bw.length ? <div className="card">
       <div className="muted small">{t('Body weight')}</div>
       <div className="big" style={{ margin: '4px 0 8px' }}>{fmtNum(bw.at(-1).w)} {Ss.unit}</div>

@@ -18,9 +18,9 @@ import * as coachJobs from './coach/jobs.js';
 import { coachRoutes } from './coach/routes.js';
 import { startCadence } from './coach/cadence.js';
 import { startWarmup } from './coach/warmup.js';
-import { dayReminderPush, groupReminderPush, habitReminderPush, healthRecapPush, medReminderPush, nudgePush, restTimerPush, smartPush, testPush, weeklyRecapPush } from './push-messages.js';
+import { dayReminderPush, groupReminderPush, habitReminderPush, healthRecapPush, medReminderPush, nudgePush, restTimerPush, smartPush, testPush, trainerPlanPush, weeklyRecapPush } from './push-messages.js';
 import { smartDue } from './smart-nudges.js';
-import { CODE_DAYS, dropLinksOf, linkWith, newCode, studentsOf, trainerByCode, trainersOf, trainingOf, trainingSummary, unlink } from './trainer.js';
+import { CODE_DAYS, dropLinksOf, linkWith, newCode, studentsOf, trainerByCode, trainersOf, planFor, trainingOf, trainingSummary, unlink } from './trainer.js';
 import { hasNews, lastWeeks, moduleOn as moduleOnServer } from './health-week.js';
 import { groupsDue, habitsDue, weekSummary } from './habits.js';
 import { doseId, medsDue } from './meds.js';
@@ -2329,6 +2329,31 @@ const trainerRoutes = {
     saveDb();
     audit(req, 'trainer.scope', { user, msg: link.scope.body ? 'body on' : 'body off' });
     json(res, 200, { ok: true, scope: link.scope });
+  },
+  // The plan a trainer makes for a student (trainer.js planFor): routines new or rewritten, routines
+  // taken out, the weekdays. Written the way an app that keeps no stamps of its own writes —
+  // stampPut works out what changed and stamps it — so the student's phone merges it like an edit
+  // from another device of theirs: it keeps what the trainer changed, and what the student changed
+  // on another field since. A push tells the student. Audited.
+  'PUT /api/trainer/student/plan': async (req, res) => {
+    const user = readSession(req);
+    if (!user) return json(res, 401, { error: 'not signed in' });
+    if (!user.trainer) return json(res, 403, { error: 'not a trainer' });
+    const body = await readBody(req);
+    const link = db.trainerLinks.find(l => l.trainerId === user.id && l.clientId === body.id);
+    const student = link && db.users.find(u => u.id === body.id);
+    if (!student) return json(res, 404, { error: 'not your student' });
+    const cur = await loadStateStrict(student.id);
+    if (cur === UNREADABLE) return json(res, 503, { error: 'state unreadable' });
+    const plan = planFor(cur, body, user);
+    if (plan.error) return json(res, 400, { error: 'routines: a list of routines, each with an id and its exercises', code: plan.error });
+    const next = { ...(cur || {}), routines: plan.routines, ...(plan.week ? { week: plan.week } : {}) };
+    const done = await commitState(student, cur, next, { overRead: true, stamped: false });
+    if (!done) return json(res, 400, { error: 'invalid state' });
+    const names = (body.routines || []).map(r => String(r.name || '').slice(0, 40)).filter(Boolean);
+    if (names.length || (body.removed || []).length) pushLater(student.id, trainerPlanPush(cur?.lang, user.name, names));
+    audit(req, 'trainer.plan', { user, target: student, msg: `${(body.routines || []).length} routine(s), ${(body.removed || []).length} removed${body.week !== undefined ? ', week' : ''}` });
+    json(res, 200, { ok: true, routines: plan.routines.length });
   },
   // Either side ends a link: the access goes with it.
   'POST /api/trainer/unlink': async (req, res) => {

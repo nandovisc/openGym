@@ -2975,4 +2975,16 @@ export default {
   'The exercises of the last 90 days, the most trained first.': 'The exercises of the last 90 days, the most trained first.',
   'No workouts in the last 90 days.': 'No workouts in the last 90 days.',
   'No weigh-ins yet.': 'No weigh-ins yet.',
+  // A trainer planning a student's routines (views/StudentPlan.jsx)
+  'Weight': 'Weight',
+  'Saved to the student’s plan': 'Saved to the student’s plan',
+  'Edit routine': 'Edit routine',
+  'Save to the student’s plan': 'Save to the student’s plan',
+  'Which routine falls on each day. A day with none is a rest day.': 'Which routine falls on each day. A day with none is a rest day.',
+  'Take “{0}” out of the plan?': 'Take “{0}” out of the plan?',
+  'It leaves the student’s routines and the days it was on. Their logged workouts stay.': 'It leaves the student’s routines and the days it was on. Their logged workouts stay.',
+  'Take it out': 'Take it out',
+  'Taken out of the plan': 'Taken out of the plan',
+  'by {0}': 'by {0}',
+  'No routines yet. Make the first one for this student.': 'No routines yet. Make the first one for this student.',
 }

@@ -2982,4 +2982,16 @@ export default {
   'The exercises of the last 90 days, the most trained first.': 'Os exercícios dos últimos 90 dias, os mais treinados primeiro.',
   'No workouts in the last 90 days.': 'Nenhum treino nos últimos 90 dias.',
   'No weigh-ins yet.': 'Nenhuma pesagem ainda.',
+  // A trainer planning a student's routines (views/StudentPlan.jsx)
+  'Weight': 'Carga',
+  'Saved to the student’s plan': 'Salvo no plano do aluno',
+  'Edit routine': 'Editar rotina',
+  'Save to the student’s plan': 'Salvar no plano do aluno',
+  'Which routine falls on each day. A day with none is a rest day.': 'Qual rotina cai em cada dia. Um dia sem nenhuma é dia de descanso.',
+  'Take “{0}” out of the plan?': 'Tirar “{0}” do plano?',
+  'It leaves the student’s routines and the days it was on. Their logged workouts stay.': 'Ela sai das rotinas do aluno e dos dias em que estava. Os treinos já registrados continuam.',
+  'Take it out': 'Tirar',
+  'Taken out of the plan': 'Tirada do plano',
+  'by {0}': 'por {0}',
+  'No routines yet. Make the first one for this student.': 'Nenhuma rotina ainda. Monte a primeira para este aluno.',
 }

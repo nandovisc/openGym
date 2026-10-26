@@ -64,6 +64,7 @@ const LABELS = {
   'trainer.link': 'A student linked to a trainer',
   'trainer.scope': 'A student changed what they share with a trainer',
   'trainer.unlink': 'A trainer link ended',
+  'trainer.plan': "A trainer changed a student's plan",
   'admin.password.reset': 'Issued a password reset code',
   'admin.invite.create': 'Created an invite code',
   'admin.invite.revoke': 'Revoked an invite code',

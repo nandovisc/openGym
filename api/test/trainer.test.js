@@ -10,7 +10,7 @@ import path from 'node:path';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { boundPort } from './helpers.mjs';
-import { cleanCode, dropLinksOf, linkWith, newCode, trainerByCode, trainingOf, trainingSummary, unlink } from '../trainer.js';
+import { cleanCode, dropLinksOf, linkWith, newCode, trainerByCode, planFor, trainingOf, trainingSummary, unlink } from '../trainer.js';
 
 const API = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SECRET = crypto.randomBytes(32).toString('hex');
@@ -51,6 +51,18 @@ test('a link shares the training, never the health modules or the photos', () =>
   const withBody = trainingOf(S, { body: true });
   assert.deepEqual(withBody.bodyweight, [{ d: '2026-10-23', w: 60 }]);
   assert.deepEqual(trainingSummary({ workouts: [{ d: '2026-10-01' }, { d: '2026-10-20' }, { d: '2026-10-23' }] }, '2026-10-26'), { last: '2026-10-23', week: 2, month: 3, total: 3 });
+});
+
+test('a plan: routines new or rewritten and marked, ones taken out leave their days', () => {
+  const cur = { routines: [{ id: 'a', name: 'A', ex: [{ id: '0043', sets: 3 }], emoji: 'x' }, { id: 'b', name: 'B', ex: [] }], week: { 1: ['a', 'b'], 3: ['b'] } };
+  const t = { id: 'pt', name: 'Ricardo' };
+  const out = planFor(cur, { routines: [{ id: 'a', name: ' Pernas ', ex: [{ id: '1064', sets: 4, _x: 1 }] }, { id: 'n', name: 'Novo', ex: [] }], removed: ['b'] }, t, 5);
+  assert.deepEqual(out.routines.map(r => [r.id, r.name, r.trainer?.name]), [['a', 'Pernas', 'Ricardo'], ['n', 'Novo', 'Ricardo']]);
+  assert.equal(out.routines[0].emoji, 'x', 'what the trainer did not send is kept');
+  assert.deepEqual(out.routines[0].ex, [{ id: '1064', sets: 4 }]);
+  assert.deepEqual(out.week, { 1: ['a'] });
+  assert.deepEqual(planFor(cur, { routines: [], week: { 2: ['a', 'zz'] } }, t).week, { 2: ['a'] });
+  assert.equal(planFor(cur, { routines: [{ id: 'x' }] }, t).error, 'routines');
 });
 
 test('admin makes a trainer; the student links with the code and either side ends it', async t => {
@@ -94,6 +106,22 @@ test('admin makes a trainer; the student links with the code and either side end
   assert.equal((await call('pt', 'GET', '/api/trainer/student?id=boss')).status, 404, 'not his student');
   assert.equal((await call('mari', 'GET', '/api/trainer/student?id=mari')).status, 403, 'not a trainer');
   assert.equal((await call('pt', 'GET', '/api/trainer/students')).body.students[0].training.last, '2026-10-23');
+  // The trainer plans: a routine rewritten, one added, on Mondays; the student's profile has it,
+  // marked, stamped as an edit, in a new revision.
+  const rev0 = (await call('mari', 'GET', '/api/data/rev')).body.rev;
+  const planned = await call('pt', 'PUT', '/api/trainer/student/plan', { id: 'mari', routines: [{ id: 'r', name: 'Pernas A', ex: [{ id: '1064', sets: 4, reps: 10 }] }, { id: 'r2', name: 'Superiores', ex: [] }], week: { 1: ['r'], 4: ['r2'] } });
+  assert.deepEqual(planned.body, { ok: true, routines: 2 });
+  const after = (await call('mari', 'GET', '/api/data')).body;
+  const st = after.state || after;
+  assert.deepEqual(st.routines.map(r => [r.name, r.trainer?.name]), [['Pernas A', 'Ricardo'], ['Superiores', 'Ricardo']]);
+  assert.deepEqual(st.week, { 1: ['r'], 4: ['r2'] });
+  assert.ok((await call('mari', 'GET', '/api/data/rev')).body.rev > rev0);
+  const removed = await call('pt', 'PUT', '/api/trainer/student/plan', { id: 'mari', removed: ['r2'] });
+  assert.equal(removed.body.routines, 1);
+  const st2 = ((await call('mari', 'GET', '/api/data')).body.state);
+  assert.deepEqual(st2.week, { 1: ['r'] });
+  assert.ok(st2.deleted?.routines?.r2 > 0, 'its removal on record, so no phone brings it back');
+  assert.equal((await call('pt', 'PUT', '/api/trainer/student/plan', { id: 'boss', routines: [] })).status, 404, 'not his student');
   assert.deepEqual((await call('mari', 'POST', '/api/trainer/scope', { id: made.body.link.id, body: true })).body.scope, { body: true });
   assert.equal((await call('pt', 'POST', '/api/trainer/scope', { id: made.body.link.id, body: false })).status, 404, 'the scope is the student’s to change');
   assert.deepEqual((await call('mari', 'GET', '/api/trainer/mine')).body.trainers.map(x => [x.trainer.name, x.scope.body]), [['Ricardo', true]]);

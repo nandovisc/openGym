@@ -484,6 +484,23 @@ paths:
         '401': { description: Not signed in. }
         '403': { description: Not a trainer. }
         '404': { description: Not a student of this trainer. }
+  /api/trainer/student/plan:
+    put:
+      tags: [trainer]
+      operationId: trainerStudentPlan
+      summary: "A trainer's plan for a student"
+      description: |
+        `{ id, routines, removed, week }`: routines new or rewritten (whole, each marked with the
+        trainer), routine ids taken out, and the weekdays (`{ "1": [routineId] }`) when given.
+        Only through a link of the trainer's. Stamped as an edit the student's phone merges; a
+        push tells the student. Audited.
+      responses:
+        '200': { description: '`{ ok, routines }`: how many routines the student has now.' }
+        '400': { description: Not a list of routines with ids and exercises. }
+        '401': { description: Not signed in. }
+        '403': { description: Not a trainer. }
+        '404': { description: Not a student of this trainer. }
+        '503': { description: "The student's profile could not be read." }
   /api/trainer/mine:
     get:
       tags: [trainer]

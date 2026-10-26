@@ -419,7 +419,8 @@ function Routines({ S, update, nav }) {
   // The weekdays a routine is on, short, in the order the week runs.
   const order = weekOrder(weekStartOf(S))
   const daysOf = id => order.filter(d => [].concat(S.week[d] || []).includes(id)).map(d => t(DAYS[d]))
-  const sub = r => [exCount(r.ex.length), daysOf(r.id).join(', ')].filter(Boolean).join(' · ')
+  // A routine the person's trainer made or changed (api/trainer.js planFor) says so.
+  const sub = r => [exCount(r.ex.length), daysOf(r.id).join(', '), r.trainer?.name ? t('by {0}', r.trainer.name) : null].filter(Boolean).join(' · ')
 
   return <>
     <div className="row between plan-sec-h plan-routines-bar">

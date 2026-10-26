@@ -89,3 +89,42 @@ export function trainingSummary(S, today) {
   const last = days.at(-1) || null;
   return { last, week: days.filter(d => d > back(today, 7) && d <= today).length, month: days.filter(d => d > back(today, 28) && d <= today).length, total: days.length };
 }
+
+const WEEK_DAYS = ['0', '1', '2', '3', '4', '5', '6'];
+const clean = (v, max) => String(v ?? '').replace(/\s+/g, ' ').trim().slice(0, max);
+/**
+ * A trainer's plan for a student put into the student's training: `routines` (whole, each new or
+ * replacing the one of its id, marked with the trainer), the ids in `removed` taken out, and
+ * `week` (weekday → routine ids) when given. { routines, week, error }. What the student keeps of
+ * a routine the trainer rewrote: its order in the list; the trainer's version of everything else.
+ */
+export function planFor(cur, { routines = [], removed = [], week } = {}, trainer, now = Date.now()) {
+  if (!Array.isArray(routines) || routines.length > 60 || !Array.isArray(removed)) return { error: 'routines' };
+  const ok = r => r && typeof r === 'object' && typeof r.id === 'string' && r.id && r.id.length <= 64 && Array.isArray(r.ex) && r.ex.length <= 60
+    && r.ex.every(x => x && typeof x === 'object' && typeof x.id === 'string' && x.id.length <= 64);
+  if (!routines.every(ok)) return { error: 'routines' };
+  const gone = new Set(removed.filter(id => typeof id === 'string'));
+  const mark = { id: trainer.id, name: trainer.name, at: now };
+  const out = list(cur?.routines).filter(r => r && !gone.has(r.id));
+  for (const r of routines) {
+    const strip = Object.fromEntries(Object.entries(r).filter(([k]) => !k.startsWith('_')));
+    const next = { ...strip, name: clean(r.name, 80) || 'Treino', ex: r.ex.map(x => Object.fromEntries(Object.entries(x).filter(([k]) => !k.startsWith('_')))), trainer: mark };
+    const i = out.findIndex(x => x?.id === r.id);
+    if (i >= 0) out[i] = { ...out[i], ...next }; else out.push(next);
+  }
+  let nextWeek;
+  if (week !== undefined) {
+    if (!week || typeof week !== 'object' || Array.isArray(week)) return { error: 'week' };
+    const ids = new Set(out.map(r => r.id));
+    nextWeek = {};
+    for (const d of WEEK_DAYS) {
+      const v = [].concat(week[d] ?? []).filter(id => ids.has(id));
+      if (v.length) nextWeek[d] = v;
+    }
+  } else if (gone.size && cur?.week && typeof cur.week === 'object') {
+    // A routine taken out leaves the days it was on.
+    nextWeek = {};
+    for (const [d, v] of Object.entries(cur.week)) { const left = [].concat(v).filter(id => !gone.has(id)); if (left.length) nextWeek[d] = left; }
+  }
+  return { routines: out, ...(nextWeek ? { week: nextWeek } : {}), error: null };
+}

@@ -2370,3 +2370,8 @@ a.btn{text-decoration:none;box-sizing:border-box}
 .student-ex:last-of-type{border-bottom:0}
 .student-routine{display:flex;flex-direction:column;gap:6px;margin-top:10px}
 .tag.warn{color:var(--orange)}
+/* A trainer planning a student's routines (views/StudentPlan.jsx) */
+.plan-ex{padding:10px 0;border-bottom:1px solid var(--sep)}
+.plan-ex-fields{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:8px;margin-top:6px}
+.plan-ex-fields label{display:flex;flex-direction:column;gap:3px}
+.plan-day{display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--sep)}

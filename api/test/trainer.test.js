@@ -10,7 +10,7 @@ import path from 'node:path';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { boundPort } from './helpers.mjs';
-import { cleanCode, dropLinksOf, linkWith, newCode, trainerByCode, unlink } from '../trainer.js';
+import { cleanCode, dropLinksOf, linkWith, newCode, trainerByCode, trainingOf, trainingSummary, unlink } from '../trainer.js';
 
 const API = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SECRET = crypto.randomBytes(32).toString('hex');
@@ -34,6 +34,23 @@ test('the rules: a readable code, one link a pair, never with oneself', () => {
   assert.equal(unlink(links, links[0].id, { id: 's' }).links.length, 0);
   assert.equal(dropLinksOf(links, 't', 'client').length, 1);
   assert.equal(dropLinksOf(links, 't').length, 0);
+});
+
+test('a link shares the training, never the health modules or the photos', () => {
+  const S = {
+    unit: 'kg', routines: [{ id: 'r', name: 'A' }], week: { 1: ['r'] },
+    workouts: [{ id: 'w', d: '2026-10-23', entries: [], media: [{ hash: 'x' }] }],
+    customEx: [{ id: 'c', name: 'Prancha', media: { hash: 'y' } }],
+    bodyweight: [{ d: '2026-10-23', w: 60, photos: [{ m: { hash: 'z' } }] }],
+    meals: [{ id: 'm' }], sleep: [{ d: '2026-10-23' }], meds: [{ id: 'x' }], exams: [{ id: 'e' }], habits: [{ id: 'h' }], water: [{ id: 'a' }]
+  };
+  const shared = trainingOf(S);
+  assert.deepEqual(Object.keys(shared).sort(), ['customEx', 'routines', 'unit', 'week', 'workouts']);
+  assert.equal(shared.workouts[0].media, undefined);
+  assert.equal(shared.customEx[0].media, undefined);
+  const withBody = trainingOf(S, { body: true });
+  assert.deepEqual(withBody.bodyweight, [{ d: '2026-10-23', w: 60 }]);
+  assert.deepEqual(trainingSummary({ workouts: [{ d: '2026-10-01' }, { d: '2026-10-20' }, { d: '2026-10-23' }] }, '2026-10-26'), { last: '2026-10-23', week: 2, month: 3, total: 3 });
 });
 
 test('admin makes a trainer; the student links with the code and either side ends it', async t => {
@@ -67,9 +84,20 @@ test('admin makes a trainer; the student links with the code and either side end
   assert.deepEqual(made.body.link.trainer, { id: 'pt', name: 'Ricardo' });
   const students = (await call('pt', 'GET', '/api/trainer/students')).body.students;
   assert.deepEqual(students.map(s => [s.student.name, s.scope.body]), [['Marília', false]]);
+  // Her training, as her trainer reads it: workouts and routines, nothing of her health.
+  await call('mari', 'PUT', '/api/data', { state: { unit: 'kg', routines: [{ id: 'r', name: 'Pernas', ex: [] }], workouts: [{ id: 'w1', d: '2026-10-23', name: 'Pernas', entries: [], media: [] }], meals: [{ id: 'm1', d: '2026-10-23', items: [] }], bodyweight: [{ d: '2026-10-23', w: 61, t: 1 }] }, stamped: true });
+  const read = await call('pt', 'GET', '/api/trainer/student?id=mari');
+  assert.equal(read.status, 200, JSON.stringify(read.body));
+  assert.deepEqual(read.body.training.workouts.map(w => w.name), ['Pernas']);
+  assert.equal(read.body.training.meals, undefined, 'never her food');
+  assert.equal(read.body.training.bodyweight, undefined, 'her body only when she shares it');
+  assert.equal((await call('pt', 'GET', '/api/trainer/student?id=boss')).status, 404, 'not his student');
+  assert.equal((await call('mari', 'GET', '/api/trainer/student?id=mari')).status, 403, 'not a trainer');
+  assert.equal((await call('pt', 'GET', '/api/trainer/students')).body.students[0].training.last, '2026-10-23');
   assert.deepEqual((await call('mari', 'POST', '/api/trainer/scope', { id: made.body.link.id, body: true })).body.scope, { body: true });
   assert.equal((await call('pt', 'POST', '/api/trainer/scope', { id: made.body.link.id, body: false })).status, 404, 'the scope is the student’s to change');
   assert.deepEqual((await call('mari', 'GET', '/api/trainer/mine')).body.trainers.map(x => [x.trainer.name, x.scope.body]), [['Ricardo', true]]);
+  assert.deepEqual((await call('pt', 'GET', '/api/trainer/student?id=mari')).body.training.bodyweight.map(b => b.w), [61]);
   const detail = (await call('boss', 'GET', '/api/admin/user?id=pt')).body.user;
   assert.deepEqual([detail.trainer, detail.students], [true, ['Marília']]);
 
@@ -77,6 +105,7 @@ test('admin makes a trainer; the student links with the code and either side end
   assert.equal((await call('boss', 'POST', '/api/trainer/unlink', { id: made.body.link.id })).status, 404, 'not a side of it');
   assert.deepEqual((await call('pt', 'POST', '/api/trainer/unlink', { id: made.body.link.id })).body, { ok: true });
   assert.deepEqual((await call('mari', 'GET', '/api/trainer/mine')).body.trainers, []);
+  assert.equal((await call('pt', 'GET', '/api/trainer/student?id=mari')).status, 404, 'the access went with the link');
 
   // Linked again, then the role is taken away: the link goes with it.
   await call('mari', 'POST', '/api/trainer/link', { code });

@@ -467,9 +467,23 @@ paths:
       operationId: trainerStudents
       summary: The trainer's students
       responses:
-        '200': { description: '`{ students: [{ id, student: { id, name, disabled }, scope: { body }, created }] }`.' }
+        '200': { description: '`{ students: [{ id, student: { id, name, disabled }, scope: { body }, created, training: { last, week, month, total } }] }`.' }
         '401': { description: Not signed in. }
         '403': { description: Not a trainer. }
+  /api/trainer/student:
+    get:
+      tags: [trainer]
+      operationId: trainerStudent
+      summary: "A student's training, for their trainer"
+      description: |
+        `?id=<student>`. Only through a link of the trainer's. The training alone: routines and
+        their plan, workouts without photos or videos, custom exercises, the unit and the 1RM
+        formula; weigh-ins and measurements only when the student shares them. Read-only.
+      responses:
+        '200': { description: '`{ link, student, lastSync, training }`.' }
+        '401': { description: Not signed in. }
+        '403': { description: Not a trainer. }
+        '404': { description: Not a student of this trainer. }
   /api/trainer/mine:
     get:
       tags: [trainer]

@@ -63,3 +63,29 @@ export function trainersOf(links, users, client) {
   return list(links).filter(l => l?.clientId === client.id && by.has(l.trainerId))
     .map(l => ({ id: l.id, trainer: { id: l.trainerId, name: by.get(l.trainerId).name }, scope: l.scope || { body: false }, created: l.created }));
 }
+
+// The training a link shares, out of a student's profile: routines and their plan, workouts
+// without their photos and videos, custom exercises without their media, the settings that read
+// them (unit, the 1RM formula, what a dumbbell weight means), and the body only when the student
+// shares it. Nothing else of the profile leaves it.
+export const TRAINING_KEYS = ['routines', 'week', 'dayPlan', 'queue', 'rotation', 'scheduleMode', 'unit', 'speedUnit', 'oneRmFormula', 'dbLoad', 'weekStart', 'exWeights'];
+export function trainingOf(S, scope = {}) {
+  const st = S && typeof S === 'object' ? S : {};
+  const out = {};
+  for (const k of TRAINING_KEYS) if (st[k] !== undefined) out[k] = st[k];
+  out.workouts = list(st.workouts).filter(w => w && typeof w === 'object').map(({ media, ...w }) => w);
+  out.customEx = list(st.customEx).filter(c => c && typeof c === 'object').map(({ media, url, ...c }) => c);
+  if (scope.body) {
+    out.bodyweight = list(st.bodyweight).filter(b => b && typeof b === 'object').map(({ photos, ...b }) => b);
+    out.measurements = list(st.measurements).filter(m => m && typeof m === 'object');
+  }
+  return out;
+}
+
+const back = (d, n) => new Date(Date.parse(d + 'T12:00:00Z') - n * 86400000).toISOString().slice(0, 10);
+/** A line of how a student trains lately, for the trainer's list: last workout, last 7 and 28 days. */
+export function trainingSummary(S, today) {
+  const days = list(S?.workouts).map(w => w?.d).filter(d => typeof d === 'string').sort();
+  const last = days.at(-1) || null;
+  return { last, week: days.filter(d => d > back(today, 7) && d <= today).length, month: days.filter(d => d > back(today, 28) && d <= today).length, total: days.length };
+}

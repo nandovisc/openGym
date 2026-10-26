@@ -49,6 +49,7 @@ import Meds from './views/Meds.jsx'
 import Water from './views/Water.jsx'
 import WeekReport from './views/WeekReport.jsx'
 import HealthReport from './views/HealthReport.jsx'
+import { StudentsList, StudentView } from './views/Students.jsx'
 import Exams from './views/Exams.jsx'
 import Food from './views/Food.jsx'
 import Sleep from './views/Sleep.jsx'
@@ -249,6 +250,8 @@ function Shell() {
               <Route path="/coach/proposal" element={<Navigate to="/coach" replace />} />
               <Route path="/coach/setup" element={<CoachSetup />} />
               <Route path="/admin" element={user?.admin ? <Admin /> : <Navigate to="/home" replace />} />
+              <Route path="/students" element={user?.trainer ? <StudentsList /> : <Navigate to="/home" replace />} />
+              <Route path="/students/:id" element={user?.trainer ? <StudentView /> : <Navigate to="/home" replace />} />
               <Route path="*" element={<Navigate to="/home" replace />} />
             </Routes>
           )}

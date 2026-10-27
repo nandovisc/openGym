@@ -12,6 +12,8 @@ import { Button, NumberField, Row, Section, Segmented } from '../components/ui.j
 import { confirmSheet } from '../sheets.jsx'
 import { myTrainersSheet } from './Trainer.jsx'
 import { RecordPayments } from './Finance.jsx'
+import { RecordAssessments } from './Assessment.jsx'
+import { ageOn } from '../lib/assessment.js'
 
 // The Personal module, phase 4: a trainer's own record of each student (lib/students.js) — who
 // they are, what they train for, what to keep in mind, what they pay — and the invite that brings
@@ -36,7 +38,7 @@ export function billingText(b) {
 function StudentForm({ prev, onSaved, close }) {
   const [f, setF] = useState(() => ({
     name: prev?.name || '', phone: prev?.phone || '', email: prev?.email || '', goal: prev?.goal || '',
-    notes: prev?.notes || '', restrictions: prev?.restrictions || '', start: prev?.start || todayISO(),
+    notes: prev?.notes || '', restrictions: prev?.restrictions || '', start: prev?.start || todayISO(), birth: prev?.birth || '', sex: prev?.sex || '',
     status: prev?.status || '', billing: { kind: prev?.billing?.kind || '', amount: prev?.billing?.amount ?? null, dueDay: prev?.billing?.dueDay ?? 5, classes: prev?.billing?.classes ?? 8 }
   }))
   const set = patch => setF(x => ({ ...x, ...patch }))
@@ -54,6 +56,12 @@ function StudentForm({ prev, onSaved, close }) {
     {field('name', t('Name'), { maxLength: 60, autoComplete: 'name' })}
     {field('phone', t('Phone (WhatsApp)'), { inputMode: 'tel', autoComplete: 'tel', placeholder: '(11) 98888-7777' })}
     {field('email', t('E-mail'), { inputMode: 'email', autoComplete: 'email' })}
+    <div className="rec-pay">
+      {field('birth', t('Date of birth'), { type: 'date' })}
+      <div className="rec-field"><span className="small dim">{t('Sex')}</span>
+        <Segmented value={f.sex || 'none'} onChange={v => set({ sex: v === 'none' ? '' : v })}
+          options={[{ value: 'none', label: '–' }, { value: 'f', label: t('Female') }, { value: 'm', label: t('Male') }]} /></div>
+    </div>
     {field('goal', t('Goal'), { maxLength: 120, placeholder: t('Gain muscle, lose fat, run 10 km…') })}
     <label className="rec-field"><span className="small dim">{t('Health history and notes')}</span>
       <textarea className="input" rows={3} maxLength={2000} value={f.notes} onChange={e => set({ notes: e.target.value })} placeholder={t('Past injuries, medications, how they train, what they like…')} /></label>
@@ -127,7 +135,9 @@ export function RecordTab({ record, name, studentId }) {
       {record.goal && <Row title={t('Goal')} subtitle={record.goal} />}
       <Row title={t(BILLING_LABEL[record.billing?.kind] || 'Payment')} subtitle={billingText(record.billing)} />
       {record.start && <Row title={t('Started on')} value={fmtDate(record.start, true)} />}
+      {(record.birth || record.sex) && <Row title={t('Age and sex')} value={[record.birth ? t('{0} years', ageOn(record.birth, todayISO())) : null, record.sex ? t(record.sex === 'f' ? 'Female' : 'Male') : null].filter(Boolean).join(' · ')} />}
     </Section>
+    <RecordAssessments record={record} />
     <RecordPayments record={record} />
     {(record.notes || record.restrictions) && <div className="card small rec-notes">
       {record.notes && <><b>{t('Health history and notes')}</b><p>{record.notes}</p></>}

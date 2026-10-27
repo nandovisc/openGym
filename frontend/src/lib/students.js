@@ -3,8 +3,10 @@
 // profile and synced like any list of theirs. The student's training stays in the student's
 // profile; a record points at it through the link (`studentId`) once the student has joined.
 //
-//   S.students [{ id, name, phone, email, goal, notes, restrictions, start, status,
+//   S.students [{ id, name, phone, email, goal, notes, restrictions, start, birth, sex, status,
 //                 billing: { kind, amount, dueDay, classes }, studentId, history, created, _ts }]
+//     birth 'YYYY-MM-DD' and sex 'm' | 'f': what a physical assessment's equations need
+//       (lib/assessment.js), both optional.
 //     status: active | paused | invited (no account linked yet) | ended (the link ended)
 //     billing.kind: monthly | package | single; amount in the trainer's currency; dueDay 1..28
 //       for a monthly fee; classes how many a package holds; since the month it started.
@@ -37,6 +39,8 @@ export function normalizeStudent(input, { prev = null, now = Date.now() } = {}) 
     notes: longText(input?.notes, 2000),
     restrictions: longText(input?.restrictions, 1000),
     start: DAY_RE.test(input?.start || '') ? input.start : prev?.start || null,
+    birth: DAY_RE.test(input?.birth || '') ? input.birth : null,
+    sex: input?.sex === 'f' || input?.sex === 'm' ? input.sex : null,
     status: STATUSES.includes(input?.status) ? input.status : prev?.status || (prev?.studentId ? 'active' : 'invited'),
     // since: the month the billing started (lib/finance.js counts what is owed from there), kept
     // while the kind stays the same.

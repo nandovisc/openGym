@@ -117,7 +117,7 @@ export const DEF = {
   students: [],
   // A trainer's classes (lib/agenda.js): series that repeat weekly, and single classes or what
   // changed of one class of a series (done, cancelled, moved). agendaPrefs: the reminder.
-  sessions: [], sessionSeries: [], payments: [], agendaPrefs: { remindMin: 30, tz: null },
+  sessions: [], sessionSeries: [], payments: [], assessments: [], agendaPrefs: { remindMin: 30, tz: null },
   // Smart reminders (api/smart-nudges.js): from what the person usually does, each off until set.
   smartReminders: { dose: false, weight: false, water: false, sleep: false, tz: null },
   habits: [], habitLog: [], habitGroups: [], habitPrefs: { on: false, tz: null, dayStartsAt: '00:00', vacations: [], hideDone: false, hideFailed: false, hideSkipped: false, hideStreaks: false },

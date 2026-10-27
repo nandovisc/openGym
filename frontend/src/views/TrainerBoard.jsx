@@ -30,6 +30,22 @@ const liveRecords = S => (S?.students || []).filter(r => r && r.status !== 'ende
 const namesOf = S => Object.fromEntries((S?.students || []).filter(Boolean).map(r => [r.id, r.name]))
 const ago = ms => fmtDate(new Date(ms - new Date(ms).getTimezoneOffset() * 60000).toISOString().slice(0, 10), true)
 
+/* ---------------------------------------------------------------- home */
+
+// A trainer's way in, always on Today (and on Home when Today is off): a new trainer has no class,
+// task or debt yet, so no other card of theirs shows, and the module looked absent.
+export function TrainerCard({ S, nav }) {
+  const due = dueCount(S.tasks, todayISO())
+  const n = liveRecords(S).length
+  const go = [['/students', 'star', 'Students'], ['/agenda', 'calendar', 'Agenda'], ['/tasks', 'checkCircle', 'Tasks'], ['/notices', 'bell', 'Notices'], ['/finance', 'chart', 'Finances']]
+  return <div className="card today-card">
+    <div className="row between today-head"><span className="today-title">{t('Personal trainer')}</span><span className="small dim">{tn('{0} student', '{0} students', n)}</span></div>
+    <div className="trainer-links">{go.map(([to, icon, label]) => <button key={to} className="trainer-link" onClick={() => nav(to)}>
+      <Icon name={icon} /><span>{t(label)}</span>{to === '/tasks' && due > 0 && <span className="tag warn">{due}</span>}
+    </button>)}</div>
+  </div>
+}
+
 /* ---------------------------------------------------------------- tasks */
 
 function TaskForm({ prev, recordId, close }) {

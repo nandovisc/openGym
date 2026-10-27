@@ -3311,4 +3311,5 @@ export default {
   'notified {0}': 'notified {0}',
   'Sent to {0} student': 'Sent to {0} student',
   'Sent to {0} students': 'Sent to {0} students',
+  'Personal trainer': 'Personal trainer',
 }

@@ -28,7 +28,7 @@ import LineChart from '../components/LineChart.jsx'
 import { useConnectionTrouble } from '../components/SyncBanner.jsx'
 import { Button, Switch } from '../components/ui.jsx'
 import { FinanceCard } from './Finance.jsx'
-import { StudentNoticesCard, TasksCard } from './TrainerBoard.jsx'
+import { StudentNoticesCard, TasksCard, TrainerCard } from './TrainerBoard.jsx'
 
 const update = fn => useStore.getState().update(fn)
 const ui = () => useUI.getState()
@@ -36,8 +36,8 @@ const list = v => (Array.isArray(v) ? v : [])
 
 // Today (Home with the modules beside training on): the day across them, each card with the one
 // thing to do about it — start the workout, add food, mark a habit, take a dose, weigh in.
-export const CARDS = ['classes', 'tasks', 'notices', 'finance', 'training', 'food', 'water', 'habits', 'meds', 'sleep', 'weight', 'week', 'patterns', 'exams']
-const CARD_LABEL = { classes: 'Classes today', tasks: 'Tasks', notices: 'From your trainer', finance: 'Finances', training: 'Today’s workout', food: 'Nutrition', water: 'Water', habits: 'Habits to do', meds: 'Medications', sleep: 'Sleep', weight: 'Body weight', week: 'Your week', patterns: 'Patterns', exams: 'Medical exams' }
+export const CARDS = ['personal', 'classes', 'tasks', 'notices', 'finance', 'training', 'food', 'water', 'habits', 'meds', 'sleep', 'weight', 'week', 'patterns', 'exams']
+const CARD_LABEL = { personal: 'Personal trainer', classes: 'Classes today', tasks: 'Tasks', notices: 'From your trainer', finance: 'Finances', training: 'Today’s workout', food: 'Nutrition', water: 'Water', habits: 'Habits to do', meds: 'Medications', sleep: 'Sleep', weight: 'Body weight', week: 'Your week', patterns: 'Patterns', exams: 'Medical exams' }
 const CARD_MODULE = { food: 'food', water: 'water', habits: 'habits', meds: 'meds', sleep: 'sleep', exams: 'exams' }
 
 /** The meal of the hour, for adding food from Today or the ＋ button. */
@@ -55,8 +55,8 @@ export function slotByHour(date = new Date()) {
  */
 export function cardOrder(S, hour = new Date().getHours()) {
   const own = list(S.homeCards?.order).filter(k => CARDS.includes(k))
-  const auto = hour < 11 ? ['classes', 'tasks', 'notices', 'finance', 'sleep', 'weight', 'meds', 'water', 'training', 'food', 'habits', 'week', 'patterns', 'exams']
-    : hour >= 18 ? ['classes', 'tasks', 'notices', 'finance', 'habits', 'food', 'water', 'meds', 'training', 'sleep', 'weight', 'week', 'patterns', 'exams'] : CARDS
+  const auto = hour < 11 ? ['personal', 'classes', 'tasks', 'notices', 'finance', 'sleep', 'weight', 'meds', 'water', 'training', 'food', 'habits', 'week', 'patterns', 'exams']
+    : hour >= 18 ? ['personal', 'classes', 'tasks', 'notices', 'finance', 'habits', 'food', 'water', 'meds', 'training', 'sleep', 'weight', 'week', 'patterns', 'exams'] : CARDS
   const order = own.length ? [...own, ...CARDS.filter(k => !own.includes(k))] : auto
   const hidden = new Set(list(S.homeCards?.hidden))
   return order.filter(k => !hidden.has(k) && (!CARD_MODULE[k] || moduleOn(S, CARD_MODULE[k])))
@@ -251,6 +251,7 @@ export default function Today() {
     training: () => <TrainingCard key="training" S={S} nav={nav} />,
     food: () => <FoodCard key="food" S={S} nav={nav} />,
     water: () => <WaterCard key="water" S={S} nav={nav} />,
+    personal: () => (user?.trainer ? <TrainerCard key="personal" S={S} nav={nav} /> : null),
     classes: () => <ClassesCard key="classes" S={S} nav={nav} user={user} />,
     tasks: () => (user?.trainer ? <TasksCard key="tasks" S={S} nav={nav} Card={Card} /> : null),
     notices: () => (user && !user.trainer ? <StudentNoticesCard key="notices" nav={nav} Card={Card} /> : null),

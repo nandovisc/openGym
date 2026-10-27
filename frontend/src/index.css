@@ -2436,6 +2436,13 @@ a.btn{text-decoration:none;box-sizing:border-box}
 .board-link { display: flex; align-items: center; gap: 8px; margin: 0; padding: 12px 14px; font: inherit; font-weight: 600; color: inherit; cursor: pointer; text-align: start }
 .board-link svg { width: 20px; height: 20px; color: var(--acc) }
 .board-link span:first-of-type { flex: 1 }
+.trainer-links { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px }
+.trainer-links > * { grid-column: span 2 }
+.trainer-links > :nth-child(n+4) { grid-column: span 3 }
+.trainer-link { position: relative; display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 0; padding: 10px 4px; border: 0; border-radius: 12px; background: var(--bg); font: inherit; font-size: 13px; font-weight: 600; color: inherit; cursor: pointer }
+.trainer-link svg { width: 22px; height: 22px; color: var(--acc) }
+.trainer-link span:first-of-type { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
+.trainer-link .tag { position: absolute; top: 5px; inset-inline-end: 6px }
 .notice-body { white-space: pre-wrap; line-height: 1.45 }
 .notice-item { padding: 10px 14px; border-top: var(--hair) solid var(--sep) }
 .notice-item:first-child { border-top: 0 }

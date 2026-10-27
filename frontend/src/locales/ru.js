@@ -3312,4 +3312,5 @@ export default {
   'notified {0}': { one: 'notified {0}', few: 'notified {0}', many: 'notified {0}', other: 'notified {0}' },
   'Sent to {0} student': 'Sent to {0} student',
   'Sent to {0} students': { one: 'Sent to {0} student', few: 'Sent to {0} students', many: 'Sent to {0} students', other: 'Sent to {0} students' },
+  'Personal trainer': 'Personal trainer',
 }

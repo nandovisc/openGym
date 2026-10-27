@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useStore } from '../store/useStore.js'
+import { TrainerCard } from './TrainerBoard.jsx'
 import { effectiveRoutines, effectiveRoutineIds, nextTrainingDay, streakWeeks, lastBW, setsDoneActive } from '../lib/history.js'
 import { fmtDur, fmtNum, fmtDate, todayISO, isoOf, weekStartOf, weekDayOffset, DAYS, DAYN } from '../lib/format.js'
 import { bwChartPoint } from '../lib/bodyweight.js'
@@ -129,6 +130,8 @@ export default function Training({ home = false, sections = home ? ALL_SECTIONS 
           <Button size="sm" variant="tinted" icon="chart" onClick={() => nav('/finance')}>{t('Finances')}</Button></div>}</div>
       <TrainingNav />
     </>}
+
+    {home && user?.trainer && <TrainerCard S={S} nav={nav} />}
 
     {has('week') && <div className="card">
       {/* A coach week runs by order, not by weekday, so its progress row stands in for the

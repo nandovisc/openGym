@@ -3336,4 +3336,5 @@ export default {
   'never': 'never',
   'reads and writes': 'reads and writes',
   'reads only': 'reads only',
+  'List each exercise with its sets.': 'List each exercise with its sets.',
 }

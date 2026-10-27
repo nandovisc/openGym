@@ -2643,14 +2643,15 @@ function ShareWorkoutImage({ w, nameOf, close }) {
   const st = useStore(s => s.S)
   const update = useStore(s => s.update)
   const withMap = st.shareMap !== false
-  const model = useMemo(() => workoutCardModel(w, { unit: st.unit, nameOf }), [w, st.unit])
+  const withEx = st.shareExercises === true
+  const model = useMemo(() => workoutCardModel(w, { unit: st.unit, nameOf, speedUnit: speedUnitOf(st) }), [w, st.unit])
   // The last picture stays up while the next one is drawn, so the toggle never blanks the sheet.
   const [img, setImg] = useState(null)
   const [busy, setBusy] = useState(false)
   const shown = useRef(null)
   useEffect(() => {
     let alive = true
-    workoutCardImage(model, { map: withMap, body: st.body })
+    workoutCardImage(model, { map: withMap, exercises: withEx, body: st.body })
       .then(blob => {
         if (!alive) return
         if (!blob) { setImg(prev => ({ ...prev, failed: true })); return }
@@ -2660,7 +2661,7 @@ function ShareWorkoutImage({ w, nameOf, close }) {
       })
       .catch(() => { if (alive) setImg(prev => ({ ...prev, failed: true })) })
     return () => { alive = false }
-  }, [model, withMap, st.body])
+  }, [model, withMap, withEx, st.body])
   useEffect(() => () => { if (shown.current) URL.revokeObjectURL(shown.current) }, [])
   const name = 'opengym-workout-' + (workoutDay(w) || todayISO()) + '.png'
   const share = async () => {
@@ -2682,10 +2683,15 @@ function ShareWorkoutImage({ w, nameOf, close }) {
         <Switch checked={withMap} aria-label={t('Muscle map')} onChange={v => update(s => { s.shareMap = v })} />
       </Row>
     </div>}
+    {model.exercises.length > 0 && <div className="sect-b" style={{ marginBottom: 12 }}>
+      <Row icon="dumbbell" iconTint="var(--acc)" title={t('Exercises')} subtitle={t('List each exercise with its sets.')}>
+        <Switch checked={withEx} aria-label={t('Exercises')} onChange={v => update(s => { s.shareExercises = v })} />
+      </Row>
+    </div>}
     <Button variant="primary" icon="share" disabled={!img?.blob || busy} onClick={share}>{t('Share')}</Button>
   </>
 }
-async function workoutCardImage(model, { map, body }) {
+async function workoutCardImage(model, { map, exercises, body }) {
   const root = getComputedStyle(document.documentElement)
   const css = (name, fallback) => root.getPropertyValue(name).trim() || fallback
   const colors = { bg: css('--bg', '#000'), surface: css('--surface', '#1c1c1e'), tile: css('--surface-2', '#2c2c2e'), label: css('--label', '#fff'), label2: css('--label-2', '#999'), acc: css('--acc', '#30d158') }
@@ -2696,7 +2702,7 @@ async function workoutCardImage(model, { map, body }) {
   const ctx = canvas.getContext('2d')
   if (!ctx) return null
   const measure = (text, weight, size) => { ctx.font = `${weight} ${size}px ${CARD_FONT}`; return ctx.measureText(text).width }
-  const layout = layoutWorkoutCard(model, { measure, rtl: document.documentElement.dir === 'rtl', map: shape ? { aspect: viewAspect(shape.front) } : null })
+  const layout = layoutWorkoutCard(model, { measure, rtl: document.documentElement.dir === 'rtl', map: shape ? { aspect: viewAspect(shape.front) } : null, exercises })
   canvas.width = layout.width
   canvas.height = layout.height
   drawWorkoutCard(ctx, layout, colors, shape ? { body: shape, levels: model.levels } : null)

@@ -2501,6 +2501,7 @@ export const PT_BR_OVERRIDES = {
   'never': 'nunca',
   'reads and writes': 'lê e grava',
   'reads only': 'só lê',
+  'List each exercise with its sets.': 'Lista cada exercício com as séries.',
 }
 
 export default { ...pt, ...PT_BR_OVERRIDES }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { workoutCardModel, layoutWorkoutCard, wrapText, parseColor, mixColor, mapColors, viewAspect, MAX_RECORDS, CARD_WIDTH } from './workout-card.js'
+import { workoutCardModel, layoutWorkoutCard, wrapText, parseColor, mixColor, mapColors, viewAspect, MAX_RECORDS, MAX_EXERCISES, CARD_WIDTH } from './workout-card.js'
 import { fmtDate } from './format.js'
 
 // #453: a finished workout shared as a picture. A fake measure stands in for the canvas — every
@@ -57,6 +57,17 @@ describe('workoutCardModel', () => {
     expect(levels.chest).toBe(4)
     expect(levels.triceps).toBeGreaterThan(0)
     expect(levels.quadriceps).toBe(0)
+  })
+
+  it('lists each exercise done with its work sets, alike ones counted', () => {
+    const m = workoutCardModel(w, { unit: 'kg', nameOf })
+    expect(m.exercises.map(e => [e.name, e.sets])).toEqual([
+      ['Barbell Bench Press', '60×8 · 60×6'],
+      ['Dumbbell Curl', '12×10'],
+      ['Dumbbell Lunge', expect.any(String)],
+    ])
+    const same = { ...w, entries: [{ id: 'curl', target: { mode: 'reps' }, sets: [1, 2, 3].map(() => ({ w: 12, r: 10, done: true })) }, { id: 'bench', sets: [{ w: 60, r: 8, done: false }] }] }
+    expect(workoutCardModel(same, { unit: 'kg', nameOf }).exercises).toEqual([{ name: 'Dumbbell Curl', sets: '3 sets · 12×10' }])
   })
 
   it('has no muscle map when no set reached a muscle the map shows', () => {
@@ -154,6 +165,19 @@ describe('layoutWorkoutCard', () => {
 
   it('leaves the map out of a card whose workout has none, even when asked', () => {
     expect(kinds(layoutWorkoutCard({ ...model, levels: null }, { measure, map }), 'map')).toHaveLength(0)
+  })
+
+  it('lists the exercises under the map only when asked, counting past the limit', () => {
+    const exercises = Array.from({ length: MAX_EXERCISES + 3 }, (_, i) => ({ name: 'Exercise ' + i, sets: '3 sets · 60×10' }))
+    const model = { title: 'Pull', date: 'x', stats: [{ label: 'Sets', value: '18' }], records: [], levels: null, exercises }
+    const texts = l => l.items.filter(i => i.kind === 'text').map(i => i.text)
+    expect(texts(layoutWorkoutCard(model, { measure }))).not.toContain('Exercises')
+    const on = layoutWorkoutCard(model, { measure, exercises: true })
+    expect(texts(on)).toContain('Exercises')
+    expect(texts(on).filter(x => x.startsWith('Exercise ')).length).toBe(MAX_EXERCISES - 1)
+    expect(texts(on)).toContain('and 4 more')
+    expect(on.height).toBeGreaterThan(layoutWorkoutCard(model, { measure }).height)
+    for (const i of on.items.filter(i => i.kind === 'text')) expect(i.y).toBeLessThan(on.height)
   })
 
   it('counts the new bests past the limit instead of growing without end', () => {

@@ -235,6 +235,8 @@ button.conn:active{filter:brightness(1.12)}
 .hdr>div{min-width:0}
 .hdr>.btn{flex:none}
 .hdr>.hdr-actions{display:flex;align-items:center;gap:8px;flex:none}
+.trainer-actions{display:flex;flex-wrap:wrap;gap:8px;margin:-8px 0 14px}
+.trainer-actions>.btn{flex:1 1 0;min-width:0;justify-content:center}
 .hdr h1{font-size:34px;line-height:1.06;font-weight:700;letter-spacing:-.028em;overflow-wrap:break-word}
 @media (max-width:420px){.hdr h1{font-size:30px}}
 .hdr .sub{color:var(--label-2);font-size:15px;letter-spacing:-.006em;margin-top:4px}

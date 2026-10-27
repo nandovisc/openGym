@@ -131,10 +131,11 @@ export default function Training({ home = false, sections = home ? ALL_SECTIONS 
       <div><h1>{user ? t('Hi {0}', user.name) : 'openGym'}</h1><div className="sub">{today.toLocaleDateString(dateLocale(), { weekday: 'long', day: 'numeric', month: 'long' })}</div></div>
       <button className="iconbtn" onClick={() => nav('/settings')} aria-label={trouble ? t('Settings') + ', ' + t('Connection problem') : t('Settings')}><Icon name="gear" />{trouble && <span className="tab-dot" aria-hidden="true" />}</button>
     </div> : <>
-      <div className="hdr"><div style={{ flex: 1 }}><h1>{t('Training')}</h1><div className="sub">{t('Your week of workouts')}</div></div>
-        {user?.trainer && <div className="row" style={{ gap: 6 }}><Button size="sm" variant="tinted" icon="calendar" onClick={() => nav('/agenda')}>{t('Agenda')}</Button>
-          <Button size="sm" variant="tinted" icon="star" onClick={() => nav('/students')}>{t('Students')}</Button>
-          <Button size="sm" variant="tinted" icon="chart" onClick={() => nav('/finance')}>{t('Finances')}</Button></div>}</div>
+      <div className="hdr"><div style={{ flex: 1 }}><h1>{t('Training')}</h1><div className="sub">{t('Your week of workouts')}</div></div></div>
+      {/* A row of its own: beside the title, on a phone, they left it a letter's width. */}
+      {user?.trainer && <div className="trainer-actions"><Button size="sm" variant="tinted" icon="calendar" onClick={() => nav('/agenda')}>{t('Agenda')}</Button>
+        <Button size="sm" variant="tinted" icon="star" onClick={() => nav('/students')}>{t('Students')}</Button>
+        <Button size="sm" variant="tinted" icon="chart" onClick={() => nav('/finance')}>{t('Finances')}</Button></div>}
       <TrainingNav />
     </>}
 

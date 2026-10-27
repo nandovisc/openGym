@@ -236,6 +236,8 @@ export const DEF = {
   // Whether "Share as image" puts this session's muscle map on the card (sheets.jsx
   // ShareWorkoutImage, #453). On by default; absent reads as on (`!== false`).
   shareMap: true,
+  // Whether it lists each exercise with its sets too. Off by default.
+  shareExercises: false,
   // The quiet line a device with no server shows ("On this phone only…", "Guest mode…", #454).
   // That is a choice, not a fault, so its × hides it for good; a real problem still shows the bar.
   // Defaults on; an older profile without the key reads as on (`!== false`).

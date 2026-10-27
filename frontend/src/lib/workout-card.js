@@ -6,12 +6,12 @@
 //   layoutWorkoutCard — where everything goes, given a way to measure text
 //   drawWorkoutCard   — paints a layout onto a 2D canvas context
 // Nothing here stores anything; the workout is read, never written.
-import { sessionSections, workoutVolume, workoutDuration, workoutDay, doneUnits } from './history.js'
+import { sessionSections, workoutVolume, workoutDuration, workoutDay, doneUnits, setLabel } from './history.js'
 import { EXIDX } from './exercises.js'
 import { isWarmupRow } from './workout-model.js'
 import { MUSCLES, INERT, levelsOf, loadOfWorkouts } from './muscles.js'
 import { fmtDate, fmtDur, fmtNum, fmtVol, capWords } from './format.js'
-import { t, exerciseNameClass } from './i18n-core.js'
+import { t, tn, exerciseNameClass } from './i18n-core.js'
 
 export const CARD_WIDTH = 1080
 const PAD = 88
@@ -19,6 +19,8 @@ const MIN_HEIGHT = 720
 // More than this many new bests and the rest are counted instead of listed: a card that grows
 // past a phone screen is not glanceable any more.
 export const MAX_RECORDS = 6
+// The same for the exercises, when the card lists them: a long session is counted past this.
+export const MAX_EXERCISES = 10
 const TITLE_LINES = 2
 const STAT_SIZE = 56
 const MAP_MAX_HEIGHT = 560
@@ -31,7 +33,7 @@ const MAP_MAX_HEIGHT = 560
  * summary's muscle map for this one session (levelsOf over loadOfWorkouts), null when no set
  * reached a muscle the map can show — a card of only cardio has nothing to shade.
  */
-export function workoutCardModel(w, { unit, nameOf }) {
+export function workoutCardModel(w, { unit, nameOf, speedUnit = 'km/h' }) {
   const entries = w.entries || []
   const sets = entries.reduce((n, e) => n + (e.sets || []).reduce((m, s) => m + (isWarmupRow(s) ? 0 : doneUnits(s)), 0), 0)
   // New bests in the order the sheet lists the exercises, each named once — a combined session
@@ -43,6 +45,20 @@ export function workoutCardModel(w, { unit, nameOf }) {
     if (!entry || !prs.has(entry.id) || records.some(r => r.id === entry.id)) continue
     const name = nameOf(entry)
     records.push({ id: entry.id, name: exerciseNameClass(EXIDX[entry.id]) ? capWords(name) : name })
+  }
+  // Every exercise done, in the order the sheet lists them, with its work sets: "3 sets · 60×10"
+  // when they were all alike, each one otherwise — what "Copy as text" says, on the card.
+  const exercises = []
+  for (const i of sessionSections(entries).flatMap(section => section.units).flat()) {
+    const entry = entries[i]
+    const done = (entry?.sets || []).filter(s => s?.done && !isWarmupRow(s))
+    if (!done.length) continue
+    const labels = done.map(s => setLabel(entry.id, s, entry.target, speedUnit))
+    const name = nameOf(entry)
+    exercises.push({
+      name: exerciseNameClass(EXIDX[entry.id]) ? capWords(name) : name,
+      sets: labels.length > 1 && labels.every(l => l === labels[0]) ? tn('{0} set', '{0} sets', labels.length) + ' · ' + labels[0] : labels.join(' · ')
+    })
   }
   const day = workoutDay(w)
   const ms = workoutDuration(w)
@@ -57,6 +73,7 @@ export function workoutCardModel(w, { unit, nameOf }) {
       { label: t('Volume'), value: fmtVol(w.vol ?? workoutVolume(w), unit) },
     ],
     records: records.map(r => r.name),
+    exercises,
     levels: MUSCLES.some(m => levels[m] > 0) ? levels : null,
   }
 }
@@ -97,11 +114,12 @@ function fitSize(text, width, measure, weight, max, min = 28) {
  * measureText in the app, a fake in the tests. `rtl` mirrors the card for Arabic: text anchors
  * at the right edge, the tiles run right to left and the trophy sits to the right of its line.
  * `map` is `{ aspect }`, one body view's height over its width, to include the muscle map, or
- * null to leave it out; a model without levels has none either way. Returns the canvas size and
+ * null to leave it out; a model without levels has none either way. `exercises` lists what was
+ * done, each exercise with its sets, under the map. Returns the canvas size and
  * a flat list of items for drawWorkoutCard; a text item carries its size and weight, the font
  * family is the drawer's.
  */
-export function layoutWorkoutCard(model, { measure, rtl = false, width = CARD_WIDTH, map = null }) {
+export function layoutWorkoutCard(model, { measure, rtl = false, width = CARD_WIDTH, map = null, exercises = false }) {
   const items = []
   const inner = width - PAD * 2
   const start = rtl ? width - PAD : PAD
@@ -168,6 +186,20 @@ export function layoutWorkoutCard(model, { measure, rtl = false, width = CARD_WI
       }
     }
     y += sw
+  }
+
+  if (exercises && model.exercises?.length) {
+    y += 52
+    text(t('Exercises'), 34, 600, 'acc')
+    y += 6
+    const shown = model.exercises.length > MAX_EXERCISES ? model.exercises.slice(0, MAX_EXERCISES - 1) : model.exercises
+    for (const ex of shown) {
+      y += 8
+      // Two lines: a translated name keeps the original beside it, "Rosca Direta Com Barra (Barbell Curl)".
+      for (const line of wrapText(ex.name, inner, s => measure(s, 600, 40), 2)) text(line, 40, 600, 'label')
+      for (const line of wrapText(ex.sets, inner, s => measure(s, 400, 34), 2)) text(line, 34, 400, 'label2')
+    }
+    if (shown.length < model.exercises.length) { y += 8; text(t('and {0} more', model.exercises.length - shown.length), 34, 400, 'label2') }
   }
 
   if (model.records.length) {

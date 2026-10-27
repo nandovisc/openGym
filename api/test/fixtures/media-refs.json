@@ -1,5 +1,5 @@
 {
-  "about": "Which blob hashes a state references. api/media.js referencedHashes() and frontend/src/lib/media-refs.js referencedHashes() must both give `expect` (compared as sorted lists) for every `state` here: the server keeps and the client keeps exactly this set. Each of customEx[].media.hash, customEx[].media.poster.hash and the same two of every entry of workouts[].media and of exams[].files, meals[].photo and bodyweight[].photos[].m count on its own when it matches /^[0-9a-f]{64}$/ — deliberately looser than normalizeMediaRef, because this set decides what is kept.",
+  "about": "Which blob hashes a state references. api/media.js referencedHashes() and frontend/src/lib/media-refs.js referencedHashes() must both give `expect` (compared as sorted lists) for every `state` here: the server keeps and the client keeps exactly this set. Each of customEx[].media.hash, customEx[].media.poster.hash and the same two of every entry of workouts[].media and of exams[].files, meals[].photo, bodyweight[].photos[].m and assessments[].photos[].m count on its own when it matches /^[0-9a-f]{64}$/ — deliberately looser than normalizeMediaRef, because this set decides what is kept.",
   "referencedHashes": [
     {
       "name": "no state at all",
@@ -1099,6 +1099,46 @@
         }
       },
       "expect": []
+    },
+    {
+      "name": "the photos of an assessment count, with their poster, past junk entries",
+      "state": {
+        "assessments": [
+          {
+            "id": "a1",
+            "photos": [
+              {
+                "pose": "front",
+                "m": {
+                  "kind": "image",
+                  "hash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+                  "mime": "image/webp",
+                  "size": 1,
+                  "at": 1
+                }
+              },
+              {
+                "pose": "side"
+              },
+              "junk",
+              {
+                "m": {
+                  "kind": "image",
+                  "hash": "bad"
+                }
+              }
+            ]
+          },
+          "x",
+          {
+            "id": "a2",
+            "photos": "no"
+          }
+        ]
+      },
+      "expect": [
+        "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+      ]
     }
   ]
 }

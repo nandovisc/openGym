@@ -54,6 +54,7 @@ import { RecordView, StudentsList, StudentView } from './views/Students.jsx'
 import { JoinInvite } from './views/StudentRecord.jsx'
 import Agenda from './views/Agenda.jsx'
 import Finance from './views/Finance.jsx'
+import AssessmentView from './views/Assessment.jsx'
 import Exams from './views/Exams.jsx'
 import Food from './views/Food.jsx'
 import Sleep from './views/Sleep.jsx'
@@ -263,6 +264,7 @@ function Shell() {
               <Route path="/join" element={<JoinInvite />} />
               <Route path="/agenda" element={user?.trainer ? <Agenda /> : <Navigate to="/home" replace />} />
               <Route path="/finance" element={user?.trainer ? <Finance /> : <Navigate to="/home" replace />} />
+              <Route path="/assessment/:id" element={user?.trainer ? <AssessmentView /> : <Navigate to="/home" replace />} />
               <Route path="*" element={<Navigate to="/home" replace />} />
             </Routes>
           )}

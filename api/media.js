@@ -85,8 +85,9 @@ export function mediaLimits(env = process.env) {
 // `workouts: true`: this server keeps the files a logged workout's `media` names (its GC walks
 // workouts[].media), so a signed-in client may offer attaching them. A server from before says
 // nothing, and the client offers them on custom exercises only. `bodyweight: true` is the same
-// for the progress photos of a weigh-in (bodyweight[].photos[].m).
-export const mediaConfig = l => ({ imageMB: l.imageMB, gifMB: l.gifMB, videoMB: l.videoMB, videoSec: l.videoSec, docMB: l.docMB, quotaMB: l.quotaMB, workouts: true, bodyweight: true });
+// for the progress photos of a weigh-in (bodyweight[].photos[].m), `assessments: true` for the
+// photos of a trainer's assessment of a student (assessments[].photos[].m).
+export const mediaConfig = l => ({ imageMB: l.imageMB, gifMB: l.gifMB, videoMB: l.videoMB, videoSec: l.videoSec, docMB: l.docMB, quotaMB: l.quotaMB, workouts: true, bodyweight: true, assessments: true });
 
 /* ---------------------------------------------------------------- errors */
 
@@ -316,6 +317,11 @@ export function referencedHashes(state) {
   for (const e of Array.isArray(state.bodyweight) ? state.bodyweight : []) {
     if (!isObj(e) || !Array.isArray(e.photos)) continue;
     for (const p of e.photos) if (isObj(p) && isObj(p.m)) ref(p.m);
+  }
+  // The photos of a trainer's physical assessment of a student: { pose, m } each, as a weigh-in's.
+  for (const a of Array.isArray(state.assessments) ? state.assessments : []) {
+    if (!isObj(a) || !Array.isArray(a.photos)) continue;
+    for (const p of a.photos) if (isObj(p) && isObj(p.m)) ref(p.m);
   }
   return out;
 }

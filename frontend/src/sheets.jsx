@@ -2728,6 +2728,12 @@ function mediaGoesToo(rec) {
   return n ? ' ' + tn('Its photo or video is deleted with it.', 'Its {0} photos or videos are deleted with it.', n) : ''
 }
 export const workoutDetailSheet = w => ui().openSheet(close => <WorkoutDetail w={w} close={close} />)
+// The workouts of a day: the one logged, or a list to pick from when there were several.
+export function dayWorkoutsSheet(iso, ws) {
+  if (!ws?.length) return
+  if (ws.length === 1) return workoutDetailSheet(ws[0])
+  ui().openSheet(c2 => <><h3>{fmtDate(iso, true)}</h3><div className="list">{ws.map(w => <WorkoutRow key={w.id} w={w} onClick={() => { c2(); workoutDetailSheet(w) }} />)}</div></>)
+}
 
 /* ============================ calendar ============================ */
 function Calendar({ start, close }) {
@@ -2759,8 +2765,7 @@ function Calendar({ start, close }) {
     cells.push(<button key={d} className={'cal-d' + (ws ? ' has' : '') + (note ? ' noted' : '') + (iso === todayISO() ? ' today' : '')}
       title={note ? dayNoteLine(note, t) : undefined} onClick={() => {
       if (!ws) { close(); dayOverrideSheet(iso); return }
-      if (ws.length === 1) { close(); workoutDetailSheet(ws[0]); return }
-      close(); ui().openSheet(c2 => <><h3>{fmtDate(iso, true)}</h3><div className="list">{ws.map(w => <WorkoutRow key={w.id} w={w} onClick={() => { c2(); workoutDetailSheet(w) }} />)}</div></>)
+      close(); dayWorkoutsSheet(iso, ws)
     }}><span>{d}</span><i className={dotCls} /></button>)
   }
   return <>

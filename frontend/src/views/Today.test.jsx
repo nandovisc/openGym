@@ -47,6 +47,16 @@ describe('Today', () => {
     expect(el.querySelector('.today-card .small.dim').textContent).toBe('1 student')
   })
 
+  it('a workout done today opens what was done, never a new session', () => {
+    withState({ workouts: [{ id: 'w1', d: today, name: 'Upper B', start: 1, end: 2, entries: [] }] })
+    const el = render(<Today />)
+    const card = [...el.querySelectorAll('.today-card')].find(c => c.textContent.includes('Trained today'))
+    act(() => card.click())
+    expect(S().active).toBeFalsy()
+    const sheet = topSheet()
+    expect(sheet.textContent).toContain('Upper B')
+  })
+
   it('takes a dose, marks a habit and offers the weigh-in where they show', () => {
     withState({
       meds: [{ id: 'm', name: 'Losartana', times: ['08:00', '20:00'], active: true, start: '2020-01-01' }], medLog: [],

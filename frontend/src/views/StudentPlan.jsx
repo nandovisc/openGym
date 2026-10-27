@@ -8,6 +8,8 @@ import { t } from '../lib/i18n.js'
 import Icon from '../components/Icon.jsx'
 import { Button, NumberField } from '../components/ui.jsx'
 import { confirmSheet, exercisePicker } from '../sheets.jsx'
+import { useStore } from '../store/useStore.js'
+import { draftSheet } from './TrainerBoard.jsx'
 
 // The Personal module, phase 3: a trainer plans a student's training — routines written, changed
 // or taken out, and which weekdays they fall on — saved to the student's profile through
@@ -88,7 +90,8 @@ function WeekEditor({ studentId, Ss, onSaved, close }) {
 }
 
 /** The student's plan, for their trainer to change: routines, their exercises, the weekdays. */
-export function PlanTab({ studentId, Ss, nameOf, reload }) {
+export function PlanTab({ studentId, Ss, nameOf, reload, record = null }) {
+  const ai = useStore(s => !!s.config?.trainer_ai)
   const today = todayISO()
   const todays = effectiveRoutines(Ss, today)
   const routines = Ss.routines || []
@@ -100,6 +103,7 @@ export function PlanTab({ studentId, Ss, nameOf, reload }) {
     <div className="card small"><b>{t('Today')}:</b> {todays.length ? todays.map(r => r.name).join(' + ') : t('Rest Day')}</div>
     <div className="row" style={{ gap: 8, margin: '10px 0' }}>
       <Button icon="plus" variant="primary" onClick={() => open(null)}>{t('New routine')}</Button>
+      {ai && <Button icon="sparkles" onClick={() => draftSheet({ studentId, record, Ss, nameOf, onSent: reload })}>{t('Draft with AI')}</Button>}
       {routines.length > 0 && <Button icon="calendar" onClick={() => ui().openSheet(close => <WeekEditor studentId={studentId} Ss={Ss} onSaved={reload} close={close} />)}>{t('Days of the week')}</Button>}
     </div>
     {routines.length ? routines.map(r => <div key={r.id} className="card student-routine">

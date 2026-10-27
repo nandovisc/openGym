@@ -30,6 +30,7 @@ const COPY = {
     classTrainerTitle: 'Class with {0} at {1}', classStudentTitle: 'Class with {0} at {1}', classBody: 'In half an hour.',
     trainerPlanTitle: '{0} updated your plan', trainerPlanBody: 'New: {0}.', trainerPlanBodyNone: 'Open the app to see it.',
     trainerWorkoutTitle: '{0} logged your workout', trainerWorkoutBody: '{0} is in your history.',
+    trainerNoticeTitle: 'A notice from {0}', trainerDocTitle: '{0} shared a document',
     smartSleepTitle: 'Last night has not arrived', smartSleepBody: 'Open Shortcuts and run the sleep one, or log the night by hand.',
     meals: { breakfast: 'breakfast', morningSnack: 'morning snack', lunch: 'lunch', snack: 'afternoon snack', dinner: 'dinner', supper: 'supper' },
   },
@@ -61,6 +62,7 @@ const COPY = {
     classTrainerTitle: 'Aula com {0} às {1}', classStudentTitle: 'Aula com {0} às {1}', classBody: 'Daqui a pouco.',
     trainerPlanTitle: '{0} atualizou seu plano', trainerPlanBody: 'Novidades: {0}.', trainerPlanBodyNone: 'Abra o app para ver.',
     trainerWorkoutTitle: '{0} registrou seu treino', trainerWorkoutBody: '{0} já está no seu histórico.',
+    trainerNoticeTitle: 'Aviso de {0}', trainerDocTitle: '{0} compartilhou um documento',
     smartSleepTitle: 'A noite de ontem não chegou', smartSleepBody: 'Abra o Atalhos e rode o do sono, ou registre a noite à mão.',
     meals: { breakfast: 'café da manhã', morningSnack: 'lanche da manhã', lunch: 'almoço', snack: 'lanche da tarde', dinner: 'jantar', supper: 'ceia' },
   },
@@ -167,6 +169,15 @@ export function trainerPlanPush(lang, trainer, names) {
 export function trainerWorkoutPush(lang, trainer, name) {
   const copy = copyFor(lang);
   return { title: fill(copy.trainerWorkoutTitle, trainer), body: fill(copy.trainerWorkoutBody, name), tag: 'trainer-workout', url: '#/history' };
+}
+
+// A trainer's notice to their students, or a document shared with one (server.js POST
+// /api/trainer/notify): the notice's title, or the document's, read in full on My personal trainer.
+export function trainerNoticePush(lang, trainer, kind, title) {
+  const copy = copyFor(lang);
+  return kind === 'document'
+    ? { title: fill(copy.trainerDocTitle, trainer), body: title, tag: 'trainer-doc', url: '#/my-trainer' }
+    : { title: fill(copy.trainerNoticeTitle, trainer), body: title, tag: 'trainer-notice', url: '#/my-trainer' };
 }
 
 // A smart reminder (smart-nudges.js smartDue), from what the person usually does.

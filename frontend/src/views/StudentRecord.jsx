@@ -14,6 +14,8 @@ import { myTrainersSheet } from './Trainer.jsx'
 import { RecordPayments } from './Finance.jsx'
 import { RecordAssessments } from './Assessment.jsx'
 import { ageOn } from '../lib/assessment.js'
+import { groupsOf } from '../lib/notices.js'
+import { RecordDocuments, RecordTasks } from './TrainerBoard.jsx'
 
 // The Personal module, phase 4: a trainer's own record of each student (lib/students.js) — who
 // they are, what they train for, what to keep in mind, what they pay — and the invite that brings
@@ -38,9 +40,10 @@ export function billingText(b) {
 function StudentForm({ prev, onSaved, close }) {
   const [f, setF] = useState(() => ({
     name: prev?.name || '', phone: prev?.phone || '', email: prev?.email || '', goal: prev?.goal || '',
-    notes: prev?.notes || '', restrictions: prev?.restrictions || '', start: prev?.start || todayISO(), birth: prev?.birth || '', sex: prev?.sex || '',
+    notes: prev?.notes || '', restrictions: prev?.restrictions || '', start: prev?.start || todayISO(), birth: prev?.birth || '', sex: prev?.sex || '', group: prev?.group || '',
     status: prev?.status || '', billing: { kind: prev?.billing?.kind || '', amount: prev?.billing?.amount ?? null, dueDay: prev?.billing?.dueDay ?? 5, classes: prev?.billing?.classes ?? 8 }
   }))
+  const groups = groupsOf(useStore(st => st.S.students))
   const set = patch => setF(x => ({ ...x, ...patch }))
   const setB = patch => setF(x => ({ ...x, billing: { ...x.billing, ...patch } }))
   const save = () => {
@@ -63,6 +66,8 @@ function StudentForm({ prev, onSaved, close }) {
           options={[{ value: 'none', label: '–' }, { value: 'f', label: t('Female') }, { value: 'm', label: t('Male') }]} /></div>
     </div>
     {field('goal', t('Goal'), { maxLength: 120, placeholder: t('Gain muscle, lose fat, run 10 km…') })}
+    {field('group', t('Group'), { maxLength: 40, list: 'rec-groups', placeholder: t('Morning, Online… (for notices)') })}
+    <datalist id="rec-groups">{groups.map(g => <option key={g} value={g} />)}</datalist>
     <label className="rec-field"><span className="small dim">{t('Health history and notes')}</span>
       <textarea className="input" rows={3} maxLength={2000} value={f.notes} onChange={e => set({ notes: e.target.value })} placeholder={t('Past injuries, medications, how they train, what they like…')} /></label>
     <label className="rec-field"><span className="small dim">{t('Restrictions')}</span>
@@ -133,12 +138,15 @@ export function RecordTab({ record, name, studentId }) {
       {record.phone && <Row title={t('Phone')} value={record.phone} />}
       {record.email && <Row title={t('E-mail')} value={record.email} />}
       {record.goal && <Row title={t('Goal')} subtitle={record.goal} />}
+      {record.group && <Row title={t('Group')} value={record.group} />}
       <Row title={t(BILLING_LABEL[record.billing?.kind] || 'Payment')} subtitle={billingText(record.billing)} />
       {record.start && <Row title={t('Started on')} value={fmtDate(record.start, true)} />}
       {(record.birth || record.sex) && <Row title={t('Age and sex')} value={[record.birth ? t('{0} years', ageOn(record.birth, todayISO())) : null, record.sex ? t(record.sex === 'f' ? 'Female' : 'Male') : null].filter(Boolean).join(' · ')} />}
     </Section>
     <RecordAssessments record={record} />
     <RecordPayments record={record} />
+    <RecordTasks record={record} />
+    <RecordDocuments record={record} />
     {(record.notes || record.restrictions) && <div className="card small rec-notes">
       {record.notes && <><b>{t('Health history and notes')}</b><p>{record.notes}</p></>}
       {record.restrictions && <><b>{t('Restrictions')}</b><p>{record.restrictions}</p></>}

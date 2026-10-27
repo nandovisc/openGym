@@ -2420,3 +2420,24 @@ a.btn{text-decoration:none;box-sizing:border-box}
 .asm-pair-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px }
 .asm-pair-img { aspect-ratio: 3 / 4; border-radius: 12px; overflow: hidden; background: var(--fill-3, #222) }
 .asm-pair-img > *, .asm-pair-img img { width: 100%; height: 100%; max-height: none; object-fit: cover; display: block; border-radius: 0 }
+
+/* ---- the Personal module, phase 9: tasks, notices, documents (views/TrainerBoard.jsx) ---- */
+.task-row { display: flex; align-items: center; gap: 12px; padding: 9px 14px; border-top: var(--hair) solid var(--sep) }
+.sect-b .task-row:first-child, .card .task-row:first-of-type { border-top: 0 }
+.card .task-row { padding: 7px 0 }
+.task-check { flex: none; width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--label-3, #888); background: none; display: grid; place-items: center; color: var(--on-acc, #000); padding: 0; cursor: pointer }
+.task-check.on { background: var(--acc); border-color: var(--acc) }
+.task-check svg { width: 14px; height: 14px }
+.task-body { flex: 1; min-width: 0; text-align: start; background: none; border: 0; padding: 0; color: inherit; font: inherit; cursor: pointer }
+.task-body .tt { font-size: 15px }
+.task-body .ss { font-size: 12.5px; color: var(--label-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+.task-row.done .tt { text-decoration: line-through; color: var(--label-2) }
+.board-links { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px }
+.board-link { display: flex; align-items: center; gap: 8px; margin: 0; padding: 12px 14px; font: inherit; font-weight: 600; color: inherit; cursor: pointer; text-align: start }
+.board-link svg { width: 20px; height: 20px; color: var(--acc) }
+.board-link span:first-of-type { flex: 1 }
+.notice-body { white-space: pre-wrap; line-height: 1.45 }
+.notice-item { padding: 10px 14px; border-top: var(--hair) solid var(--sep) }
+.notice-item:first-child { border-top: 0 }
+.notice-item .notice-body { margin: 4px 0 }
+.notice-clip { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden }

@@ -42,6 +42,9 @@ const LISTS = {
   u: ['sessionSeries', e => e?.id],
   f: ['payments', e => e?.id],
   a: ['assessments', e => e?.id],
+  j: ['notices', e => e?.id],
+  e: ['documents', e => e?.id],
+  t: ['tasks', e => e?.id],
 }
 // Not content: the stamps and the revision say when, not what (`deleted` and `edited` go with a
 // change the lists or the rest already count); the running workout never syncs.

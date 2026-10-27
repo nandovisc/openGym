@@ -18,6 +18,7 @@ import { RecordTab, studentFormSheet } from './StudentRecord.jsx'
 import { attachLinks, roster } from '../lib/students.js'
 import { PlanTab } from './StudentPlan.jsx'
 import { CoachOutbox, trainNowSheet } from './TrainNow.jsx'
+import { dueCount } from '../lib/tasks.js'
 
 // The Personal module, phase 2: a trainer's students and, for each, their training as the link
 // shares it (GET /api/trainer/student) — the workouts, how each exercise moves, the plan, the body
@@ -56,6 +57,7 @@ export function StudentsList() {
       <button className="iconbtn" onClick={() => studentFormSheet(null, r => nav('/students/record/' + r.id))} aria-label={t('New student')}><Icon name="plus" /></button>
     </div>
     <CoachOutbox />
+    <BoardLinks nav={nav} />
     {rows === null ? <div className="muted small">{t('Loading…')}</div>
       : rows.length ? <div className="list">{rows.map(r => <button key={r.key} className="item student-row" onClick={() => nav(r.link ? '/students/' + r.link.student.id : '/students/record/' + r.record.id)}>
         <span className="lrow-i" style={{ '--tint': r.link ? 'var(--teal)' : 'var(--grey)' }}><Icon name="figureStrength" /></span>
@@ -67,6 +69,16 @@ export function StudentsList() {
       </button>)}</div>
         : <div className="card muted small">{t('No students yet. Add one and send them the invite link, or hand them your code (the key above).')}
           <div style={{ height: 10 }} /><Button variant="primary" icon="plus" onClick={() => studentFormSheet(null, r => nav('/students/record/' + r.id))}>{t('New student')}</Button></div>}
+  </div>
+}
+
+// Notices and tasks (views/TrainerBoard.jsx), a tap from the list of students.
+function BoardLinks({ nav }) {
+  const S = useStore(s => s.S)
+  const due = dueCount(S.tasks, todayISO())
+  return <div className="board-links">
+    <button className="card board-link" onClick={() => nav('/notices')}><Icon name="bell" /><span>{t('Notices')}</span></button>
+    <button className="card board-link" onClick={() => nav('/tasks')}><Icon name="checkCircle" /><span>{t('Tasks')}</span>{due > 0 && <span className="tag warn">{due}</span>}</button>
   </div>
 }
 
@@ -163,7 +175,7 @@ export function StudentView() {
     {tab === 'workouts' && <WorkoutsTab Ss={Ss} />}
     {tab === 'progress' && <ProgressTab Ss={Ss} />}
     {tab === 'record' && <RecordTab record={record} name={d.student.name} studentId={d.student.id} />}
-    {tab === 'plan' && <PlanTab studentId={d.student.id} Ss={Ss} nameOf={nameIn(Ss)} reload={load} />}
+    {tab === 'plan' && <PlanTab studentId={d.student.id} Ss={Ss} nameOf={nameIn(Ss)} reload={load} record={record} />}
     {tab === 'body' && body && (bw.length ? <div className="card">
       <div className="muted small">{t('Body weight')}</div>
       <div className="big" style={{ margin: '4px 0 8px' }}>{fmtNum(bw.at(-1).w)} {Ss.unit}</div>

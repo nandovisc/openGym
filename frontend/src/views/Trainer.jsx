@@ -118,6 +118,6 @@ export function TrainerRows() {
   if (!user) return null
   return <>
     {user.trainer && <Row icon="star" iconTint="var(--orange)" title={t('My students')} subtitle={t('Your code, and who shares their training with you')} accessory="chevron" onClick={() => nav('/students')} />}
-    <Row icon="link" iconTint="var(--teal)" title={t('My personal trainer')} subtitle={t('Share your training with your trainer')} accessory="chevron" onClick={myTrainersSheet} />
+    <Row icon="link" iconTint="var(--teal)" title={t('My personal trainer')} subtitle={t('Notices, documents, and what you share')} accessory="chevron" onClick={() => nav('/my-trainer')} />
   </>
 }

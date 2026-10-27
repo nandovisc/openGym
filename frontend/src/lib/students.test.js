@@ -10,6 +10,7 @@ describe('a trainer’s records of their students', () => {
     expect([r.birth, r.sex]).toEqual([null, null])
     expect(normalizeStudent({ name: 'Ana', birth: '1995-01-10', sex: 'f' })).toMatchObject({ birth: '1995-01-10', sex: 'f' })
     expect(normalizeStudent({ name: 'Ana', birth: '10/01/1995', sex: 'x' })).toMatchObject({ birth: null, sex: null })
+    expect(normalizeStudent({ name: 'Ana', group: '  Turma   da manhã ' }).group).toBe('Turma da manhã')
     const p = normalizeStudent({ name: 'João', billing: { kind: 'package', amount: 600 } }, { now: Date.parse('2026-10-26T12:00:00') })
     expect(p.billing).toEqual({ kind: 'package', amount: 600, classes: 8, since: '2026-10' })
     // The month the billing started stays while its kind does, and starts again with a new kind.

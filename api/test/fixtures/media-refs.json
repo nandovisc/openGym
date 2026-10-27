@@ -1,5 +1,5 @@
 {
-  "about": "Which blob hashes a state references. api/media.js referencedHashes() and frontend/src/lib/media-refs.js referencedHashes() must both give `expect` (compared as sorted lists) for every `state` here: the server keeps and the client keeps exactly this set. Each of customEx[].media.hash, customEx[].media.poster.hash and the same two of every entry of workouts[].media and of exams[].files, meals[].photo, bodyweight[].photos[].m and assessments[].photos[].m count on its own when it matches /^[0-9a-f]{64}$/ — deliberately looser than normalizeMediaRef, because this set decides what is kept.",
+  "about": "Which blob hashes a state references. api/media.js referencedHashes() and frontend/src/lib/media-refs.js referencedHashes() must both give `expect` (compared as sorted lists) for every `state` here: the server keeps and the client keeps exactly this set. Each of customEx[].media.hash, customEx[].media.poster.hash and the same two of every entry of workouts[].media and of exams[].files, meals[].photo, bodyweight[].photos[].m, assessments[].photos[].m and documents[].m count on its own when it matches /^[0-9a-f]{64}$/ — deliberately looser than normalizeMediaRef, because this set decides what is kept.",
   "referencedHashes": [
     {
       "name": "no state at all",
@@ -1138,6 +1138,41 @@
       },
       "expect": [
         "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+      ]
+    },
+    {
+      "name": "the file of a trainer's document counts, past junk entries",
+      "state": {
+        "documents": [
+          {
+            "id": "d1",
+            "m": {
+              "kind": "doc",
+              "hash": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+              "mime": "application/pdf",
+              "size": 10,
+              "at": 1
+            }
+          },
+          {
+            "id": "d2"
+          },
+          "junk",
+          {
+            "id": "d3",
+            "m": {
+              "kind": "doc",
+              "hash": "bad"
+            }
+          },
+          {
+            "id": "d4",
+            "m": "no"
+          }
+        ]
+      },
+      "expect": [
+        "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
       ]
     }
   ]

@@ -46,6 +46,7 @@ import { Section, Row, SelectRow, Switch, Segmented, Button, TextField, SearchFi
 import { PAGES, ROOT_GROUPS, pageVisible, searchSettings, pageTrail } from './settings-pages.js'
 import { sleepSyncSheet } from './Sleep.jsx'
 import { TrainerRows } from './Trainer.jsx'
+import { apiKeysSheet } from './ApiKeys.jsx'
 import { MODULES, healthOn, moduleOn } from '../lib/modules.js'
 
 /* Settings (v1.3.11). The root is one screen: an account card, eleven rows that each open a page
@@ -870,6 +871,7 @@ export default function Settings({ page = null, find = null, via = null }) {
         {MOBILE && <>
           {user.admin && <Row icon="crown" iconTint="var(--indigo)" title={t('Admin dashboard')} accessory="chevron" onClick={() => nav('/admin')} />}
           <TrainerRows />
+          <Row icon="key" iconTint="var(--teal)" title={t('API keys')} subtitle={t('Share your data with other apps')} accessory="chevron" onClick={apiKeysSheet} />
           <AccountIdRow id={user.id} />
           <Row icon="signOut" iconTint="var(--red)" title={t('Disconnect')} danger onClick={disconnect} />
         </>}
@@ -893,6 +895,7 @@ export default function Settings({ page = null, find = null, via = null }) {
           <TrainerRows />
           <PasskeysRow state={passkeys.st} changed={credsChanged} />
           <DeviceLinkRow state={passkeys.st} />
+          <Row icon="key" iconTint="var(--teal)" title={t('API keys')} subtitle={t('Share your data with other apps')} accessory="chevron" onClick={apiKeysSheet} />
           <Row icon="qr" iconTint="var(--blue)" title={t('Pair the mobile app')} subtitle={t('Connect the openGym app on your phone to this account.')} accessory="chevron"
             onClick={() => useUI.getState().openSheet(close => <PairSheet close={close} />)} />
           {pwOn && <PasswordRow version={credsV} />}

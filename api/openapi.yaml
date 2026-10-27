@@ -161,6 +161,14 @@ tags:
     description: >-
       The Personal module: a trainer's code, the students who linked to them with it, and the
       links either side can end. Only training is ever shared, never the health modules.
+  - name: keys
+    description: |
+      A person's own API keys, made in Settings → API keys, for another app to read their data
+      — and write it, when the key says so. Each key opens some areas only (`training`, `body`,
+      `health`, `exams`, and for a trainer `personal`). `/api/v1/*` takes the key only
+      (`Authorization: Bearer ogk_…`), never a cookie, and answers any origin (CORS). 600
+      requests an hour per key. A write is stamped by the server like any device's edit, so
+      every device keeps it on its next sync.
 
 security:
   - cookieAuth: []
@@ -443,6 +451,151 @@ paths:
         '401': { description: No token, or not a valid one (`sleep-token`). }
         '429': { description: Too many posts this hour (`locked`). }
         '503': { description: The profile could not be read. }
+  /api/account/api-keys:
+    get:
+      tags: [keys]
+      operationId: listApiKeys
+      summary: The signed-in person's API keys
+      description: '`{ keys: [{ id, name, scopes, write, created, last }], max }` — never a key or its hash.'
+      responses:
+        '200': { description: The keys. }
+        '401': { description: Not signed in. }
+    post:
+      tags: [keys]
+      operationId: makeApiKey
+      summary: Make an API key
+      description: |
+        Body `{ name, scopes: ['training' | 'body' | 'health' | 'exams' | 'personal'], write }`.
+        `personal` (a trainer's records of their students) only for a trainer. The key
+        (`ogk_<id>_<secret>`) is answered this once and stored only as a SHA-256.
+      responses:
+        '200': { description: '`{ key, id, name, scopes, write, created, last: null }`.' }
+        '400': { description: '`name` (no name) or `scopes` (no area).' }
+        '401': { description: Not signed in. }
+        '409': { description: '`too-many`: ten keys already.' }
+    delete:
+      tags: [keys]
+      operationId: revokeApiKey
+      summary: Revoke an API key
+      parameters:
+        - { name: id, in: query, required: true, schema: { type: string } }
+      responses:
+        '200': { description: Revoked; the key stops working at once. }
+        '401': { description: Not signed in. }
+        '404': { description: No such key of this person. }
+  /api/v1/me:
+    get:
+      tags: [keys]
+      operationId: apiMe
+      summary: Whose data a key reads, and what it may do
+      security: [{ apiKeyAuth: [] }]
+      responses:
+        '200': { description: '`{ user: { id, name }, unit, key: { id, name, scopes, write, created, last } }`.' }
+        '401': { description: '`api-key`: no key, a wrong one, or a revoked one.' }
+        '429': { description: '`locked`: over 600 requests this hour; `Retry-After` says when.' }
+  /api/v1/settings:
+    get:
+      tags: [keys]
+      operationId: apiSettings
+      summary: The settings of the areas a key opens
+      description: |
+        `training`: `week`, `dayPlan`, `exWeights`, `queue`; `body`: `targetW`, `unit`;
+        `health`: `nutrition`, `sleepPrefs`, `waterPrefs`.
+      security: [{ apiKeyAuth: [] }]
+      responses:
+        '200': { description: '`{ settings }`.' }
+        '401': { description: Not a valid key. }
+  /api/v1/{list}:
+    parameters:
+      - name: list
+        in: path
+        required: true
+        description: |
+          `training`: workouts, routines, customEx · `body`: bodyweight, measurements ·
+          `health`: sleep, water, meals, foods, savedMeals, meds, medLog, habits, habitLog,
+          habitGroups · `exams`: exams · `personal`: students, sessions, sessionSeries,
+          payments, assessments, notices, documents, tasks.
+        schema: { type: string }
+    get:
+      tags: [keys]
+      operationId: apiList
+      summary: A page of a list
+      description: |
+        Newest day first. `from` / `to` (YYYY-MM-DD, inclusive) keep the entries of those days;
+        `limit` (default 100, at most 500); `cursor` is the `next` of the page before. Entries
+        come without the sync stamps (`_ts`, `_f`).
+      security: [{ apiKeyAuth: [] }]
+      parameters:
+        - { name: from, in: query, schema: { type: string, format: date } }
+        - { name: to, in: query, schema: { type: string, format: date } }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 500 } }
+        - { name: cursor, in: query, schema: { type: string } }
+      responses:
+        '200': { description: '`{ items, total, next }` — `next` is null on the last page.' }
+        '401': { description: Not a valid key. }
+        '403': { description: '`scope`: the key does not open this list''s area.' }
+        '404': { description: No such list. }
+    post:
+      tags: [keys]
+      operationId: apiAdd
+      summary: Add an entry (a key that writes)
+      description: |
+        The server gives the id (any sent is ignored), except where the app derives it:
+        `medLog` (`medId|d|time`), `habitLog` (`habitId|d`); `bodyweight` and `measurements` are
+        keyed by their day. What each list needs, e.g. `bodyweight { d, w }`,
+        `water { d, ml }`, `sleep { d, bed, wake }`, `meals { d, slot, items }`,
+        `medLog { medId, d, time, status }`, `workouts { d, start, entries }`. At most 32 KB.
+      security: [{ apiKeyAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object }
+            example: { d: '2026-10-27', w: 79.4 }
+      responses:
+        '201': { description: '`{ ok: true, entry }`.' }
+        '400': { description: '`{ error, field }`: the field that is missing or wrong.' }
+        '403': { description: '`read-only` (the key only reads) or `scope`.' }
+        '409': { description: An entry with this key exists; change it with PATCH. }
+  /api/v1/{list}/{id}:
+    parameters:
+      - { name: list, in: path, required: true, schema: { type: string } }
+      - { name: id, in: path, required: true, description: 'The entry''s id; its day for bodyweight and measurements; `d|start` for a workout without an id.', schema: { type: string } }
+    get:
+      tags: [keys]
+      operationId: apiGet
+      summary: One entry
+      security: [{ apiKeyAuth: [] }]
+      responses:
+        '200': { description: '`{ entry }`.' }
+        '404': { description: No such entry. }
+    patch:
+      tags: [keys]
+      operationId: apiChange
+      summary: Change an entry's fields (a key that writes)
+      description: The fields sent replace the stored ones; the id and the fields it is made of stay.
+      security: [{ apiKeyAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object }
+            example: { ml: 300 }
+      responses:
+        '200': { description: '`{ ok: true, entry }`.' }
+        '400': { description: '`{ error, field }`.' }
+        '403': { description: '`read-only` or `scope`.' }
+        '404': { description: No such entry. }
+    delete:
+      tags: [keys]
+      operationId: apiRemove
+      summary: Remove an entry (a key that writes)
+      description: The removal is put on record, so no device brings the entry back.
+      security: [{ apiKeyAuth: [] }]
+      responses:
+        '200': { description: '`{ ok: true }`.' }
+        '403': { description: '`read-only` or `scope`.' }
+        '404': { description: No such entry. }
   /api/trainer/code:
     get:
       tags: [trainer]
@@ -3440,6 +3593,14 @@ components:
         The same signed session token, carried as `Authorization: Bearer <token>` by
         the paired mobile app (obtained from `POST /api/pair/redeem`). Bearer requests
         skip the CSRF origin check; a browser never attaches this header on its own.
+
+    apiKeyAuth:
+      type: http
+      scheme: bearer
+      description: >-
+        A person's own API key (`ogk_<id>_<secret>`), made in Settings → API keys, as
+        `Authorization: Bearer <key>`. Only the `/api/v1/*` routes take it, and they take
+        nothing else.
 
   responses:
     Unauthorized:

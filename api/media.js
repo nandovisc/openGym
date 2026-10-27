@@ -86,8 +86,9 @@ export function mediaLimits(env = process.env) {
 // workouts[].media), so a signed-in client may offer attaching them. A server from before says
 // nothing, and the client offers them on custom exercises only. `bodyweight: true` is the same
 // for the progress photos of a weigh-in (bodyweight[].photos[].m), `assessments: true` for the
-// photos of a trainer's assessment of a student (assessments[].photos[].m).
-export const mediaConfig = l => ({ imageMB: l.imageMB, gifMB: l.gifMB, videoMB: l.videoMB, videoSec: l.videoSec, docMB: l.docMB, quotaMB: l.quotaMB, workouts: true, bodyweight: true, assessments: true });
+// photos of a trainer's assessment of a student (assessments[].photos[].m), `documents: true` for
+// a trainer's documents of a student (documents[].m).
+export const mediaConfig = l => ({ imageMB: l.imageMB, gifMB: l.gifMB, videoMB: l.videoMB, videoSec: l.videoSec, docMB: l.docMB, quotaMB: l.quotaMB, workouts: true, bodyweight: true, assessments: true, documents: true });
 
 /* ---------------------------------------------------------------- errors */
 
@@ -322,6 +323,10 @@ export function referencedHashes(state) {
   for (const a of Array.isArray(state.assessments) ? state.assessments : []) {
     if (!isObj(a) || !Array.isArray(a.photos)) continue;
     for (const p of a.photos) if (isObj(p) && isObj(p.m)) ref(p.m);
+  }
+  // A trainer's documents of a student (a contract, a diet, a certificate): one file each.
+  for (const d of Array.isArray(state.documents) ? state.documents : []) {
+    if (isObj(d) && isObj(d.m)) ref(d.m);
   }
   return out;
 }

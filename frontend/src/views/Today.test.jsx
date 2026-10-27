@@ -27,12 +27,12 @@ afterEach(() => { for (const [root, c] of mounted.splice(0)) { act(() => root.un
 
 describe('Today', () => {
   it('orders the cards by the hour, or by the person, and leaves out what is switched off', () => {
-    expect(cardOrder({}, 8).slice(0, 4)).toEqual(['classes', 'finance', 'sleep', 'weight'])
-    expect(cardOrder({}, 20).slice(0, 3)).toEqual(['classes', 'finance', 'habits'])
-    expect(cardOrder({}, 14).slice(0, 2)).toEqual(['classes', 'finance'])
-    expect(cardOrder({ homeCards: { order: ['weight', 'food'], hidden: ['exams'] } }, 8)).toEqual(['weight', 'food', 'classes', 'finance', 'training', 'water', 'habits', 'meds', 'sleep', 'week', 'patterns'])
-    expect(cardOrder({ modules: { food: false, sleep: false } }, 14)).toEqual(['classes', 'finance', 'training', 'water', 'habits', 'meds', 'weight', 'week', 'patterns', 'exams'])
-    expect(cardOrder({ modules: { food: false, sleep: false, habits: false, meds: false, exams: false } }, 14)).toEqual(['classes', 'finance', 'training', 'weight', 'week', 'patterns'])
+    expect(cardOrder({}, 8).slice(0, 6)).toEqual(['classes', 'tasks', 'notices', 'finance', 'sleep', 'weight'])
+    expect(cardOrder({}, 20).slice(0, 5)).toEqual(['classes', 'tasks', 'notices', 'finance', 'habits'])
+    expect(cardOrder({}, 14).slice(0, 4)).toEqual(['classes', 'tasks', 'notices', 'finance'])
+    expect(cardOrder({ homeCards: { order: ['weight', 'food'], hidden: ['exams'] } }, 8)).toEqual(['weight', 'food', 'classes', 'tasks', 'notices', 'finance', 'training', 'water', 'habits', 'meds', 'sleep', 'week', 'patterns'])
+    expect(cardOrder({ modules: { food: false, sleep: false } }, 14)).toEqual(['classes', 'tasks', 'notices', 'finance', 'training', 'water', 'habits', 'meds', 'weight', 'week', 'patterns', 'exams'])
+    expect(cardOrder({ modules: { food: false, sleep: false, habits: false, meds: false, exams: false } }, 14)).toEqual(['classes', 'tasks', 'notices', 'finance', 'training', 'weight', 'week', 'patterns'])
     expect([slotByHour(new Date('2026-10-22T08:00')), slotByHour(new Date('2026-10-22T12:00')), slotByHour(new Date('2026-10-22T17:00')), slotByHour(new Date('2026-10-22T20:00'))]).toEqual(['breakfast', 'lunch', 'snack', 'dinner'])
     expect([slotByHour(new Date('2026-10-22T10:30')), slotByHour(new Date('2026-10-22T22:00'))]).toEqual(['morningSnack', 'supper'])
   })

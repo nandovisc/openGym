@@ -403,11 +403,11 @@ const bodyweightKey = e => `${e?.d}|${e?.t ?? ''}`
 // way gym cards are — union by id, field by field for an id both copies have, removals stamped.
 // A dose of a schedule has an id made of the medication, the day and the time (lib/meds.js), so
 // the same dose marked on two devices is one entry, not two.
-export const HEALTH_LISTS = ['meds', 'medLog', 'exams', 'meals', 'foods', 'sleep', 'savedMeals', 'habits', 'habitLog', 'habitGroups', 'water', 'students', 'sessions', 'sessionSeries', 'payments', 'assessments']
+export const HEALTH_LISTS = ['meds', 'medLog', 'exams', 'meals', 'foods', 'sleep', 'savedMeals', 'habits', 'habitLog', 'habitGroups', 'water', 'students', 'sessions', 'sessionSeries', 'payments', 'assessments', 'notices', 'documents', 'tasks']
 const RESET_LISTS = {
   workouts: workoutKey, routines: x => x?.id, customEx: x => x?.id, bodyweight: bodyweightKey,
   measurements: bodyweightKey, gymCards: x => x?.id, equipProfiles: x => x?.id, favEx: x => x,
-  meds: x => x?.id, medLog: x => x?.id, exams: x => x?.id, meals: x => x?.id, foods: x => x?.id, sleep: x => x?.id, savedMeals: x => x?.id, habits: x => x?.id, habitLog: x => x?.id, habitGroups: x => x?.id, water: x => x?.id, students: x => x?.id, sessions: x => x?.id, sessionSeries: x => x?.id, payments: x => x?.id, assessments: x => x?.id,
+  meds: x => x?.id, medLog: x => x?.id, exams: x => x?.id, meals: x => x?.id, foods: x => x?.id, sleep: x => x?.id, savedMeals: x => x?.id, habits: x => x?.id, habitLog: x => x?.id, habitGroups: x => x?.id, water: x => x?.id, students: x => x?.id, sessions: x => x?.id, sessionSeries: x => x?.id, payments: x => x?.id, assessments: x => x?.id, notices: x => x?.id, documents: x => x?.id, tasks: x => x?.id,
 }
 const RESET_MAPS = ['exNotes', 'barWeights', ...STAMPED_MAPS]
 /** An entry's name in resetIds: a workout's id (or day and start), a weigh-in's day and time, … */
@@ -479,6 +479,9 @@ export function sinceReset(S, at, ids) {
     out.sessionSeries = list(S.sessionSeries).filter(x => x && after(x._ts))
     out.payments = list(S.payments).filter(x => x && after(x._ts))
     out.assessments = list(S.assessments).filter(x => x && after(x._ts))
+    out.notices = list(S.notices).filter(x => x && after(x._ts))
+    out.documents = list(S.documents).filter(x => x && after(x._ts))
+    out.tasks = list(S.tasks).filter(x => x && after(x._ts))
     // No time of their own: taken for what they were before the reset, which cleared them.
     out.equipProfiles = []
     out.gymCards = []
@@ -521,7 +524,7 @@ export function sinceReset(S, at, ids) {
 const DEL_LISTS = {
   workouts: workoutKey, routines: x => x?.id, customEx: x => x?.id, bodyweight: e => e?.d,
   measurements: e => e?.d, gymCards: x => x?.id, equipProfiles: x => x?.id, favEx: x => x,
-  meds: x => x?.id, medLog: x => x?.id, exams: x => x?.id, meals: x => x?.id, foods: x => x?.id, sleep: x => x?.id, savedMeals: x => x?.id, habits: x => x?.id, habitLog: x => x?.id, habitGroups: x => x?.id, water: x => x?.id, students: x => x?.id, sessions: x => x?.id, sessionSeries: x => x?.id, payments: x => x?.id, assessments: x => x?.id,
+  meds: x => x?.id, medLog: x => x?.id, exams: x => x?.id, meals: x => x?.id, foods: x => x?.id, sleep: x => x?.id, savedMeals: x => x?.id, habits: x => x?.id, habitLog: x => x?.id, habitGroups: x => x?.id, water: x => x?.id, students: x => x?.id, sessions: x => x?.id, sessionSeries: x => x?.id, payments: x => x?.id, assessments: x => x?.id, notices: x => x?.id, documents: x => x?.id, tasks: x => x?.id,
 }
 // When an entry was last edited, to hold against a removal. Entries with no time of their own
 // (favourites, and cards and profiles saved before they were stamped) count as older than any
@@ -531,7 +534,7 @@ const DEL_TIME = {
   bodyweight: e => Number(e?.t) || 0, measurements: e => Number(e?.t) || 0,
   gymCards: x => Number(x?._ts) || 0, equipProfiles: x => Number(x?._ts) || 0,
   meds: x => Number(x?._ts) || 0, medLog: x => Number(x?._ts) || 0, exams: x => Number(x?._ts) || 0,
-  meals: x => Number(x?._ts) || 0, foods: x => Number(x?._ts) || 0, sleep: x => Number(x?._ts) || 0, savedMeals: x => Number(x?._ts) || 0, habits: x => Number(x?._ts) || 0, habitLog: x => Number(x?._ts) || 0, habitGroups: x => Number(x?._ts) || 0, water: x => Number(x?._ts) || 0, students: x => Number(x?._ts) || 0, sessions: x => Number(x?._ts) || 0, sessionSeries: x => Number(x?._ts) || 0, payments: x => Number(x?._ts) || 0, assessments: x => Number(x?._ts) || 0,
+  meals: x => Number(x?._ts) || 0, foods: x => Number(x?._ts) || 0, sleep: x => Number(x?._ts) || 0, savedMeals: x => Number(x?._ts) || 0, habits: x => Number(x?._ts) || 0, habitLog: x => Number(x?._ts) || 0, habitGroups: x => Number(x?._ts) || 0, water: x => Number(x?._ts) || 0, students: x => Number(x?._ts) || 0, sessions: x => Number(x?._ts) || 0, sessionSeries: x => Number(x?._ts) || 0, payments: x => Number(x?._ts) || 0, assessments: x => Number(x?._ts) || 0, notices: x => Number(x?._ts) || 0, documents: x => Number(x?._ts) || 0, tasks: x => Number(x?._ts) || 0,
 }
 // Per field, the most stamps kept; past it the oldest go first.
 export const DELETED_MAX = 5000
@@ -638,7 +641,7 @@ function applyDeletions(S, deleted) {
 const OWN_MERGE = new Set([
   '_ts', '_rev', '_wid', '_wids', '_unstamped', '_prior', 'active', 'unit', 'unitSet', 'resetAt', 'resetIds', 'deleted', 'edited', 'undone', 'routineOrder',
   'workouts', 'routines', 'customEx', 'equipProfiles', 'gymCards', 'bodyweight', 'measurements', 'favEx',
-  'meds', 'medLog', 'exams', 'meals', 'foods', 'sleep', 'savedMeals', 'habits', 'habitLog', 'habitGroups', 'water', 'students', 'sessions', 'sessionSeries', 'payments', 'assessments',
+  'meds', 'medLog', 'exams', 'meals', 'foods', 'sleep', 'savedMeals', 'habits', 'habitLog', 'habitGroups', 'water', 'students', 'sessions', 'sessionSeries', 'payments', 'assessments', 'notices', 'documents', 'tasks',
   'exWeights', 'balanceOverrides', 'loadKind', 'plates', 'dbLoad', 'dumbbells', 'dayNotes',
 ])
 // Stamped per key instead of whole: one day of the plan, one exercise's note or bar.

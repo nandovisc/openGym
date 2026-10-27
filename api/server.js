@@ -18,10 +18,11 @@ import * as coachJobs from './coach/jobs.js';
 import { coachRoutes } from './coach/routes.js';
 import { startCadence } from './coach/cadence.js';
 import { startWarmup } from './coach/warmup.js';
-import { classReminderPush, dayReminderPush, groupReminderPush, habitReminderPush, healthRecapPush, medReminderPush, nudgePush, restTimerPush, smartPush, testPush, trainerPlanPush, trainerWorkoutPush, weeklyRecapPush } from './push-messages.js';
+import { classReminderPush, dayReminderPush, groupReminderPush, habitReminderPush, healthRecapPush, medReminderPush, nudgePush, restTimerPush, smartPush, testPush, trainerNoticePush, trainerPlanPush, trainerWorkoutPush, weeklyRecapPush } from './push-messages.js';
 import { smartDue } from './smart-nudges.js';
 import { agendaDue, occurrences as classesOf, recordOf } from './agenda.js';
-import { CODE_DAYS, dropLinksOf, linkWith, newCode, studentsOf, trainerByCode, trainersOf, archiveFor, planFor, trainingOf, trainingSummary, unlink, workoutFor } from './trainer.js';
+import { CODE_DAYS, dropLinksOf, linkWith, newCode, studentsOf, trainerByCode, trainersOf, archiveFor, planFor, trainingOf, trainingSummary, unlink, workoutFor, noticesFor, documentsFor, sharedDocument } from './trainer.js';
+import { TrainerAiError, draftPlan, trainerAiConfig } from './trainer-ai.js';
 import { hasNews, lastWeeks, moduleOn as moduleOnServer } from './health-week.js';
 import { groupsDue, habitsDue, weekSummary } from './habits.js';
 import { doseId, medsDue } from './meds.js';
@@ -2274,6 +2275,9 @@ const sleepRoutes = {
 // The student makes the link, with the trainer's code, seeing what they share; either side ends
 // it. Phase 1: the link itself. What the trainer may read and write through it comes next.
 const TRAINER_TRIES = createWindow({ max: 10, windowMs: 3600000 });
+// The AI draft of a student's plan (trainer-ai.js): its settings, and twenty an hour per trainer.
+const TRAINER_AI = trainerAiConfig(process.env);
+const TRAINER_DRAFTS = createWindow({ max: 20, windowMs: 3600000 });
 const trainerRoutes = {
   // The trainer's code, to hand to a student: the live one (or none), or a new one.
   'GET /api/trainer/code': async (req, res) => {
@@ -2337,6 +2341,56 @@ const trainerRoutes = {
     }
     classes.sort((a, b) => (a.d + a.time < b.d + b.time ? -1 : 1));
     json(res, 200, { classes });
+  },
+  // A student's notices and shared documents (phase 9), from each trainer's profile (trainer.js
+  // noticesFor, documentsFor): the ones of the trainer's record that is this student's.
+  'GET /api/trainer/mine/board': async (req, res) => {
+    const user = readSession(req);
+    if (!user) return json(res, 401, { error: 'not signed in' });
+    const notices = [], documents = [];
+    for (const l of db.trainerLinks.filter(x => x.clientId === user.id)) {
+      const trainer = db.users.find(u => u.id === l.trainerId);
+      if (!trainer) continue;
+      const S = (await loadState(trainer.id)) || {};
+      for (const n of noticesFor(S, l)) notices.push({ ...n, link: l.id, trainer: trainer.name });
+      for (const d of documentsFor(S, l)) documents.push({ ...d, link: l.id, trainer: trainer.name });
+    }
+    notices.sort((a, b) => b.at - a.at);
+    json(res, 200, { notices, documents });
+  },
+  // The file of a document a trainer shared with this student: out of the trainer's own folder,
+  // only through a link of theirs and only while the trainer's record says it is shared with them.
+  'GET /api/trainer/mine/document': async (req, res) => {
+    const user = readSession(req);
+    if (!user) return json(res, 401, { error: 'not signed in' });
+    const q = new URL(req.url, 'http://x').searchParams;
+    const l = db.trainerLinks.find(x => x.id === q.get('link') && x.clientId === user.id);
+    if (!l) return json(res, 404, { error: 'not found' });
+    const doc = sharedDocument((await loadState(l.trainerId)) || {}, l, String(q.get('id') || ''));
+    const f = doc && await MEDIA.file(l.trainerId, doc.m.hash);
+    if (!f) throw new MediaError(404, 'media-missing');
+    await sendMediaFile(res, f, doc.m.hash);
+  },
+  // A trainer's notice to students, or a document shared with one (phase 9), as a push: to the
+  // students named, those of them linked to this trainer. The notice and the document themselves
+  // are in the trainer's profile, synced like the rest of it; this only rings the bell.
+  'POST /api/trainer/notify': async (req, res) => {
+    const user = readSession(req);
+    if (!user) return json(res, 401, { error: 'not signed in' });
+    if (!user.trainer) return json(res, 403, { error: 'not a trainer' });
+    const body = await readBody(req);
+    const kind = body.kind === 'document' ? 'document' : 'notice';
+    const title = String(body.title ?? '').replace(/\s+/g, ' ').trim().slice(0, 100);
+    const ids = new Set((Array.isArray(body.students) ? body.students : []).slice(0, 500).filter(x => typeof x === 'string'));
+    if (!title || !ids.size) return json(res, 400, { error: 'a title and at least one student', code: 'notify' });
+    let sent = 0;
+    for (const l of db.trainerLinks.filter(x => x.trainerId === user.id && ids.has(x.clientId))) {
+      const S = await loadState(l.clientId);
+      pushLater(l.clientId, trainerNoticePush(S?.lang, user.name, kind, title));
+      sent++;
+    }
+    audit(req, 'trainer.notify', { user, msg: `${kind}, ${sent} student(s)` });
+    json(res, 200, { ok: true, sent });
   },
   // A student's side: their trainers, a link made with a code, the scope of one changed.
   'GET /api/trainer/mine': async (req, res) => {
@@ -2421,6 +2475,33 @@ const trainerRoutes = {
     json(res, 200, { ok: true, added: out.added });
   },
   // Either side ends a link: the access goes with it.
+  // A first draft of a student's plan by AI (trainer-ai.js), from their training and the intake
+  // the trainer filled from the record. Nothing is saved: the trainer changes the draft and sends
+  // it with PUT /api/trainer/student/plan. Off without ANTHROPIC_API_KEY (404, and /api/config
+  // says nothing); twenty drafts an hour per trainer, each a paid call.
+  ...(TRAINER_AI.key ? {
+    'POST /api/trainer/student/draft': async (req, res) => {
+      const user = readSession(req);
+      if (!user) return json(res, 401, { error: 'not signed in' });
+      if (!user.trainer) return json(res, 403, { error: 'not a trainer' });
+      const body = await readBody(req);
+      const link = db.trainerLinks.find(l => l.trainerId === user.id && l.clientId === body.id);
+      const student = link && db.users.find(u => u.id === body.id);
+      if (!student) return json(res, 404, { error: 'not your student' });
+      const wait = TRAINER_DRAFTS.take(user.id);
+      if (wait) return json(res, 429, { error: 'too many drafts, try again later', code: 'locked', retryAfter: wait }, { 'Retry-After': String(wait) });
+      req.allowSlowBody?.();
+      try {
+        const plan = await draftPlan(trainingOf((await loadState(student.id)) || {}), body.intake, TRAINER_AI, { lang: body.lang });
+        audit(req, 'trainer.draft', { user, target: student, msg: `${plan.routines.length} routine(s)` });
+        json(res, 200, { plan });
+      } catch (e) {
+        if (!(e instanceof TrainerAiError)) throw e;
+        audit(req, 'trainer.draft', { ok: false, user, target: student, msg: e.code });
+        json(res, e.status, { error: e.message, code: e.code });
+      }
+    }
+  } : {}),
   'POST /api/trainer/unlink': async (req, res) => {
     const user = readSession(req);
     if (!user) return json(res, 401, { error: 'not signed in' });
@@ -2617,6 +2698,7 @@ const routes = {
       ...(MEDIA_ON ? { media: mediaConfig(MEDIA_LIMITS) } : {}),
       // Whether Health → Exams may offer reading a report with AI (POST /api/exams/read).
       ...(EXAM_AI.key ? { exams_ai: true } : {}),
+      ...(TRAINER_AI.key ? { trainer_ai: true } : {}),
       // Whether Health → Food may offer estimating a plate from its photo (POST /api/meals/read).
       ...(MEAL_AI.key ? { meals_ai: true } : {}),
       ...(readSession(req) ? { coach: coachConfig.publicConfig() } : {})

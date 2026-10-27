@@ -179,3 +179,50 @@ export function workoutFor(cur, workout, best, trainer, now = Date.now()) {
   }
   return { workouts, exWeights, added: true, error: null };
 }
+
+// ---- what a trainer's profile holds for a student to read (phase 9): notices and documents.
+// The same rule as frontend/src/lib/notices.js noticeReaches (notices-parity.test.js holds both).
+
+/** The trainer's record of the student a link joins: by the invite's `ref`, else by their id. */
+export const recordOfLink = (S, link) => list(S?.students).find(r => r && (r.studentId === link.clientId || (link.ref && r.id === link.ref))) || null;
+
+/**
+ * Whether `notice` is for the student of `record`: every student, the students of a group (the
+ * record's `group`, compared without case or spaces around), or this one. Never a record whose
+ * link ended.
+ */
+export function noticeReaches(notice, record) {
+  if (!notice || !record || record.status === 'ended') return false;
+  const to = notice.to || {};
+  if (to.kind === 'all') return true;
+  if (to.kind === 'group') return !!to.group && String(record.group || '').trim().toLowerCase() === String(to.group).trim().toLowerCase();
+  if (to.kind === 'student') return to.recordId === record.id;
+  return false;
+}
+
+const NOTICE_DAYS = 60;
+/** A trainer's notices a student of theirs reads, newest first: the last 60 days, at most 30. */
+export function noticesFor(S, link, now = Date.now()) {
+  const record = recordOfLink(S, link);
+  if (!record) return [];
+  return list(S?.notices).filter(n => n && typeof n.id === 'string' && Number(n.at) > now - NOTICE_DAYS * 86400000 && noticeReaches(n, record))
+    .sort((a, b) => b.at - a.at).slice(0, 30)
+    .map(n => ({ id: n.id, title: clean(n.title, 100), body: String(n.body ?? '').slice(0, 2000), at: Number(n.at) }));
+}
+
+const HASH = /^[0-9a-f]{64}$/;
+/** The documents a trainer shared with a student, newest first: what the app lists, no file. */
+export function documentsFor(S, link) {
+  const record = recordOfLink(S, link);
+  if (!record || record.status === 'ended') return [];
+  return list(S?.documents).filter(d => d && d.recordId === record.id && d.shared === true && typeof d.id === 'string' && HASH.test(d.m?.hash || ''))
+    .sort((a, b) => (a.d < b.d ? 1 : a.d > b.d ? -1 : 0))
+    .map(d => ({ id: d.id, kind: d.kind || 'other', title: clean(d.title, 100), d: DAY.test(d.d || '') ? d.d : null, mime: d.m.mime, size: d.m.size }));
+}
+
+/** The one shared document `id` of the student's, with its file's hash, or null. */
+export const sharedDocument = (S, link, id) => {
+  const record = recordOfLink(S, link);
+  if (!record || record.status === 'ended') return null;
+  return list(S?.documents).find(d => d && d.id === id && d.recordId === record.id && d.shared === true && HASH.test(d.m?.hash || '')) || null;
+};

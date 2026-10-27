@@ -527,6 +527,62 @@ paths:
       responses:
         '200': { description: '`{ classes: [{ trainer, d, time, dur, status }] }`.' }
         '401': { description: Not signed in. }
+  /api/trainer/mine/board:
+    get:
+      tags: [trainer]
+      operationId: trainerMineBoard
+      summary: "The signed-in student's notices and shared documents"
+      description: |
+        From each of their trainers' profiles: the notices of the last 60 days meant for every
+        student, the student's group or the student, and the documents shared with them (no file).
+      responses:
+        '200': { description: '`{ notices: [{ id, title, body, at, link, trainer }], documents: [{ id, kind, title, d, mime, size, link, trainer }] }`.' }
+        '401': { description: Not signed in. }
+  /api/trainer/mine/document:
+    get:
+      tags: [trainer]
+      operationId: trainerMineDocument
+      summary: The file of a document a trainer shared with the signed-in student
+      description: '`?link=&id=`: out of the trainer''s folder, only through the student''s own link and while the document is shared with them.'
+      parameters:
+        - { name: link, in: query, required: true, schema: { type: string } }
+        - { name: id, in: query, required: true, schema: { type: string } }
+      responses:
+        '200': { description: The file's bytes. }
+        '401': { description: Not signed in. }
+        '404': { description: No such shared document for this student (`media-missing`). }
+  /api/trainer/notify:
+    post:
+      tags: [trainer]
+      operationId: trainerNotify
+      summary: A push to a trainer's students about a notice or a shared document
+      description: |
+        `{ kind: notice | document, title, students: [id] }`. Sent to the students named that are
+        linked to this trainer; the notice or document itself is in the trainer's profile. Audited.
+      responses:
+        '200': { description: '`{ ok, sent }`.' }
+        '400': { description: No title, or no student (`notify`). }
+        '401': { description: Not signed in. }
+        '403': { description: Not a trainer. }
+  /api/trainer/student/draft:
+    post:
+      tags: [trainer]
+      operationId: trainerStudentDraft
+      summary: A first draft of a student's plan by AI
+      description: |
+        `{ id, intake, lang }`: the Coach's create task run on the student's training with the
+        trainer's intake (goal, days, minutes, limitations, notes), with the instance's
+        ANTHROPIC_API_KEY. Nothing is saved; the trainer sends what they keep with
+        PUT /api/trainer/student/plan. Only when the key is set (`trainer_ai` in /api/config);
+        twenty an hour per trainer. Audited.
+      responses:
+        '200': { description: '`{ plan: { name, summary, week, routines, customEx } }`.' }
+        '401': { description: Not signed in. }
+        '403': { description: Not a trainer. }
+        '404': { description: Not a student of this trainer, or no AI key on this instance. }
+        '429': { description: Too many drafts (`locked`). }
+        '502': { description: 'The AI failed, the key was refused (`config`), or the answer could not be used (`unusable`).' }
+        '504': { description: No answer in time (`timeout`). }
   /api/trainer/mine:
     get:
       tags: [trainer]

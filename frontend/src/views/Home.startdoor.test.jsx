@@ -8,7 +8,7 @@ import React, { act } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createRoot } from 'react-dom/client'
 import { useStore } from '../store/useStore.js'
-import { startFlow } from '../sheets.jsx'
+import { dayWorkoutsSheet, startFlow } from '../sheets.jsx'
 // The training cards of the old Home (the week, today's session, the streak, weight) live in
 // views/Training.jsx; `home` draws all of them, as Home does with every other module off.
 import Training from './Training.jsx'
@@ -17,7 +17,7 @@ const Home = () => <Training home />
 const nav = vi.fn()
 vi.mock('react-router-dom', () => ({ useNavigate: () => nav }))
 vi.mock('../sheets.jsx', () => ({
-  starterPlanSheet: vi.fn(), bwSheet: vi.fn(), goalSheet: vi.fn(), dayOverrideSheet: vi.fn(),
+  starterPlanSheet: vi.fn(), bwSheet: vi.fn(), goalSheet: vi.fn(), dayOverrideSheet: vi.fn(), dayWorkoutsSheet: vi.fn(),
   calendarSheet: vi.fn(), startFlow: vi.fn(), bwDeltaColor: () => '', weighInsSheet: vi.fn(),
 }))
 
@@ -26,7 +26,7 @@ const routines = [{ id: 'r1', name: 'Push', emoji: null, ex: [{ id: '0025' }] }]
 let host, root
 beforeEach(() => {
   globalThis.IS_REACT_ACT_ENVIRONMENT = true
-  nav.mockClear(); startFlow.mockClear()
+  nav.mockClear(); startFlow.mockClear(); dayWorkoutsSheet.mockClear()
   host = document.createElement('div')
   document.body.appendChild(host)
   root = createRoot(host)
@@ -85,5 +85,16 @@ describe('Home — the way to the Start screen when a plan already owns today', 
     const row = host.querySelector('.today-row')
     expect(row.querySelector('.ttl').textContent).toBe('Push (in progress)')
     expect(row.querySelector('.tag').textContent).toBe('Resume')
+  })
+
+  it('once today’s plan is done, a tap shows what was done instead of starting it again', () => {
+    const d = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10)
+    const w = { id: 'w1', d, name: 'Push', routineId: 'r1', start: 1, end: 2, entries: [] }
+    setS({ workouts: [w] }); mount()
+    const row = host.querySelector('.today-row')
+    expect(row.querySelector('.ttl').textContent).toBe('Push (done)')
+    act(() => { row.dispatchEvent(new MouseEvent('click', { bubbles: true })) })
+    expect(startFlow).not.toHaveBeenCalled()
+    expect(dayWorkoutsSheet).toHaveBeenCalledWith(d, [w])
   })
 })

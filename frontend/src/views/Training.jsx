@@ -6,7 +6,7 @@ import { effectiveRoutines, effectiveRoutineIds, nextTrainingDay, streakWeeks, l
 import { fmtDur, fmtNum, fmtDate, todayISO, isoOf, weekStartOf, weekDayOffset, DAYS, DAYN } from '../lib/format.js'
 import { bwChartPoint } from '../lib/bodyweight.js'
 import { t, tn, dateLocale } from '../lib/i18n.js'
-import { bwSheet, goalSheet, dayOverrideSheet, calendarSheet, startFlow, starterPlanSheet, bwDeltaColor, weighInsSheet } from '../sheets.jsx'
+import { bwSheet, goalSheet, dayOverrideSheet, dayWorkoutsSheet, calendarSheet, startFlow, starterPlanSheet, bwDeltaColor, weighInsSheet } from '../sheets.jsx'
 import LineChart from '../components/LineChart.jsx'
 import Icon from '../components/Icon.jsx'
 import QueueRow from '../components/QueueRow.jsx'
@@ -114,7 +114,14 @@ export default function Training({ home = false, sections = home ? ALL_SECTIONS 
   const bwPoints = S.bodyweight.slice(-30).map(bwChartPoint)
 
   // today's session shown right under the week strip
-  const onToday = () => { if (S.active) nav('/workout'); else if (todayRoutines.length) startFlow(effectiveRoutineIds(S, todayISO())); else dayOverrideSheet(todayISO()) }
+  // Once today's plan is done the row reports it, so a tap shows what was done — never a new
+  // session of the same routine; "Choose another workout" below is the way to train again.
+  const onToday = () => {
+    if (S.active) nav('/workout')
+    else if (doneToday) dayWorkoutsSheet(todayISO(), loggedToday)
+    else if (todayRoutines.length) startFlow(effectiveRoutineIds(S, todayISO()))
+    else dayOverrideSheet(todayISO())
+  }
   // A chip on the coach week's progress row starts that one routine, in any order. A session
   // already in progress wins, as on the today row — starting another would overwrite it.
   const onQueueStart = id => { if (S.active) nav('/workout'); else startFlow([id]) }

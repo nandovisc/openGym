@@ -15,7 +15,7 @@ import { kcalOn } from '../lib/workout-health.js'
 import { DAYN, fmtDate, fmtDur, fmtNum, todayISO } from '../lib/format.js'
 import { bwChartPoint } from '../lib/bodyweight.js'
 import { t, dateLocale } from '../lib/i18n.js'
-import { bwSheet, startFlow } from '../sheets.jsx'
+import { bwSheet, dayWorkoutsSheet, startFlow } from '../sheets.jsx'
 import { addFoodSheet } from './Food.jsx'
 import { HabitRow, useMedHabits, useNow } from './Habits.jsx'
 import { drink, mlText, useWaterMigration } from './Water.jsx'
@@ -77,7 +77,7 @@ function TrainingCard({ S, nav }) {
     <div className="today-big">{t('Workout in progress')}</div>
     <Button variant="primary" icon="play" onClick={() => nav('/workout')}>{t('Resume')}</Button>
   </Card>
-  if (done.length) return <Card title={t('Today’s workout')} onClick={() => nav('/training')}>
+  if (done.length) return <Card title={t('Today’s workout')} onClick={() => dayWorkoutsSheet(today, done)}>
     <div className="today-big"><Icon name="checkCircle" style={{ color: 'var(--acc)' }} /> {done.map(w => w.name).filter(Boolean).join(' + ') || t('Workout')}</div>
     <div className="small dim">{kcalOn(done, today) > 0 ? t('Trained today · {0} kcal burned', fmtNum(kcalOn(done, today))) : t('Trained today')}</div>
   </Card>

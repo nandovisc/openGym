@@ -11,6 +11,7 @@ import Icon from '../components/Icon.jsx'
 import { Button, NumberField, Row, Section, Segmented } from '../components/ui.jsx'
 import { confirmSheet } from '../sheets.jsx'
 import { myTrainersSheet } from './Trainer.jsx'
+import { RecordPayments } from './Finance.jsx'
 
 // The Personal module, phase 4: a trainer's own record of each student (lib/students.js) — who
 // they are, what they train for, what to keep in mind, what they pay — and the invite that brings
@@ -127,6 +128,7 @@ export function RecordTab({ record, name, studentId }) {
       <Row title={t(BILLING_LABEL[record.billing?.kind] || 'Payment')} subtitle={billingText(record.billing)} />
       {record.start && <Row title={t('Started on')} value={fmtDate(record.start, true)} />}
     </Section>
+    <RecordPayments record={record} />
     {(record.notes || record.restrictions) && <div className="card small rec-notes">
       {record.notes && <><b>{t('Health history and notes')}</b><p>{record.notes}</p></>}
       {record.restrictions && <><b>{t('Restrictions')}</b><p>{record.restrictions}</p></>}

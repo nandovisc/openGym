@@ -45,6 +45,7 @@ import { createDeviceLink, findDeviceLink, burnDeviceLink, dropDeviceLinks } fro
 import { createMediaStore, mediaLimits, mediaConfig, MediaError, HASH_RE, sniffMedia } from './media.js';
 import { effectiveRoutineId } from './queue.js';
 import { stampEntry, stampPut } from './sync-stamps.js';
+import { MAX_KEYS, SCOPES, findKey, keyOf, keyView, mintKey, newEntry, normalizeKeyInput, pageOf, patchEntry, publicEntry, scopeOfList, settingsFor } from './api-keys.js';
 import { atomicWrite as durableWrite } from './durable.js';
 import { excusedOn, nudgeFor, nudgeWindowOpen, toneOf } from './nudge.js';
 import { createRemote } from './store/remote.js';
@@ -2271,6 +2272,140 @@ const sleepRoutes = {
   }
 };
 
+/* ---------- a person's own API keys (api-keys.js) ---------- */
+// Another app reads the profile with a key of the person's own, and writes it when the key says
+// so: only the areas the key opens, only with the key (a cookie or an app session is not read
+// here, so a hostile page has nothing to borrow), six hundred requests an hour per key.
+const API_CALLS = createWindow({ max: 600, windowMs: 3600000 });
+const KEY_LAST_MS = 10 * 60 * 1000;
+function apiKeyAuth(req, res) {
+  const found = findKey(db.users, req.headers.authorization);
+  if (!found) { json(res, 401, { error: 'invalid API key', code: 'api-key' }); return null; }
+  const wait = API_CALLS.take(found.key.id);
+  if (wait) { json(res, 429, { error: 'too many requests, try again later', code: 'locked', retryAfter: wait }, { 'Retry-After': String(wait) }); return null; }
+  const now = Date.now();
+  if (!found.key.last || now - found.key.last >= KEY_LAST_MS) {
+    found.key.last = now;
+    try { saveDb(); } catch (e) { console.error('db save failed', e.message); }
+  }
+  return found;
+}
+// The list a /api/v1/{list} route names, if the key opens it; answers 404 or 403 otherwise.
+function apiList(req, res, found) {
+  const name = req.apiList;
+  const scope = scopeOfList(name);
+  if (!scope) { json(res, 404, { error: 'no such list' }); return null; }
+  if (!found.key.scopes.includes(scope) || (SCOPES[scope].trainer && !found.user.trainer)) { json(res, 403, { error: `this key does not open ${scope}`, code: 'scope' }); return null; }
+  return name;
+}
+// A write through a key: the stored profile changed by `change` (which returns the entry it
+// touched, or an answer to give instead) and stamped by the server like an API script's PUT.
+async function apiWrite(req, res, found, name, change) {
+  if (!found.key.write) return json(res, 403, { error: 'this key only reads', code: 'read-only' });
+  const cur = await loadStateStrict(found.user.id);
+  if (cur === UNREADABLE) { console.error('state file unreadable for', found.user.id); return json(res, 503, { error: 'state unreadable' }); }
+  const next = JSON.parse(JSON.stringify(cur || {}));
+  const entries = Array.isArray(next[name]) ? next[name] : [];
+  const out = change(entries);
+  if (out.status) return json(res, out.status, out.body);
+  next[name] = out.entries;
+  const done = await commitState(found.user, cur, next, { overRead: true });
+  if (!done) return json(res, 400, { error: 'invalid state' });
+  audit(req, 'api.write', { user: found.user, msg: `${req.method} ${name} (key ${found.key.id})` });
+  json(res, out.code || 200, out.entry === undefined ? { ok: true } : { ok: true, entry: publicEntry(out.entry) });
+}
+const apiKeyRoutes = {
+  // The owner's keys, from their app session: list, make (the key shown this once), revoke.
+  'GET /api/account/api-keys': async (req, res) => {
+    const user = readSession(req);
+    if (!user) return json(res, 401, { error: 'not signed in' });
+    json(res, 200, { keys: (user.apiKeys || []).map(keyView), max: MAX_KEYS });
+  },
+  'POST /api/account/api-keys': async (req, res) => {
+    const user = readSession(req);
+    if (!user) return json(res, 401, { error: 'not signed in' });
+    const input = normalizeKeyInput(await readBody(req), { trainer: !!user.trainer });
+    if (input.error) return json(res, 400, { error: input.error === 'name' ? 'a name is required' : 'choose at least one area', code: input.error });
+    if ((user.apiKeys || []).length >= MAX_KEYS) return json(res, 409, { error: `at most ${MAX_KEYS} keys`, code: 'too-many' });
+    const { id, key, h } = mintKey();
+    const rec = { id, name: input.name, h, scopes: input.scopes, write: input.write, created: Date.now(), last: null };
+    user.apiKeys = [...(user.apiKeys || []), rec];
+    saveDb();
+    audit(req, 'api.key', { user, msg: `created ${id}: ${input.scopes.join(',')}${input.write ? ', write' : ''}` });
+    json(res, 200, { key, ...keyView(rec) });
+  },
+  'DELETE /api/account/api-keys': async (req, res) => {
+    const user = readSession(req);
+    if (!user) return json(res, 401, { error: 'not signed in' });
+    const id = new URL(req.url, 'http://x').searchParams.get('id');
+    const before = (user.apiKeys || []).length;
+    user.apiKeys = (user.apiKeys || []).filter(k => k.id !== id);
+    if (user.apiKeys.length === before) return json(res, 404, { error: 'no such key' });
+    if (!user.apiKeys.length) delete user.apiKeys;
+    saveDb();
+    audit(req, 'api.key', { user, msg: `revoked ${id}` });
+    json(res, 200, { ok: true });
+  },
+
+  // What a key may see of its owner, and the settings of the areas it opens.
+  'GET /api/v1/me': async (req, res) => {
+    const found = apiKeyAuth(req, res); if (!found) return;
+    const S = await loadStateCached(found.user.id);
+    json(res, 200, { user: { id: found.user.id, name: found.user.name }, unit: S?.unit || 'kg', key: keyView(found.key) });
+  },
+  'GET /api/v1/settings': async (req, res) => {
+    const found = apiKeyAuth(req, res); if (!found) return;
+    json(res, 200, { settings: settingsFor(await loadStateCached(found.user.id), found.key.scopes) });
+  },
+  'GET /api/v1/{list}': async (req, res) => {
+    const found = apiKeyAuth(req, res); if (!found) return;
+    const name = apiList(req, res, found); if (!name) return;
+    const q = new URL(req.url, 'http://x').searchParams;
+    const S = await loadStateCached(found.user.id);
+    json(res, 200, pageOf(S?.[name], { from: q.get('from'), to: q.get('to'), limit: q.get('limit'), cursor: q.get('cursor') }));
+  },
+  'GET /api/v1/{list}/{id}': async (req, res) => {
+    const found = apiKeyAuth(req, res); if (!found) return;
+    const name = apiList(req, res, found); if (!name) return;
+    const S = await loadStateCached(found.user.id);
+    const e = (Array.isArray(S?.[name]) ? S[name] : []).find(x => x && String(keyOf(name, x)) === req.apiId);
+    if (!e) return json(res, 404, { error: 'no such entry' });
+    json(res, 200, { entry: publicEntry(e) });
+  },
+  'POST /api/v1/{list}': async (req, res) => {
+    const found = apiKeyAuth(req, res); if (!found) return;
+    const name = apiList(req, res, found); if (!name) return;
+    const made = newEntry(name, await readBody(req));
+    if (made.error) return json(res, 400, { error: made.error, ...(made.field ? { field: made.field } : {}) });
+    await apiWrite(req, res, found, name, entries => {
+      const k = String(keyOf(name, made.entry));
+      if (entries.some(x => x && String(keyOf(name, x)) === k)) return { status: 409, body: { error: 'an entry with this key exists; change it with PATCH', id: k } };
+      return { entries: [...entries, made.entry], entry: made.entry, code: 201 };
+    });
+  },
+  'PATCH /api/v1/{list}/{id}': async (req, res) => {
+    const found = apiKeyAuth(req, res); if (!found) return;
+    const name = apiList(req, res, found); if (!name) return;
+    const body = await readBody(req);
+    await apiWrite(req, res, found, name, entries => {
+      const i = entries.findIndex(x => x && String(keyOf(name, x)) === req.apiId);
+      if (i < 0) return { status: 404, body: { error: 'no such entry' } };
+      const ch = patchEntry(name, entries[i], body);
+      if (ch.error) return { status: 400, body: { error: ch.error, ...(ch.field ? { field: ch.field } : {}) } };
+      return { entries: entries.map((x, j) => (j === i ? ch.entry : x)), entry: ch.entry };
+    });
+  },
+  'DELETE /api/v1/{list}/{id}': async (req, res) => {
+    const found = apiKeyAuth(req, res); if (!found) return;
+    const name = apiList(req, res, found); if (!name) return;
+    await apiWrite(req, res, found, name, entries => {
+      const rest = entries.filter(x => !(x && String(keyOf(name, x)) === req.apiId));
+      if (rest.length === entries.length) return { status: 404, body: { error: 'no such entry' } };
+      return { entries: rest };
+    });
+  }
+};
+
 /* ---------- the Personal module: a trainer and their students (trainer.js) ---------- */
 // The student makes the link, with the trainer's code, seeing what they share; either side ends
 // it. Phase 1: the link itself. What the trainer may read and write through it comes next.
@@ -3380,6 +3515,7 @@ const routes = {
   ...(EXAM_AI.key ? examRoutes : {}),
   ...(MEAL_AI.key ? mealRoutes : {}),
   ...sleepRoutes,
+  ...apiKeyRoutes,
   ...trainerRoutes,
   ...foodRoutes,
 
@@ -3449,7 +3585,7 @@ async function handle(req, res) {
     const pna = String(req.headers['access-control-request-private-network'] || '').toLowerCase() === 'true'
       && APP_ORIGINS.has(origin);
     res.writeHead(204, {
-      'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS',
+      'Access-Control-Allow-Methods': 'GET,POST,PUT,PATCH,DELETE,OPTIONS',
       // The CF-Access-* pair: a phone's Cloudflare Access service token (frontend lib/cf-access.js),
       // for an Access application that passes OPTIONS through to the origin.
       'Access-Control-Allow-Headers': 'Content-Type, Authorization, CF-Access-Client-Id, CF-Access-Client-Secret',
@@ -3468,6 +3604,13 @@ async function handle(req, res) {
   // above stays a plain lookup, and so csrfOk and the catch-all see one name for every file.
   const mm = /^\/api\/media\/([0-9a-f]{64})$/.exec(url.pathname);
   if (mm) { key = req.method + ' /api/media/{hash}'; req.mediaHash = mm[1]; }
+  // And a key's lists (api-keys.js): /api/v1/{list} and /api/v1/{list}/{id}, besides /me and /settings.
+  const av = /^\/api\/v1\/([A-Za-z]+)(?:\/([^/]{1,200}))?$/.exec(url.pathname);
+  if (av && !(av[2] === undefined && (av[1] === 'me' || av[1] === 'settings'))) {
+    try { req.apiId = av[2] === undefined ? undefined : decodeURIComponent(av[2]); } catch { return json(res, 400, { error: 'bad request' }); }
+    req.apiList = av[1];
+    key = req.method + (av[2] === undefined ? ' /api/v1/{list}' : ' /api/v1/{list}/{id}');
+  }
   const handler = routes[key];
   if (!handler) return json(res, 404, { error: 'not found' });
   if (!csrfOk(req, key)) {

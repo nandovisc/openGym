@@ -135,7 +135,8 @@ const TAGS = {
   // spec needs a line here.
   coach: { title: 'AI Coach', side: 'Plans, reviews, debriefs' },
   admin: { title: 'Admin', side: 'Users, invites, audit log, Coach' },
-  trainer: { title: 'Personal', side: 'A trainer and their students' }
+  trainer: { title: 'Personal', side: 'A trainer and their students' },
+  keys: { title: 'API keys', side: 'Your data in other apps' }
 }
 
 // "Admin: list all users" → "List all users": the section heading and the ADMIN
@@ -148,6 +149,9 @@ const sumText = s => {
 function authOf (op, tag) {
   if (Array.isArray(op.security) && op.security.length === 0) {
     return { chip: 'public', line: 'Public: no authentication required.' }
+  }
+  if (Array.isArray(op.security) && op.security.some(x => x && x.apiKeyAuth)) {
+    return { chip: 'key', line: 'Requires an API key of the person\'s own: <code>Authorization: Bearer ogk_…</code>. A session is not accepted.' }
   }
   if (tag === 'admin') {
     return {

@@ -2293,6 +2293,7 @@ a.btn{text-decoration:none;box-sizing:border-box}
 .health-tile{display:flex;flex-direction:column;align-items:flex-start;gap:6px;min-height:104px;padding:14px;border:0;border-radius:var(--r);background:var(--surface);color:var(--label);font:inherit;text-align:start}
 .health-tile .warn{color:var(--red)}
 .linkbtn{background:none;border:0;color:var(--acc);font:inherit;font-size:14px;padding:4px 0;cursor:pointer}
+.linkbtn.danger{color:var(--red)}
 .today-top{display:flex;align-items:center;gap:16px}
 .today-ring{--p:0;width:72px;height:72px;border-radius:50%;border:0;flex:none;display:grid;place-items:center;background:conic-gradient(var(--acc) calc(var(--p)*360deg),var(--surface-3) 0);cursor:pointer}
 .today-ring b{width:56px;height:56px;border-radius:50%;display:grid;place-items:center;background:var(--surface);color:var(--label);font-size:17px}

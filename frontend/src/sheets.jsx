@@ -400,11 +400,18 @@ function WeighIns({ close }) {
     </div>
     <div className="chart"><LineChart points={points} h={140} unit={st.unit} goal={st.targetW} /></div>
     <div className="small dim" style={{ marginTop: 6 }}>{t('Weekly average')}</div>
-    {weeks.map(w => {
+    {weeks.map((w, i) => {
       // Only a change the display can show: at one decimal, 0.02 kg is "0", and an arrow over a
       // zero says something moved when, as far as the screen goes, nothing did.
       const moved = w.delta != null && fmtNum(Math.abs(w.delta)) !== fmtNum(0)
+      // The dates say day and month only, so each year gets a heading where it starts: a long
+      // history read Feb 2025 and Feb 2026 alike.
+      // A week across New Year goes under the year of its latest weigh-in.
+      const yearOf = x => x.entries.reduce((m, b) => (b.d > m ? b.d : m), x.key).slice(0, 4)
+      const year = yearOf(w)
+      const newYear = i === 0 || yearOf(weeks[i - 1]) !== year
       return <div key={w.key} data-week={w.key}>
+        {newYear && <h4 className="bw-year" style={{ margin: '24px 2px 0', fontSize: 20, fontWeight: 700 }}>{year}</h4>}
         <div className="row between" style={{ margin: '16px 2px 4px', gap: 8 }}>
           <span className="small" style={{ fontWeight: 600 }}>{t('Week of {0}', fmtDate(w.key))}</span>
           <span className="small row" style={{ gap: 8 }}>

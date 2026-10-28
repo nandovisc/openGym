@@ -55,6 +55,18 @@ describe('weigh-ins sheet', () => {
     expect(weeks[1].querySelectorAll('button[aria-label="Delete weigh-in"]')).toHaveLength(2)
   })
 
+  it('heads each year where it starts, a week across New Year under the year of its latest weigh-in', () => {
+    install({ bodyweight: [
+      { d: '2026-01-02', w: 82, t: 1 }, { d: '2025-12-30', w: 82.5, t: 2 },   // the week of 29 Dec 2025
+      { d: '2025-02-10', w: 85, t: 3 }, { d: '2024-11-04', w: 88, t: 4 },
+    ] })
+    weighInsSheet()
+    const host = mountTopSheet()
+    expect([...host.querySelectorAll('.bw-year')].map(h => h.textContent)).toEqual(['2026', '2025', '2024'])
+    expect(host.querySelector('[data-week="2025-12-29"] .bw-year').textContent).toBe('2026')
+    expect(host.querySelector('[data-week="2025-02-10"] .bw-year').textContent).toBe('2025')
+  })
+
   it('follows a Sunday week start', () => {
     install({ weekStart: 0 })
     weighInsSheet()

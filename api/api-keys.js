@@ -119,6 +119,19 @@ const DERIVED_ID = {
   habitLog: e => `${e.habitId}|${e.d}`
 };
 const INTERNAL = ['_ts', '_f', '_u'];
+// The lists whose entries hold items the app edits one by one, by id (lib/nutrition.js).
+const ITEM_LISTS = new Set(['meals', 'savedMeals']);
+
+/** `items` each with an id of its own: one given to those sent without one, or with one taken. */
+export function itemsWithIds(items) {
+  const seen = new Set();
+  return items.map(x => {
+    if (!isMap(x)) return x;
+    const id = typeof x.id === 'string' && x.id && !seen.has(x.id) ? x.id : crypto.randomBytes(9).toString('base64url');
+    seen.add(id);
+    return id === x.id ? x : { ...x, id };
+  });
+}
 
 /** An entry's key in its list: its day for bodyweight and measurements, its id for the rest. */
 export const keyOf = (name, e) => (DAY_KEYED.has(name) ? e?.d : DEL_LISTS[name] ? DEL_LISTS[name](e) : e?.id);
@@ -158,6 +171,7 @@ export function newEntry(name, body, { now = Date.now(), id = crypto.randomBytes
   if ((name === 'bodyweight' || name === 'measurements') && !num(e.t)) e.t = now;
   const bad = checkEntry(name, e);
   if (bad) return bad;
+  if (ITEM_LISTS.has(name)) e.items = itemsWithIds(e.items);
   if (!DAY_KEYED.has(name)) e.id = DERIVED_ID[name] ? DERIVED_ID[name](e) : id;
   if (!DAY_KEYED.has(name) && name !== 'workouts' && !num(e.created)) e.created = now;
   return { entry: e };
@@ -172,7 +186,9 @@ export function patchEntry(name, old, body) {
   if (DAY_KEYED.has(name)) e.d = old.d;
   if (DERIVED_ID[name]) for (const k of name === 'medLog' ? ['medId', 'd', 'time'] : ['habitId', 'd']) e[k] = old[k];
   const bad = checkEntry(name, e);
-  return bad || { entry: e };
+  if (bad) return bad;
+  if (ITEM_LISTS.has(name)) e.items = itemsWithIds(e.items);
+  return { entry: e };
 }
 
 /* ---------------------------------------------------------------- reading */

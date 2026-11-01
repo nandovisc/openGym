@@ -452,20 +452,27 @@ export const addFoodSheet = (d, slot) => ui().openSheet(close => <AddFood d={d} 
 
 /* ---------- editing ---------- */
 
-function EditItem({ mealId, itemId, close }) {
+/**
+ * Where the item is among the meal's: at the row tapped (`at`) while that row is still it, else
+ * found by its id. By position first, since items a script added may share an id, or have none.
+ */
+const itemIndex = (items, at, id) => (items?.[at] && items[at].id === id ? at : (items || []).findIndex(x => x.id === id))
+
+function EditItem({ mealId, itemId, at, close }) {
   const meal = useStore(s => (s.S.meals || []).find(m => m.id === mealId))
-  const item = meal?.items?.find(x => x.id === itemId)
+  const item = meal?.items?.[itemIndex(meal?.items, at, itemId)]
   const [grams, setGrams] = useState(item?.grams || 0)
   const [slot, setSlot] = useState(meal?.slot || 'snack')
   if (!item) return <><h3>{t('Food')}</h3><div className="muted small">{t('This food was removed.')}</div><Button onClick={close}>{t('Close')}</Button></>
-  const next = item.grams ? rescale(item, grams || 0) : item
+  const next = { ...(item.grams ? rescale(item, grams || 0) : item), id: item.id || uid() }
   const save = () => {
     update(s => {
       const m = s.meals.find(x => x.id === mealId)
-      if (!m) return
-      if (slot === m.slot) { m.items = m.items.map(x => (x.id === itemId ? next : x)); return }
+      const i = m ? itemIndex(m.items, at, itemId) : -1
+      if (i < 0) return
+      if (slot === m.slot) { m.items = m.items.map((x, j) => (j === i ? next : x)); return }
       // Moved to another meal of the day: out of this one, into that one's hand-typed meal.
-      m.items = m.items.filter(x => x.id !== itemId)
+      m.items = m.items.filter((_, j) => j !== i)
       const into = s.meals.find(x => x.d === m.d && x.slot === slot && !x.photo && !x.ai)
       if (into) into.items = [...into.items, next]
       else s.meals.push(normalizeMeal({ d: m.d, slot, time: m.time, items: [next] }))
@@ -476,8 +483,9 @@ function EditItem({ mealId, itemId, close }) {
   const remove = () => {
     update(s => {
       const m = s.meals.find(x => x.id === mealId)
-      if (!m) return
-      m.items = m.items.filter(x => x.id !== itemId)
+      const i = m ? itemIndex(m.items, at, itemId) : -1
+      if (i < 0) return
+      m.items = m.items.filter((_, j) => j !== i)
       if (!m.items.length && !m.photo) s.meals = s.meals.filter(x => x.id !== mealId)
     })
     close()
@@ -669,8 +677,8 @@ function MealBlock({ meal }) {
           : <>{meal.title && <b>{meal.title}</b>}{meal.ai > 0 && <div className="dim">{t('Estimated by AI. Adjust the grams if needed.')}</div>}</>}
       </div>
     </div>}
-    {(meal.items || []).map(it => <Row key={it.id} title={it.name} subtitle={[it.grams ? `${fmtNum(it.grams)} g` : null, `P ${fmtNum(it.p)} · C ${fmtNum(it.c)} · F ${fmtNum(it.f)}`].filter(Boolean).join(' · ')}
-      value={kcalText(it.kcal)} onClick={() => ui().openSheet(close => <EditItem mealId={meal.id} itemId={it.id} close={close} />)}>
+    {(meal.items || []).map((it, i) => <Row key={`${i}-${it.id}`} title={it.name} subtitle={[it.grams ? `${fmtNum(it.grams)} g` : null, `P ${fmtNum(it.p)} · C ${fmtNum(it.c)} · F ${fmtNum(it.f)}`].filter(Boolean).join(' · ')}
+      value={kcalText(it.kcal)} onClick={() => ui().openSheet(close => <EditItem mealId={meal.id} itemId={it.id} at={i} close={close} />)}>
       {it.src === 'ai' && <span className="exam-ai"><Icon name="sparkles" /></span>}
     </Row>)}
     {(meal.items || []).length > 0 && !reading && <Row icon="list" iconTint="var(--orange)" title={t('Save as a meal')} subtitle={t('To add it again, whole or in part')}

@@ -10,7 +10,7 @@ import path from 'node:path';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { boundPort } from './helpers.mjs';
-import { findKey, hashKey, keyOf, mintKey, newEntry, normalizeKeyInput, pageOf, parseBearer, patchEntry, publicEntry, scopeOfList, settingsFor } from '../api-keys.js';
+import { findKey, hashKey, itemsWithIds, keyOf, mintKey, newEntry, normalizeKeyInput, pageOf, parseBearer, patchEntry, publicEntry, scopeOfList, settingsFor } from '../api-keys.js';
 
 const API = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SECRET = crypto.randomBytes(32).toString('hex');
@@ -59,6 +59,20 @@ test('an entry: what each list needs, the id the server gives or the app derives
   assert.equal(keyOf('bodyweight', { d: '2026-10-27' }), '2026-10-27');
   assert.equal(keyOf('workouts', { d: '2026-10-27', start: 5 }), '2026-10-27|5');
   assert.deepEqual(publicEntry({ id: 'a', _ts: 1, _f: {}, _u: {} }), { id: 'a' });
+});
+
+test('the foods of a meal: each with an id of its own, so the app edits one at a time', () => {
+  const meal = newEntry('meals', { d: '2026-10-27', slot: 'lunch', items: [{ name: 'Arroz', kcal: 130 }, { name: 'Feijão', kcal: 80 }] }).entry;
+  const ids = meal.items.map(x => x.id);
+  assert.equal(new Set(ids).size, 2);
+  assert.ok(ids.every(id => typeof id === 'string' && id));
+  const fixed = itemsWithIds([{ id: 'a', name: 'x' }, { id: 'a', name: 'y' }, { name: 'z' }]);
+  assert.equal(fixed[0].id, 'a', 'an id of its own is kept');
+  assert.equal(new Set(fixed.map(x => x.id)).size, 3);
+  const patched = patchEntry('meals', meal, { items: [{ name: 'Ovo', kcal: 70 }, meal.items[1]] }).entry;
+  assert.ok(patched.items[0].id);
+  assert.equal(patched.items[1].id, meal.items[1].id);
+  assert.ok(newEntry('savedMeals', { name: 'Almoço', items: [{ name: 'Arroz', kcal: 130 }] }).entry.items[0].id);
 });
 
 test('a page: by day, newest first, a page at a time', () => {

@@ -133,6 +133,38 @@ describe('finding a food', () => {
   })
 })
 
+describe('editing a food of a meal', () => {
+  // Items a script sent through the API may come with no id, or with the same one: editing one
+  // changes that one alone.
+  it('changes only the food tapped, even when the foods have no id', () => {
+    const S = clone(DEF)
+    const it = (name, kcal) => ({ name, grams: 100, kcal, p: 1, c: 1, f: 1, src: 'quick' })
+    S.meals = [{ id: 'm', d: todayISO(), slot: 'lunch', items: [it('Arroz', 130), it('Feijão', 80), it('Frango', 160)], created: 1 }]
+    useStore.setState({ S, user: null, config: null })
+    const page = render(<MemoryRouter><Food /></MemoryRouter>)
+    act(() => [...page.querySelectorAll('button')].find(b => b.textContent.includes('Feijão')).click())
+    const sheet = topSheet()
+    setInput(sheet.querySelector('.food-grams input'), 200)
+    act(() => button(sheet, 'Save').click())
+    const items = meals()[0].items
+    expect(items.map(x => [x.name, x.grams])).toEqual([['Arroz', 100], ['Feijão', 200], ['Frango', 100]])
+    expect(items[1].id).toBeTruthy()
+  })
+
+  it('removes only the food tapped when two share an id', () => {
+    const S = clone(DEF)
+    S.meals = [{ id: 'm', d: todayISO(), slot: 'lunch', created: 1, items: [
+      { id: 'x', name: 'Arroz', grams: 100, kcal: 130, p: 1, c: 1, f: 1, src: 'quick' },
+      { id: 'x', name: 'Feijão', grams: 100, kcal: 80, p: 1, c: 1, f: 1, src: 'quick' }] }]
+    useStore.setState({ S, user: null, config: null })
+    const page = render(<MemoryRouter><Food /></MemoryRouter>)
+    act(() => [...page.querySelectorAll('button')].find(b => b.textContent.includes('Feijão')).click())
+    const sheet = topSheet()
+    act(() => button(sheet, 'Remove').click())
+    expect(meals()[0].items.map(x => x.name)).toEqual(['Arroz'])
+  })
+})
+
 describe('the photo of a plate', () => {
   const withMeal = items => {
     const S = clone(DEF)
